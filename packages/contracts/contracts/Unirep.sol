@@ -265,8 +265,6 @@ contract Unirep is IUnirep, VerifySignature {
             epkData.epoch = uint64(currentEpoch);
         }
 
-        // now operate on the data in memory
-
         if (fieldIndex < sumFieldCount) {
             uint256 oldVal = epkData.data[fieldIndex];
             uint256 newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
@@ -282,6 +280,8 @@ contract Unirep is IUnirep, VerifySignature {
         }
 
         // now construct the leaf
+        // TODO: only rebuild the hashchain as needed
+        // e.g. if data[4] if attested to, don't hash 0,1,2,3
 
         uint256 leaf = epochKey;
         for (uint8 x = 0; x < fieldCount; x++) {

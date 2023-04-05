@@ -100,19 +100,21 @@ export const deployUnirep = async (
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
-    const polyPath =
+    const reusableMerklePath =
         'contracts/libraries/ReusableMerkleTree.sol/ReusableMerkleTree.json'
-    const polyArtifacts = tryPath(polyPath)
-    const _polyFactory = new ethers.ContractFactory(
-        polyArtifacts.abi,
-        linkLibrary(polyArtifacts.bytecode, {
+    const reusableMerkleArtifacts = tryPath(reusableMerklePath)
+    const _reusableMerkleFactory = new ethers.ContractFactory(
+        reusableMerkleArtifacts.abi,
+        linkLibrary(reusableMerkleArtifacts.bytecode, {
             ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
         }),
         deployer
     )
-    const polyFactory = await GlobalFactory(_polyFactory)
-    const polyContract = await retryAsNeeded(() => polyFactory.deploy())
-    await polyContract.deployed()
+    const reusableMerkleFactory = await GlobalFactory(_reusableMerkleFactory)
+    const reusableMerkleContract = await retryAsNeeded(() =>
+        reusableMerkleFactory.deploy()
+    )
+    await reusableMerkleContract.deployed()
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
@@ -156,7 +158,7 @@ export const deployUnirep = async (
                         ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                             incrementalMerkleTreeLib.address,
                         ['contracts/libraries/ReusableMerkleTree.sol:ReusableMerkleTree']:
-                            polyContract.address,
+                            reusableMerkleContract.address,
                         ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
                             PoseidonT3.address,
                     },

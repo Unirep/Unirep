@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
 import {ReusableMerkleTree, ReusableTreeData} from '../libraries/ReusableMerkleTree.sol';
-import {PolysumData} from '../libraries/Polysum.sol';
 
 interface IUnirep {
     event AttesterSignedUp(
