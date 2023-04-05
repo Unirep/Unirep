@@ -11,7 +11,6 @@ enum Circuit {
   userStateTransition,
   signup,
   epochKeyLite,
-  buildOrderedTree
 }
 ```
 
@@ -150,11 +149,9 @@ Control fields are use to encode many small values into a single field element. 
 
 ## User State Transition Proof
 
-The user state transition proof allows a user to prove how much reputation they have at the end of an epoch and output a new state tree leaf. The proof calculates an inclusion proof for the state tree, and for each epoch key nonce an inclusion or noninclusion proof for the epoch tree. If neither inclusion nor noninclusion is proven for the epoch tree, the value `0` is output for the epoch tree root. The epoch tree root is `0` when no attestations are made in an epoch.
+The user state transition proof allows a user to prove how much reputation they have at the end of an epoch and output a new state tree leaf. The proof calculates an inclusion proof for the state tree, and for each epoch key nonce an inclusion proof for the epoch tree. If the epoch key does not exist in the epoch tree it is instead output as a public signal. If the epoch key does exist in the tree a random value will be output instead. The verifier _must_ check that the output epoch keys are not included in the epoch tree.
 
-Once it has proved inclusion/noninclusion it sums the reputation values stored in the leaves. Then it takes the graffiti value with the highest timestamp and outputs a new state tree leaf for the next epoch.
-
-This proof makes multiple inclusion proofs in the same tree path for inclusion/noninclusion. To do this efficiently we prove first the subtree, then for each inclusion/noninclusion we prove against the bottom of the subtree. This avoids having to do multiple full merkle proofs.
+Once it has proved inclusion it sums the reputation values stored in the leaves. Then it takes the replacement values with the highest timestamps and outputs a new state tree leaf for the next epoch.
 
 TODO: add a graphic for this
 
@@ -170,11 +167,6 @@ Inputs:
 - `new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT]`
 - `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1][EPOCH_TREE_ARITY]`
 - `epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1]`
-- `noninclusion_leaf[EPOCH_KEY_NONCE_PER_EPOCH][2]`
-- `noninclusion_leaf_index[EPOCH_KEY_NONCE_PER_EPOCH]`
-- `noninclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][2][EPOCH_TREE_ARITY]`
-- `inclusion_leaf_index[EPOCH_KEY_NONCE_PER_EPOCH]`
-- `inclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_ARITY]`
 
 Outputs:
 - `state_tree_root`
@@ -182,21 +174,3 @@ Outputs:
 - `transition_nullifier`
 - `epoch_tree_root`
 
-## Build Ordered Tree
-
-The build ordered tree proof takes a list of leaf pre-images and asserts that the leaf hashes are sorted in ascending order. It then puts the leaves into a tree and outputs the root and a checksum using [polysum](../protocol/polysum).
-
-Each leaf of the tree is computed using `Poseidon1` of each element combined using a polysum. If the first element of the pre-image is `0` or `1` the pre-image is ignore and the value `0` or `SNARK_SCALAR_FIELD - 1` is used for the leaf respectively.
-
-We can prove non-inclusion in an ordered tree by proving that for an element `e` there exist two elements `a` and `b` next to each other in the tree where `a < e < b`.
-
-Constants:
-- `OMT_R`: The constant used for ordered merkle tree polysum checksum calculation.
-
-Inputs:
-- `sorted_leaf_preimages[TREE_ARITY**TREE_DEPTH][FIELD_COUNT + 1]`
-- `leaf_r_values[TREE_ARITY**TREE_DEPTH]`
-
-Outputs:
-- `root`
-- `checksum`

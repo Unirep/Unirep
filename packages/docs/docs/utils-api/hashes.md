@@ -30,19 +30,6 @@ genEpochKey(
 ): bigint
 ```
 
-## genUserStateTransitionNullifier
-
-Calculate a user state transition nullifier.
-```ts
-import { genUserStateTransitionNullifier } from '@unirep/utils'
-
-genUserStateTransitionNullifier(
-    identitySecret: bigint,
-    attesterId: bigint | string,
-    epoch: number | bigint
-): bigint
-```
-
 ## genStateTreeLeaf
 
 Calculate a state tree leaf for a user.

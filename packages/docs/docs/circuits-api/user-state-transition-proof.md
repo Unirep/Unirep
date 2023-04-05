@@ -59,3 +59,11 @@ The epoch tree root from the old epoch.
 ```ts
 this.epochTreeRoot
 ```
+
+## epochKeys
+
+The epoch keys that are output as public signals. These should be verified to not exist in the epoch tree.
+
+```ts
+this.epochKeys
+```

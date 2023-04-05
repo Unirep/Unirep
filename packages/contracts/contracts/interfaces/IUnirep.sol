@@ -51,8 +51,6 @@ interface IUnirep {
 
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 
-    event EpochSealed(uint256 indexed epoch, uint160 indexed attesterId);
-
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);
     error AttesterAlreadySignUp(uint160 attester);
