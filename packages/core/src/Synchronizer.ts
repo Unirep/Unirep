@@ -368,7 +368,6 @@ export class Synchronizer extends EventEmitter {
                     'UserStateTransitioned',
                     'Attestation',
                     'EpochEnded',
-                    'EpochSealed',
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
                     'AttesterSignedUp',
@@ -481,14 +480,6 @@ export class Synchronizer extends EventEmitter {
             this.attesterId
         )
         return epoch.toNumber()
-    }
-
-    async isEpochSealed(epoch: number) {
-        const sealed = await this.unirepContract.attesterEpochSealed(
-            this.attesterId,
-            epoch
-        )
-        return sealed
     }
 
     async epochTreeRoot(epoch: number) {
@@ -801,14 +792,14 @@ export class Synchronizer extends EventEmitter {
                     attesterId,
                 },
                 update: {
-                    sealed: false,
+                    sealed: true,
                 },
             })
         } else {
             db.create('Epoch', {
                 number: epoch,
                 attesterId,
-                sealed: false,
+                sealed: true,
             })
         }
         // create the next stub entry
@@ -834,41 +825,6 @@ export class Synchronizer extends EventEmitter {
             epochLength,
             startTimestamp,
         })
-        return true
-    }
-
-    async handleEpochSealed({ decodedData, event, db }: EventHandlerArgs) {
-        const epoch = Number(decodedData.epoch)
-        const attesterId = BigInt(decodedData.attesterId).toString()
-
-        if (
-            attesterId !== this.attesterId.toString() &&
-            this.attesterId !== BigInt(0)
-        )
-            return
-        const existingDoc = await this._db.findOne('Epoch', {
-            where: {
-                number: epoch,
-                attesterId,
-            },
-        })
-        if (existingDoc) {
-            db.update('Epoch', {
-                where: {
-                    number: epoch,
-                    attesterId,
-                },
-                update: {
-                    sealed: true,
-                },
-            })
-        } else {
-            db.create('Epoch', {
-                number: epoch,
-                attesterId,
-                sealed: true,
-            })
-        }
         return true
     }
 }
