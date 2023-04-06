@@ -389,7 +389,7 @@ export default class UserState {
         const leaf = await this.sync._db.findOne('HistoryTreeLeaf', {
             where: {
                 attesterId: this.sync.attesterId.toString(),
-                leaf: leafHash,
+                leaf: leafHash.toString(),
             },
         })
         let historyTreeProof
