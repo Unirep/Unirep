@@ -86,7 +86,7 @@ export const genNullifier = (
     return hash2([BigInt(identityNullifier), BigInt(externalNullifier)])
 }
 
-export const genProposalId = (
+export const genIdCommitment = (
     nullifier: bigint,
     trapdoor: number | bigint
 ): bigint => {

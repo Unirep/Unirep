@@ -199,7 +199,6 @@ const genPreventDoubleActionCircuitInput = (config: {
     const circuitInputs = {
         state_tree_elements: proof.siblings,
         state_tree_indexes: proof.pathIndices,
-        identity_secret: id.secretHash,
         data,
         sig_data: sigData ?? BigInt(0),
         nonce,
@@ -208,7 +207,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         reveal_nonce: revealNonce ?? 0,
         identity_nullifier: id.identityNullifier,
         external_nullifier: externalNullifier,
-        trapdoor: id.trapdoor,
+        identity_trapdoor: id.trapdoor,
     }
 
     return utils.stringifyBigInts(circuitInputs)

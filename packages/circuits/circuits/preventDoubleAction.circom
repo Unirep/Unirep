@@ -14,19 +14,15 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     signal input state_tree_elements[STATE_TREE_DEPTH];
 
     // Global state tree leaf: Identity & user state root
-    signal input identity_secret;
     signal input reveal_nonce;
     signal input attester_id;
     signal input epoch;
     signal input nonce;
-
-    signal input data[FIELD_COUNT];
-
-    // Some arbitrary data to endorse
-    signal input sig_data;
-
     signal output epoch_key;
     signal output state_tree_root;
+
+    // Some arbitrary data to endorse
+    signal input sig_data; // public input
 
     // Optionally reveal nonce, epoch, attester_id
     signal output control;
@@ -35,13 +31,27 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     signal input external_nullifier;
     signal output nullifier;
 
-    signal input trapdoor;
+    signal input identity_trapdoor;
     signal output identity_commitment;
 
-    /* 1. Check if user exists in the Global State Tree*/
+    signal input data[FIELD_COUNT];
+
+    /* 1. Compute nullifier */
+    component poseidon = Poseidon(2);
+    poseidon.inputs[0] <== identity_nullifier;
+    poseidon.inputs[1] <== external_nullifier;
+    nullifier <== poseidon.out;
+
+     /* 2. Compute identity commitment */
+    component commitment = IdentityCommitment();
+    commitment.nullifier <== identity_nullifier;
+    commitment.trapdoor <== identity_trapdoor;
+    identity_commitment <== commitment.out;
+
+    /* 3. Check if user exists in the Global State Tree*/
     // Compute user state tree root
     component leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
-    leaf_hasher.identity_secret <== identity_secret;
+    leaf_hasher.identity_secret <== commitment.secret;
     leaf_hasher.attester_id <== attester_id;
     leaf_hasher.epoch <== epoch;
     for (var x = 0; x < FIELD_COUNT; x++) {
@@ -56,9 +66,9 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     }
     state_tree_root <== merkletree.root;
 
-    /* 2. Check nonce and epoch key are valid */
+    /* 4. Check epoch key is valid */
     component epoch_key_lite = EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH);
-    epoch_key_lite.identity_secret <== identity_secret;
+    epoch_key_lite.identity_secret <== commitment.secret;
     epoch_key_lite.reveal_nonce <== reveal_nonce;
     epoch_key_lite.attester_id <== attester_id;
     epoch_key_lite.epoch <== epoch;
@@ -66,16 +76,4 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     epoch_key_lite.sig_data <== sig_data;
     control <== epoch_key_lite.control;
     epoch_key <== epoch_key_lite.epoch_key;
-
-    /* 3. Check nullifier's validity */
-    component poseidon = Poseidon(2);
-    poseidon.inputs[0] <== identity_nullifier;
-    poseidon.inputs[1] <== external_nullifier;
-    nullifier <== poseidon.out;
-
-     /* 4. Check identity commitment's validity */
-    component commitment = IdentityCommitment();
-    commitment.nullifier <== nullifier;
-    commitment.trapdoor <== trapdoor;
-    identity_commitment <== commitment.out;
 }

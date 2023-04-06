@@ -11,9 +11,9 @@ export class PreventDoubleActionProof extends BaseProof {
         epochKey: 0,
         stateTreeRoot: 1,
         control: 2,
-        data: 3,
-        nullifier: 4,
-        identity_commitment: 5,
+        nullifier: 3,
+        identityCommitment: 4,
+        sigData: 5,
     }
     public revealNonce: BigNumberish
     public attesterId: BigNumberish
@@ -22,9 +22,9 @@ export class PreventDoubleActionProof extends BaseProof {
     public epochKey: BigNumberish
     public stateTreeRoot: BigNumberish
     public control: BigNumberish
-    public data: BigNumberish
+    public sigData: BigNumberish
     public nullifier: BigNumberish
-    public identity_commitment: BigNumberish
+    public identityCommitment: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the prevent double action proof that can be verified by the prover
@@ -40,10 +40,10 @@ export class PreventDoubleActionProof extends BaseProof {
         this.epochKey = _publicSignals[this.idx.epochKey].toString()
         this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot].toString()
         this.control = _publicSignals[this.idx.control].toString()
-        this.data = _publicSignals[this.idx.data].toString()
+        this.sigData = _publicSignals[this.idx.sigData].toString()
         this.nullifier = _publicSignals[this.idx.nullifier].toString()
-        this.identity_commitment =
-            _publicSignals[this.idx.identity_commitment].toString()
+        this.identityCommitment =
+            _publicSignals[this.idx.identityCommitment].toString()
         this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control) >> BigInt(72)) &
