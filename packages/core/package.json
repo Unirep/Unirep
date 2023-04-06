@@ -21,7 +21,7 @@
         "pre": "node scripts/prepare",
         "build": "tsc",
         "test": "DEPLOY_DELAY=0 hardhat test test/*.test.ts",
-        "test-ci": "DEPLOY_DELAY=0 hardhat test",
+        "test-ci": "DEPLOY_DELAY=0 hardhat test --parallel",
         "lint": "prettier --write ."
     },
     "devDependencies": {
