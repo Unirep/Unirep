@@ -9,7 +9,7 @@ import { CircuitConfig } from './CircuitConfig'
  */
 export class UserStateTransitionProof extends BaseProof {
     readonly idx = {
-        fromStateTreeRoot: 0,
+        historyTreeRoot: 0,
         stateTreeLeaf: 1,
         epochKeys: 2,
         fromEpoch: 3,
@@ -17,7 +17,7 @@ export class UserStateTransitionProof extends BaseProof {
         attesterId: 5,
         epochTreeRoot: 6,
     }
-    public fromStateTreeRoot: BigNumberish
+    public historyTreeRoot: BigNumberish
     public stateTreeLeaf: BigNumberish
     public epochKeys: BigNumberish[]
     public fromEpoch: BigNumberish
@@ -38,8 +38,8 @@ export class UserStateTransitionProof extends BaseProof {
     ) {
         super(_publicSignals, _proof, prover)
         const { NUM_EPOCH_KEY_NONCE_PER_EPOCH } = config
-        this.fromStateTreeRoot =
-            _publicSignals[this.idx.fromStateTreeRoot].toString()
+        this.historyTreeRoot =
+            _publicSignals[this.idx.historyTreeRoot].toString()
         this.stateTreeLeaf = _publicSignals[this.idx.stateTreeLeaf].toString()
         this.epochKeys = _publicSignals.slice(
             this.idx.epochKeys,
