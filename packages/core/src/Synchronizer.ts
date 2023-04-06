@@ -180,6 +180,16 @@ export class Synchronizer extends EventEmitter {
         return this._attesterId[0]
     }
 
+    get attestersOrClauses() {
+        const orClauses = [] as any[]
+        for (let id = 0; id < this._attesterId.length; id++) {
+            orClauses.push({
+                attesterId: toDecString(this._attesterId[id]),
+            })
+        }
+        return orClauses
+    }
+
     setAttesterId(attesterId: string | bigint) {
         const index = this._attesterId.indexOf(BigInt(attesterId))
         if (index === -1) {
@@ -238,6 +248,7 @@ export class Synchronizer extends EventEmitter {
             )
         }
 
+        const docs: any[] = []
         for (let event of events) {
             const decodedData = this.unirepContract.interface.decodeEventLog(
                 'AttesterSignedUp',
@@ -258,18 +269,20 @@ export class Synchronizer extends EventEmitter {
             }
             const syncStartBlock = event.blockNumber - 1
 
-            await this._db.upsert('SynchronizerState', {
+            const findDoc = await this._db.findOne('SynchronizerState', {
                 where: {
-                    latestCompleteBlock: {
-                        $gt: syncStartBlock,
-                    },
+                    attesterId: toDecString(attesterId),
                 },
-                create: {
-                    latestCompleteBlock: syncStartBlock,
-                },
-                update: {},
             })
+            if (!findDoc) {
+                docs.push({
+                    attesterId: toDecString(attesterId),
+                    latestCompleteBlock: syncStartBlock,
+                })
+            }
         }
+
+        await this._db.create('SynchronizerState', docs)
     }
 
     /**
@@ -330,8 +343,14 @@ export class Synchronizer extends EventEmitter {
             return { complete: false }
         }
         this.emit('pollStart')
+
         const state = await this._db.findOne('SynchronizerState', {
-            where: {},
+            where: {
+                OR: this.attestersOrClauses,
+            },
+            orderBy: {
+                latestCompleteBlock: 'asc',
+            },
         })
         const latestProcessed = state.latestCompleteBlock
         const latestBlock = await this.provider.getBlockNumber()
@@ -359,7 +378,9 @@ export class Synchronizer extends EventEmitter {
         })
         await this.processEvents(unprocessedEvents)
         await this._db.update('SynchronizerState', {
-            where: {},
+            where: {
+                OR: this.attestersOrClauses,
+            },
             update: {
                 latestCompleteBlock: blockEnd,
             },
@@ -427,7 +448,9 @@ export class Synchronizer extends EventEmitter {
                         db,
                     })
                     db.update('SynchronizerState', {
-                        where: {},
+                        where: {
+                            OR: this.attestersOrClauses,
+                        },
                         update: {
                             latestProcessedBlock: +event.blockNumber,
                             latestProcessedTransactionIndex:
@@ -457,7 +480,12 @@ export class Synchronizer extends EventEmitter {
             blockNumber ?? (await this.unirepContract.provider.getBlockNumber())
         for (;;) {
             const state = await this._db.findOne('SynchronizerState', {
-                where: {},
+                where: {
+                    OR: this.attestersOrClauses,
+                },
+                orderBy: {
+                    latestCompleteBlock: 'asc',
+                },
             })
             if (state && state.latestCompleteBlock >= latestBlock) return
             await new Promise((r) => setTimeout(r, 250))
@@ -916,6 +944,10 @@ export class Synchronizer extends EventEmitter {
                 epochLength,
             }
             this._attesterId.push(BigInt(_id))
+            db.create('SynchronizerState', {
+                attesterId: _id,
+                latestCompleteBlock: event.blockNumber - 1,
+            })
         }
         if (!this.attesterExist(_id)) return
 

@@ -5,6 +5,7 @@ const _schema = [
     {
         name: 'SynchronizerState',
         rows: [
+            ['attesterId', 'String', { unique: true }],
             {
                 name: 'latestProcessedBlock',
                 type: 'Int',
