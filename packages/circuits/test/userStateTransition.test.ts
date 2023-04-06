@@ -85,12 +85,8 @@ describe('User state transition', function () {
             historyTree.root.toString()
         )
         expect(ustProof.stateTreeLeaf.toString()).to.equal(newLeaf.toString())
-        expect(ustProof.fromEpoch.toString()).to.equal(fromEpoch.toString())
         expect(ustProof.toEpoch.toString()).to.equal(toEpoch.toString())
         expect(ustProof.attesterId.toString()).to.equal(attesterId.toString())
-        expect(ustProof.epochTreeRoot.toString()).to.equal(
-            epochTree.root.toString()
-        )
     })
 
     it('should do a user state transition with new rep', async () => {

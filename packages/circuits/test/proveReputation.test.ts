@@ -12,7 +12,7 @@ describe('Prove reputation from attester circuit', function () {
     it('should prove a reputation', async () => {
         const id = new Identity()
         const epoch = 20
-        const nonce = 2
+        const nonce = 1
         const attesterId = 219090124810
         const circuitInputs = genReputationCircuitInput({
             id,
@@ -146,7 +146,7 @@ describe('Prove reputation from attester circuit', function () {
     it('should prove a minRep and maxRep', async () => {
         const id = new Identity()
         const epoch = 20
-        const nonce = 2
+        const nonce = 1
         const attesterId = 219090124810
         const minRep = 0
         const maxRep = 0
