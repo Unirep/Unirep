@@ -49,6 +49,8 @@ interface IUnirep {
         uint256 leaf
     );
 
+    event HistoryTreeLeaf(uint160 indexed attesterId, uint256 leaf);
+
     event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
 
     // error
@@ -69,6 +71,7 @@ interface IUnirep {
     error InvalidEpoch(uint256 epoch);
 
     error InvalidProof();
+    error InvalidHistoryTreeRoot(uint256 historyTreeRoot);
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
@@ -109,6 +112,8 @@ interface IUnirep {
         // epoch keyed to root keyed to whether it's valid
         mapping(uint256 => mapping(uint256 => bool)) stateTreeRoots;
         ReusableTreeData stateTree;
+        mapping(uint256 => bool) historyTreeRoots;
+        IncrementalTreeData historyTree;
         // epoch keyed to root
         mapping(uint256 => uint256) epochTreeRoots;
         ReusableTreeData epochTree;
@@ -125,6 +130,7 @@ interface IUnirep {
         // circuit config
         uint8 stateTreeDepth;
         uint8 epochTreeDepth;
+        uint8 historyTreeDepth;
         uint8 fieldCount;
         uint8 sumFieldCount;
         uint8 numEpochKeyNoncePerEpoch;
