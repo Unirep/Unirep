@@ -8,6 +8,7 @@ import {
     genStateTreeLeaf,
     genEpochTreeLeaf,
     F,
+    hash2,
 } from '@unirep/utils'
 import {
     Circuit,
@@ -372,6 +373,7 @@ export default class UserState {
             throw new Error('Cannot transition to same epoch')
         }
         const epochTree = await this.sync.genEpochTree(fromEpoch)
+        const stateTree = await this.sync.genStateTree(fromEpoch)
         const epochKeys = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
@@ -382,6 +384,26 @@ export default class UserState {
                     i
                 )
             )
+        const historyTree = await this.sync.genHistoryTree()
+        const leafHash = hash2([stateTree.root, epochTree.root])
+        const leaf = await this.sync._db.findOne('HistoryTreeLeaf', {
+            where: {
+                attesterId: this.sync.attesterId.toString(),
+                leaf: leafHash,
+            },
+        })
+        let historyTreeProof
+        if (leaf) {
+            historyTreeProof = historyTree.createProof(leaf.index)
+        } else {
+            // the epoch hasn't been ended onchain yet
+            // add the leaf offchain to make the proof
+            const leafCount = await this.sync._db.count('HistoryTreeLeaf', {
+                attesterId: this.sync.attesterId.toString(),
+            })
+            historyTree.insert(leafHash)
+            historyTreeProof = historyTree.createProof(leafCount)
+        }
         const epochKeyLeafIndices = await Promise.all(
             epochKeys.map(async (epk) => this.getEpochKeyIndex(fromEpoch, epk))
         )
@@ -406,7 +428,6 @@ export default class UserState {
         }, {})
         const leaves = await this.sync.genEpochTreePreimages(fromEpoch)
         const latestLeafIndex = await this.latestStateTreeLeafIndex(fromEpoch)
-        const stateTree = await this.sync.genStateTree(fromEpoch)
         const stateTreeProof = stateTree.createProof(latestLeafIndex)
         const circuitInputs = {
             from_epoch: fromEpoch,
@@ -414,6 +435,8 @@ export default class UserState {
             identity_secret: this.id.secret,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
+            history_tree_indices: historyTreeProof.pathIndices,
+            history_tree_elements: historyTreeProof.siblings,
             attester_id: this.sync.attesterId.toString(),
             data,
             new_data: epochKeyRep.map(({ newData }) => newData),
