@@ -222,27 +222,20 @@ export class Synchronizer extends EventEmitter {
     private async _findStartBlock() {
         // look for the first attesterSignUp event
         // no events could be emitted before this
-        let events: ethers.Event[] = []
-        if (this._syncAll) {
-            const filter = this.unirepContract.filters.AttesterSignedUp()
-            events = await this.unirepContract.queryFilter(filter)
-        } else if (this._attesterId.length) {
-            for (let id of this._attesterId) {
-                const filter = this.unirepContract.filters.AttesterSignedUp(id)
-                const event = await this.unirepContract.queryFilter(filter)
-                // const events = await this.unirepContract.queryFilter(filter)
-                if (event.length === 0) {
-                    throw new Error(
-                        `@unirep/core:Synchronizer: failed to fetch genesis event of attester ${id.toString()}`
-                    )
-                }
-                if (event.length > 1) {
-                    throw new Error(
-                        '@unirep/core:Synchronizer: multiple genesis events'
-                    )
-                }
-                events.push(event[0])
-            }
+        const filter = this.unirepContract.filters.AttesterSignedUp()
+
+        if (!this._syncAll && this._attesterId.length) {
+            filter.topics?.push([
+                ...this._attesterId.map(
+                    (n) => '0x' + n.toString(16).padStart(64, '0')
+                ),
+            ])
+        }
+        const events = await this.unirepContract.queryFilter(filter)
+        if (events.length === 0) {
+            throw new Error(
+                `@unirep/core:Synchronizer: failed to fetch genesis event`
+            )
         }
 
         for (let event of events) {
