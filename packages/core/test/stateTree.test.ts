@@ -46,17 +46,9 @@ describe('State tree', function () {
 
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
-        const stateRootExists =
-            await unirepContract.attesterStateTreeRootExists(
-                attester.address,
-                epoch,
-                stateTree.root
-            )
-        expect(stateRootExists).to.be.true
 
         const contractStateTree = await unirepContract.attesterStateTreeRoot(
-            attester.address,
-            epoch
+            attester.address
         )
         const unirepStateTree = await unirepState.genStateTree(epoch)
         expect(contractStateTree.toString()).to.equal(
@@ -126,8 +118,7 @@ describe('State tree', function () {
             )
             const contractLeaves =
                 await unirepContract.attesterStateTreeLeafCount(
-                    attester.address,
-                    contractEpoch
+                    attester.address
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
@@ -209,8 +200,7 @@ describe('State tree', function () {
             )
             const contractLeaves =
                 await unirepContract.attesterStateTreeLeafCount(
-                    attester.address,
-                    toEpoch
+                    attester.address
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
@@ -297,13 +287,6 @@ describe('State tree', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        const { publicSignals, proof } = await unirepState.genSealedEpochProof()
-
-        await unirepContract
-            .connect(accounts[5])
-            .sealEpoch(fromEpoch, attester.address, publicSignals, proof)
-            .then((t) => t.wait())
-
         unirepState.stop()
 
         const config = await unirepContract.config()
@@ -359,8 +342,7 @@ describe('State tree', function () {
             )
             const contractLeaves =
                 await unirepContract.attesterStateTreeLeafCount(
-                    attester.address,
-                    toEpoch
+                    attester.address
                 )
             expect(numLeaves).to.equal(contractLeaves.toNumber())
 
@@ -403,19 +385,27 @@ describe('State tree', function () {
             stateTree.insert(leaf)
             userState.sync.stop()
         }
-
-        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-        await ethers.provider.send('evm_mine', [])
-        const newEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        expect(prevEpoch.toNumber() + 1).to.equal(newEpoch.toNumber())
-
         const unirepState = await genUnirepState(
             ethers.provider,
             unirepContract.address,
             attester.address
         )
+        const numLeaves = await unirepState.numStateTreeLeaves(
+            prevEpoch.toNumber()
+        )
+        const contractLeaves = await unirepContract.attesterStateTreeLeafCount(
+            attester.address
+        )
+        expect(numLeaves).to.equal(contractLeaves.toNumber())
+
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+
+        const newEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        expect(prevEpoch.toNumber() + 1).to.equal(newEpoch.toNumber())
+
         const stateRootExists =
             await unirepContract.attesterStateTreeRootExists(
                 attester.address,
@@ -430,14 +420,5 @@ describe('State tree', function () {
         expect(unirepStateTree.root.toString()).to.equal(
             stateTree.root.toString()
         )
-
-        const numLeaves = await unirepState.numStateTreeLeaves(
-            prevEpoch.toNumber()
-        )
-        const contractLeaves = await unirepContract.attesterStateTreeLeafCount(
-            attester.address,
-            prevEpoch
-        )
-        expect(numLeaves).to.equal(contractLeaves.toNumber())
     })
 })

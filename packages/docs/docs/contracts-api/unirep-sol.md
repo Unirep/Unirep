@@ -58,8 +58,8 @@ Register an attester contract through a relayer. The signature will be recovered
 
 ```sol
 function attesterSignUpViaRelayer(
-  address attester, 
-  uint256 epochLength, 
+  address attester,
+  uint256 epochLength,
   bytes calldata signature
 ) public
 ```
@@ -81,19 +81,6 @@ function attest(
   uint targetEpoch,
   uint fieldIndex,
   uint change
-) public
-```
-
-## sealEpoch
-
-Finalize an epoch by submitting a [build ordered tree](../circuits-api/circuits#build-ordered-tree) proof. This will set the epoch tree root for the epoch. This must be called _after_ an epoch ends. If no attestations occur in an epoch this _must not_ be called.
-
-```sol
-function sealEpoch(
-  uint256 epoch,
-  uint160 attesterId,
-  uint256[] memory publicSignals,
-  uint256[8] memory proof
 ) public
 ```
 
@@ -369,17 +356,6 @@ function attesterStartTimestamp(uint160 attesterId)
   returns (uint256)
 ```
 
-## attesterEpochSealed
-
-Get a boolean indicating whether or not an epoch for an attester is sealed. Once the epoch is sealed users may execute user state transitions from the epoch.
-
-```sol
-function attesterEpochSealed(uint160 attesterId, uint256 epoch)
-  public
-  view
-  returns (bool)
-```
-
 ## attesterEpochLength
 
 Get the epoch length for an attester.
@@ -404,10 +380,10 @@ function attesterStateTreeRootExists(uint160 attesterId, uint256 epoch, uint256 
 
 ## attesterStateTreeRoot
 
-Get the state tree root for an attester for an epoch.
+Get the state tree root for an attester for the current epoch.
 
 ```sol
-function attesterStateTreeRoot(uint160 attesterId, uint256 epoch)
+function attesterStateTreeRoot(uint160 attesterId)
   public
   view
   returns (uint256)
@@ -415,10 +391,10 @@ function attesterStateTreeRoot(uint160 attesterId, uint256 epoch)
 
 ## attesterStateTreeLeafCount
 
-Get the number of state tree leaves for an attester for an epoch.
+Get the number of state tree leaves for an attester for the current epoch.
 
 ```sol
-function attesterStateTreeLeafCount(uint160 attesterId, uint256 epoch)
+function attesterStateTreeLeafCount(uint160 attesterId)
   public
   view
   returns (uint256)
@@ -594,12 +570,4 @@ Emitted when an attester epoch ends.
 
 ```sol
 event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
-```
-
-### EpochSealed
-
-Emitted when an epoch is sealed.
-
-```sol
-event EpochSealed(uint256 indexed epoch, uint160 indexed attesterId);
 ```

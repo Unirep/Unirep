@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import { IncrementalMerkleTree } from '@unirep/utils'
 import defaultConfig from '@unirep/circuits/config'
 
-const { STATE_TREE_DEPTH } = defaultConfig
+const { STATE_TREE_DEPTH, EPOCH_TREE_DEPTH } = defaultConfig
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
@@ -48,7 +48,9 @@ describe('Epoch', function () {
             )
 
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
-            await unirepContract.updateEpochIfNeeded(attester.address)
+            await unirepContract
+                .updateEpochIfNeeded(attester.address)
+                .then((t) => t.wait())
 
             // attester should have the current data
             const newEpoch = await unirepContract.attesterCurrentEpoch(
@@ -57,25 +59,17 @@ describe('Epoch', function () {
             expect(prevEpoch.toNumber() + 1).to.equal(newEpoch.toNumber())
 
             const stateTreeRoot = await unirepContract.attesterStateTreeRoot(
-                attester.address,
-                newEpoch
+                attester.address
             )
             expect(stateTreeRoot.toString()).to.equal(
                 emptyStateTree.root.toString()
             )
-
-            const exist = await unirepContract.attesterStateTreeRootExists(
-                attester.address,
-                newEpoch,
-                stateTreeRoot
-            )
-            expect(exist).to.be.true
-
+            const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
             const epochRoot = await unirepContract.attesterEpochRoot(
                 attester.address,
                 newEpoch
             )
-            expect(epochRoot.toString()).to.equal('0')
+            expect(epochRoot.toString()).to.equal(epochTree.root.toString())
         }
     })
 

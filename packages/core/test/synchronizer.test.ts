@@ -42,14 +42,6 @@ describe('Synchronizer process events', function () {
             await synchronizer.waitForSync()
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             await ethers.provider.send('evm_mine', [])
-            const { publicSignals, proof } =
-                await synchronizer.genSealedEpochProof()
-
-            const accounts = await ethers.getSigners()
-            await unirepContract
-                .connect(accounts[5])
-                .sealEpoch(epoch, attester.address, publicSignals, proof)
-                .then((t) => t.wait())
         })
 
         afterEach(async () => {
@@ -251,15 +243,7 @@ describe('Synchronizer process events', function () {
         // now commit the attetstations
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const { publicSignals, proof } =
-            await userState.sync.genSealedEpochProof()
 
-        await unirepContract
-            .connect(accounts[5])
-            .sealEpoch(epoch, attester.address, publicSignals, proof)
-            .then((t) => t.wait())
-
-        await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
             const data = await userState.getDataByEpochKey(key, BigInt(epoch))
@@ -339,17 +323,6 @@ describe('Synchronizer process events', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        // now commit the attetstations
-        {
-            const { publicSignals, proof } =
-                await userState.sync.genSealedEpochProof()
-
-            await unirepContract
-                .connect(accounts[5])
-                .sealEpoch(epoch, attester.address, publicSignals, proof)
-                .then((t) => t.wait())
-            await userState.sync.waitForSync()
-        }
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
             const data = await userState.getDataByEpochKey(key, BigInt(epoch))

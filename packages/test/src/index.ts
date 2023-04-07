@@ -89,25 +89,3 @@ export async function bootstrapAttestations(
     }
     return ids
 }
-
-export async function sealEpoch(
-    synchronizer: Synchronizer,
-    account: any,
-    epoch: number
-) {
-    if (synchronizer.attesterId.toString() === '0') {
-        throw new Error('Synchronizer must have attesterId set')
-    }
-    const { unirepContract } = synchronizer
-    const { publicSignals, proof } = await synchronizer.genSealedEpochProof()
-
-    await unirepContract
-        .connect(account)
-        .sealEpoch(
-            epoch,
-            synchronizer.attesterId.toString(),
-            publicSignals,
-            proof
-        )
-        .then((t) => t.wait())
-}

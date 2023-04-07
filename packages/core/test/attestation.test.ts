@@ -70,15 +70,7 @@ describe('Attester signs up and gives attestation', function () {
         //
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const { publicSignals, proof } =
-            await userState.sync.genSealedEpochProof()
 
-        await unirepContract
-            .connect(accounts[5])
-            .sealEpoch(epoch, attester.address, publicSignals, proof)
-            .then((t) => t.wait())
-
-        await userState.waitForSync()
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
             const data = await userState.getDataByEpochKey(key, BigInt(epoch))

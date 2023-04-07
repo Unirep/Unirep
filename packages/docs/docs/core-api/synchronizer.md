@@ -129,7 +129,7 @@ This value may mismatch the onchain value depending on synchronization status.
 :::
 
 ```ts
-synchronizer.readCurrentEpoch(): Promise<{
+synchronizer.readCurrentEpoch(attesterId?: bigint | string): Promise<{
   number: number,
   sealed: boolean
 }>
@@ -187,36 +187,6 @@ Build the latest epoch tree for a certain epoch.
 synchronizer.genEpochTree(epoch: bigint, attesterId?: bigint | string): Promise<IncrementalMerkleTree>
 ```
 
-## genEpochTreePreimages
-
-Get the pre-images for the leaves in an epoch tree.
-
-```ts
-synchronizer.genEpochTreePreimages(
-  epoch: bigint | number,
-  attesterId?: bigint | string
-): Promise<bigint[][]>
-```
-
-## genSealedEpochProof
-
-Generate the sealed epoch proof. See [`sealEpoch`](../contracts-api/unirep-sol.md#sealepoch)
-
-```ts
-synchronizer.genSealedEpochProof(
-  options: {
-    epoch?: bigint
-    attesterId?: bigint
-    preimages?: bigint[]
-  } = {}
-): Promise<BuildOrderedTree>
-```
-
-:::tip
-This proof is large and best made with `rapidsnark`. This function should only be used for small trees.
-:::
-
-
 ## stateTreeRootExists
 
 Determine if a state root exists in a certain epoch.
@@ -230,7 +200,7 @@ synchronizer.stateTreeRootExists(root: bigint, epoch: bigint, attesterId?: bigin
 Determine if an epoch tree root exists for a certain epoch.
 
 ```ts
-synchronizer.epochTreeRootExists(root: bigint, epoch: bigint, attesterId?: bigint | string): Promise<boolean>
+synchronizer.epochTreeRootExists(root: bigint, epoch: bigint): Promise<boolean>
 ```
 
 ## numStateTreeLeaves

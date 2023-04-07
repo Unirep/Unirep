@@ -14,7 +14,7 @@ include "./sparseMerkleTree.circom";
 include "./incrementalMerkleTree.circom";
 include "./epochKey.circom";
 
-template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, EPK_R) {
+template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT) {
     signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
@@ -85,8 +85,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     component epoch_key_prover = EpochKey(
       STATE_TREE_DEPTH,
       EPOCH_KEY_NONCE_PER_EPOCH,
-      FIELD_COUNT,
-      EPK_R
+      FIELD_COUNT
     );
     epoch_key_prover.identity_secret <== identity_secret;
     epoch_key_prover.reveal_nonce <== reveal_nonce;

@@ -71,11 +71,6 @@ const sidebars = {
                     label: 'Attestation',
                     id: 'protocol/attestation',
                 },
-                {
-                    type: 'doc',
-                    label: 'Polysum',
-                    id: 'protocol/polysum',
-                },
             ],
         },
         {
@@ -173,11 +168,6 @@ const sidebars = {
                     type: 'doc',
                     label: 'UserStateTransitionProof',
                     id: 'circuits-api/user-state-transition-proof',
-                },
-                {
-                    type: 'doc',
-                    label: 'BuildOrderedTree',
-                    id: 'circuits-api/build-ordered-tree',
                 },
             ],
         },

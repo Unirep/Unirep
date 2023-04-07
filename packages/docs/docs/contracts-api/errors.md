@@ -66,7 +66,7 @@ Please make sure the signature is signed through the correct attester.
 
 ## 0x2217bbbc
 - `InvalidEpochKey()`<br/>
-    If The epoch key is greater than `SNARK_SCALAR_FIELD` is recognized invalid. And epoch key `0` and `1` are also preserved in the Unirep protocol. See [BuildOrderedTree proof](../circuits-api/build-ordered-tree.md).
+    If The epoch key is greater than `SNARK_SCALAR_FIELD` is recognized invalid.
 
 ## 0x53d3ff53
 - `EpochNotMatch()` <br/>
@@ -77,24 +77,6 @@ Please make sure the signature is signed through the correct attester.
 - `InvalidEpoch(uint256 epoch)`<br/>
     The [epoch](../protocol/epoch.md) in the proof is greater than the current epoch. <br/>
     Please check the current epoch and generate a corresponding proof.
-
-## 0x74d1bcdc
-- `MaxAttestations()`<br/>
-    The [epoch tree](../protocol/trees.md#epoch-tree) can only store `tree_arity ** tree_degree - 3` epoch keys per attester per epoch. See also [build ordered tree](../circuits-api/circuits.md#build-ordered-tree).<br/>
-    There is no more new epoch keys that can receive attestations. Users should wait until the next epoch and then generate a new epoch key to receive attestations.
-
-## 0xef32b8ef
-- `NoAttestations()`<br/>
-    If there is no attestations in an epoch, the `sealEpoch` cannot be executed. Users can perform user state transition without `sealEpoch` and then move on to the new epoch.
-
-## 0x997bdc87
-- `DoubleSeal()`<br/>
-    The `sealEpoch` can only be called once. See [epoch transition](../protocol/epoch.md#epoch-transition).
-
-## 0x3fbcde72
-- `IncorrectHash()`<br/>
-    The circuit should output the [polysum](../protocol/polysum.md#polysum) that matches the on-chain polysum. <br/>
-    If the error occurs, please check if the off-chain attestations matches the on-chain attestations.
 
 ## 0x09bde339
 - `InvalidProof()`<br/>
@@ -115,7 +97,3 @@ Please make sure the signature is signed through the correct attester.
 - `InvalidEpochTreeRoot(uint256 epochTreeRoot)`<br/>
     The [epoch tree](../protocol/trees.md#epoch-tree) root of given epoch does not match the current Unirep contract. <br/>
     Please check if all attestations are processed correctly and successfully.
-
-## 0x39b6da94
-- `EpochNotSealed()`<br/>
-    The epoch a user is attempting to transition from has not been sealed.

@@ -65,20 +65,6 @@ export const deployUnirep = async (
         '-----------------------------------------------------------------'
     )
 
-    let PoseidonT2
-    {
-        const poseidonPath = 'poseidon-solidity/PoseidonT2.sol/PoseidonT2.json'
-        const poseidonArtifacts = tryPath(poseidonPath)
-        const _poseidonFactory = new ethers.ContractFactory(
-            poseidonArtifacts.abi,
-            poseidonArtifacts.bytecode,
-            deployer
-        )
-        const poseidonFactory = await GlobalFactory(_poseidonFactory)
-        PoseidonT2 = await retryAsNeeded(() => poseidonFactory.deploy())
-        await PoseidonT2.deployed()
-    }
-
     let PoseidonT3
     {
         const poseidonPath = 'poseidon-solidity/PoseidonT3.sol/PoseidonT3.json'
@@ -114,16 +100,21 @@ export const deployUnirep = async (
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
-    const polyPath = 'contracts/libraries/Polysum.sol/Polysum.json'
-    const polyArtifacts = tryPath(polyPath)
-    const _polyFactory = new ethers.ContractFactory(
-        polyArtifacts.abi,
-        polyArtifacts.bytecode,
+    const reusableMerklePath =
+        'contracts/libraries/ReusableMerkleTree.sol/ReusableMerkleTree.json'
+    const reusableMerkleArtifacts = tryPath(reusableMerklePath)
+    const _reusableMerkleFactory = new ethers.ContractFactory(
+        reusableMerkleArtifacts.abi,
+        linkLibrary(reusableMerkleArtifacts.bytecode, {
+            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
+        }),
         deployer
     )
-    const polyFactory = await GlobalFactory(_polyFactory)
-    const polyContract = await retryAsNeeded(() => polyFactory.deploy())
-    await polyContract.deployed()
+    const reusableMerkleFactory = await GlobalFactory(_reusableMerkleFactory)
+    const reusableMerkleContract = await retryAsNeeded(() =>
+        reusableMerkleFactory.deploy()
+    )
+    await reusableMerkleContract.deployed()
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
@@ -166,10 +157,10 @@ export const deployUnirep = async (
                     {
                         ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
                             incrementalMerkleTreeLib.address,
-                        ['contracts/libraries/Polysum.sol:Polysum']:
-                            polyContract.address,
-                        ['poseidon-solidity/PoseidonT2.sol:PoseidonT2']:
-                            PoseidonT2.address,
+                        ['contracts/libraries/ReusableMerkleTree.sol:ReusableMerkleTree']:
+                            reusableMerkleContract.address,
+                        ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
+                            PoseidonT3.address,
                     },
                     deployer
                 )
@@ -187,8 +178,7 @@ export const deployUnirep = async (
             verifiers[Circuit.userStateTransition],
             verifiers[Circuit.proveReputation],
             verifiers[Circuit.epochKey],
-            verifiers[Circuit.epochKeyLite],
-            verifiers[Circuit.buildOrderedTree]
+            verifiers[Circuit.epochKeyLite]
         )
     )
 

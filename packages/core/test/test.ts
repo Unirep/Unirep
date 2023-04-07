@@ -23,8 +23,8 @@ export async function bootstrapUsers(
 export async function bootstrapAttestations(
     synchronizer: Synchronizer,
     account: any,
-    userCount = 3,
-    attestationCount = 10
+    userCount = 2,
+    attestationCount = 2
 ) {
     const { unirepContract } = synchronizer
     const epoch = await synchronizer.loadCurrentEpoch()

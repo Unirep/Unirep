@@ -76,15 +76,8 @@ describe('Attester Signup', function () {
             expect(epochLength.toNumber()).to.equal(attesterEpochLength)
 
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const exists = await unirepContract.attesterStateTreeRootExists(
-                attester.address,
-                currentEpoch,
-                stateTree.root
-            )
-            expect(exists).to.be.true
             const stateRoot = await unirepContract.attesterStateTreeRoot(
-                attester.address,
-                currentEpoch
+                attester.address
             )
             expect(stateRoot).to.equal(stateTree.root)
             const semaphoreRoot =
@@ -148,15 +141,8 @@ describe('Attester Signup', function () {
         expect(epochLength.toNumber()).to.equal(EPOCH_LENGTH)
 
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const exists = await unirepContract.attesterStateTreeRootExists(
-            attester.address,
-            currentEpoch,
-            stateTree.root
-        )
-        expect(exists).to.be.true
         const stateRoot = await unirepContract.attesterStateTreeRoot(
-            attester.address,
-            currentEpoch
+            attester.address
         )
         expect(stateRoot).to.equal(stateTree.root)
         const semaphoreRoot = await unirepContract.attesterSemaphoreGroupRoot(
