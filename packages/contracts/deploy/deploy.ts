@@ -39,7 +39,6 @@ export const deployUnirep = async (
 ): Promise<Unirep> => {
     const {
         EPOCH_TREE_DEPTH,
-        EPOCH_TREE_ARITY,
         STATE_TREE_DEPTH,
         NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         FIELD_COUNT,
@@ -50,7 +49,6 @@ export const deployUnirep = async (
         '-----------------------------------------------------------------'
     )
     console.log(`Epoch tree depth: ${EPOCH_TREE_DEPTH}`)
-    console.log(`Epoch tree arity: ${EPOCH_TREE_ARITY}`)
     console.log(`State tree depth: ${STATE_TREE_DEPTH}`)
     console.log(
         `Number of epoch keys per epoch: ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}`
@@ -169,7 +167,6 @@ export const deployUnirep = async (
             {
                 stateTreeDepth: STATE_TREE_DEPTH,
                 epochTreeDepth: EPOCH_TREE_DEPTH,
-                epochTreeArity: EPOCH_TREE_ARITY,
                 numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
                 fieldCount: FIELD_COUNT,
                 sumFieldCount: SUM_FIELD_COUNT,

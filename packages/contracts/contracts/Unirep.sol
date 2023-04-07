@@ -40,7 +40,6 @@ contract Unirep is IUnirep, VerifySignature {
 
     uint8 public immutable stateTreeDepth;
     uint8 public immutable epochTreeDepth;
-    uint8 public immutable epochTreeArity;
     uint8 public immutable fieldCount;
     uint8 public immutable sumFieldCount;
     uint8 public immutable numEpochKeyNoncePerEpoch;
@@ -55,7 +54,6 @@ contract Unirep is IUnirep, VerifySignature {
     ) {
         stateTreeDepth = _config.stateTreeDepth;
         epochTreeDepth = _config.epochTreeDepth;
-        epochTreeArity = _config.epochTreeArity;
         fieldCount = _config.fieldCount;
         sumFieldCount = _config.sumFieldCount;
         numEpochKeyNoncePerEpoch = _config.numEpochKeyNoncePerEpoch;
@@ -77,7 +75,6 @@ contract Unirep is IUnirep, VerifySignature {
             Config({
                 stateTreeDepth: stateTreeDepth,
                 epochTreeDepth: epochTreeDepth,
-                epochTreeArity: epochTreeArity,
                 fieldCount: fieldCount,
                 sumFieldCount: sumFieldCount,
                 numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch

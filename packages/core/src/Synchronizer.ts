@@ -77,7 +77,6 @@ export class Synchronizer extends EventEmitter {
         this.settings = {
             stateTreeDepth: 0,
             epochTreeDepth: 0,
-            epochTreeArity: 2,
             numEpochKeyNoncePerEpoch: 0,
             epochLength: 0,
             fieldCount: 0,
@@ -166,7 +165,6 @@ export class Synchronizer extends EventEmitter {
         const config = await this.unirepContract.config()
         this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
-        this.settings.epochTreeArity = config.epochTreeArity
         this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
         this.settings.fieldCount = config.fieldCount
         this.settings.sumFieldCount = config.sumFieldCount
@@ -521,11 +519,7 @@ export class Synchronizer extends EventEmitter {
         _epoch: number | ethers.BigNumberish
     ): Promise<IncrementalMerkleTree> {
         const epoch = Number(_epoch)
-        const tree = new IncrementalMerkleTree(
-            this.settings.epochTreeDepth,
-            0,
-            this.settings.epochTreeArity
-        )
+        const tree = new IncrementalMerkleTree(this.settings.epochTreeDepth, 0)
         const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
                 epoch,

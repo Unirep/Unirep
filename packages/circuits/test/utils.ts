@@ -5,7 +5,6 @@ import { Circuit, SNARK_SCALAR_FIELD, CircuitConfig } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 const {
     EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     SUM_FIELD_COUNT,

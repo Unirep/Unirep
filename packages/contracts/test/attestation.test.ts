@@ -8,8 +8,7 @@ import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
-const { FIELD_COUNT, EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY, SUM_FIELD_COUNT } =
-    defaultConfig
+const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT } = defaultConfig
 
 describe('Attestations', function () {
     this.timeout(120000)
