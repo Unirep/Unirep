@@ -5,6 +5,8 @@ import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { genUnirepState, genUserState } from './utils'
 import { Identity } from '@semaphore-protocol/identity'
+import { schema } from '../src/schema'
+import { SQLiteConnector } from 'anondb/node'
 
 const ATTESTER_COUNT = 5
 
@@ -228,6 +230,54 @@ describe('Synchronizer watch multiple attesters', function () {
         })
         expect(userCount).to.equal(1)
         userState.sync.stop()
+    })
+
+    it('should stop and sync with different attesters', async () => {
+        const accounts = await ethers.getSigners()
+
+        const attesters = Array(ATTESTER_COUNT)
+            .fill(0)
+            .map((_, i) => accounts[i])
+
+        for (const attester of attesters) {
+            const userState = await genUserState(
+                ethers.provider,
+                unirepContract.address,
+                new Identity(),
+                attester.address
+            )
+            const { publicSignals, proof } =
+                await userState.genUserSignUpProof()
+            await unirepContract
+                .connect(attester)
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+            userState.stop()
+        }
+
+        const db = await SQLiteConnector.create(schema, ':memory:')
+        {
+            const state = await genUnirepState(
+                ethers.provider,
+                unirepContract.address,
+                attesters[0].address,
+                db
+            )
+            await state.start()
+            await state.waitForSync()
+            state.stop()
+        }
+        {
+            const state = await genUnirepState(
+                ethers.provider,
+                unirepContract.address,
+                attesters.map((a) => a.address),
+                db
+            )
+            await state.start()
+            await state.waitForSync()
+            state.stop()
+        }
     })
 
     it('should generate proofs for different attester', async () => {
