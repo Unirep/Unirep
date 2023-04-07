@@ -583,7 +583,10 @@ export class Synchronizer extends EventEmitter {
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
         const epoch = Number(_epoch)
-        const tree = new IncrementalMerkleTree(this.settings.epochTreeDepth, this.defaultEpochTreeLeaf)
+        const tree = new IncrementalMerkleTree(
+            this.settings.epochTreeDepth,
+            this.defaultEpochTreeLeaf
+        )
         const leaves = await this._db.findMany('EpochTreeLeaf', {
             where: {
                 epoch,
