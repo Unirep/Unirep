@@ -6,6 +6,7 @@ pragma circom 2.0.0;
 
 include "./circomlib/circuits/mux1.circom";
 include "./circomlib/circuits/poseidon.circom";
+include "./circomlib/circuits/comparators.circom";
 
 template MerkleTreeInclusionProof(n_levels) {
     signal input leaf;
@@ -18,6 +19,11 @@ template MerkleTreeInclusionProof(n_levels) {
 
     signal levelHashes[n_levels + 1];
     levelHashes[0] <== leaf;
+
+    // don't allow inclusion proof for 0 leaf
+    component leaf_zero = IsZero();
+    leaf_zero.in <== leaf;
+    leaf_zero.out === 0;
 
     for (var i = 0; i < n_levels; i++) {
         // Should be 0 or 1
