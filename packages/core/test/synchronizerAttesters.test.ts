@@ -288,24 +288,12 @@ describe('Synchronizer watch multiple attesters', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        // seal epoch
-        await userState.waitForSync()
-        for (let i = 0; i < count; i++) {
-            const attesterId = BigInt(accounts[i].address)
-            const epoch = BigInt(0)
-            const { publicSignals, proof } =
-                await userState.sync.genSealedEpochProof({ epoch, attesterId })
-            await unirepContract
-                .sealEpoch(epoch, attesterId, publicSignals, proof)
-                .then((t) => t.wait())
-        }
-
         // ust
         await userState.waitForSync()
         for (let i = 0; i < 2; i++) {
             const toEpoch = 1
             const attesterId = BigInt(accounts[i].address).toString()
-            const { publicSignals, proof, transitionNullifier } =
+            const { publicSignals, proof, epochKeys } =
                 await userState.genUserStateTransitionProof({
                     attesterId,
                     toEpoch,
@@ -316,7 +304,7 @@ describe('Synchronizer watch multiple attesters', function () {
             await userState.waitForSync()
             const userCount = await userState.sync._db.count('Nullifier', {
                 attesterId,
-                nullifier: transitionNullifier.toString(),
+                nullifier: epochKeys[0].toString(),
             })
             expect(userCount).to.equal(1)
         }
