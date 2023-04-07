@@ -73,7 +73,6 @@ interface IUnirep {
     error InvalidProof();
     error InvalidHistoryTreeRoot(uint256 historyTreeRoot);
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
-    error InvalidEpochTreeRoot(uint256 epochTreeRoot);
 
     struct EpochKeySignals {
         uint256 revealNonce;
