@@ -44,14 +44,24 @@ describe('User state transition', function () {
     it('users should perform user state transition', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const attester2 = accounts[2]
+        {
+            await unirepContract
+                .connect(attester2)
+                .attesterSignUp(EPOCH_LENGTH)
+                .then((t) => t.wait())
+            const epk = 2141
+            await unirepContract
+                .connect(attester2)
+                .attest(epk, 0, 1, 1)
+                .then((t) => t.wait())
+        }
         const rootHistories = [] as any
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
         const users = Array(5)
             .fill(null)
-            .map(() => {
-                return new Identity()
-            })
+            .map(() => new Identity())
         for (let i = 0; i < 5; i++) {
             const userState = await genUserState(
                 ethers.provider,
@@ -59,12 +69,17 @@ describe('User state transition', function () {
                 users[i],
                 BigInt(attester.address)
             )
+            const epoch = await userState.sync.loadCurrentEpoch()
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
 
             await unirepContract
                 .connect(attester)
                 .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+            await unirepContract
+                .connect(attester)
+                .attest(userState.getEpochKeys()[0], epoch, 0, 0)
                 .then((t) => t.wait())
 
             userState.sync.stop()
@@ -75,11 +90,22 @@ describe('User state transition', function () {
         await ethers.provider.send('evm_mine', [])
 
         for (let i = 0; i < 5; i++) {
+            let db
+            {
+                const state = await genUnirepState(
+                    ethers.provider,
+                    unirepContract.address,
+                    attester2.address
+                )
+                db = state._db
+                state.stop()
+            }
             const userState = await genUserState(
                 ethers.provider,
                 unirepContract.address,
                 users[i],
-                BigInt(attester.address)
+                BigInt(attester.address),
+                db
             )
             await userState.waitForSync()
             const toEpoch = await userState.sync.loadCurrentEpoch()

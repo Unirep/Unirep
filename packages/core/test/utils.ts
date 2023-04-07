@@ -122,6 +122,7 @@ export const genUnirepState = async (
         provider,
         attesterId,
         prover: defaultProver,
+        db: _db,
     })
     unirep.pollRate = 150
     await unirep.start()

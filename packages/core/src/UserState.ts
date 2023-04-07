@@ -343,6 +343,7 @@ export default class UserState {
         const attestations = await this.sync._db.findMany('Attestation', {
             where: {
                 epoch,
+                attesterId: this.sync.attesterId.toString(),
             },
             orderBy: {
                 index: 'asc',
