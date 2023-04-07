@@ -31,3 +31,12 @@ The epoch tree exists onchain and is overwritten each epoch. Only the tree root 
 :::info
 See also: [Data](data.md)
 :::
+
+## **History tree**
+
+* The history tree tracks valid combinations of state tree roots and epoch tree roots. When an epoch ends an entry is added.
+
+* This is an **incremental merkle tree** with it's leaves storing the hash of a state tree root and epoch tree root
+  * leaf value: `H(stateTreeRoot, epochTreeRoot)`
+
+The history tree exists onchain. Each attester has their own history tree.
