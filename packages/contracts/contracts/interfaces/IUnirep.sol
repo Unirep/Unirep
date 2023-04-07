@@ -125,7 +125,6 @@ interface IUnirep {
         // circuit config
         uint8 stateTreeDepth;
         uint8 epochTreeDepth;
-        uint8 epochTreeArity;
         uint8 fieldCount;
         uint8 sumFieldCount;
         uint8 numEpochKeyNoncePerEpoch;

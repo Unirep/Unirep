@@ -449,14 +449,6 @@ Get the epoch tree depth for the Unirep contract.
 function epochTreeDepth() public view returns (uint8)
 ```
 
-## epochTreeArity
-
-Get the epoch tree arity for the Unirep contract.
-
-```sol
-function epochTreeArity() public view returns (uint8)
-```
-
 ## numEpochKeyNoncePerEpoch
 
 Get the maximum nonce value for an epoch key. This determines the number of epoch keys per epoch.

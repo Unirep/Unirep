@@ -3,12 +3,8 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import defaultConfig from '@unirep/circuits/config'
 
-const {
-    EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-} = defaultConfig
+const { EPOCH_TREE_DEPTH, STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } =
+    defaultConfig
 
 import { deployUnirep } from '../deploy'
 
@@ -27,7 +23,6 @@ describe('Config', function () {
             config.numEpochKeyNoncePerEpoch
         )
         expect(EPOCH_TREE_DEPTH).equal(config.epochTreeDepth)
-        expect(EPOCH_TREE_ARITY).equal(config.epochTreeArity)
         expect(STATE_TREE_DEPTH).equal(config.stateTreeDepth)
     })
 
@@ -37,9 +32,6 @@ describe('Config', function () {
 
         const epochTreeDepth = await unirepContract.epochTreeDepth()
         expect(EPOCH_TREE_DEPTH).equal(epochTreeDepth)
-
-        const epochTreeArity = await unirepContract.epochTreeArity()
-        expect(EPOCH_TREE_ARITY).equal(epochTreeArity)
 
         const numEpochKeyNoncePerEpoch =
             await unirepContract.numEpochKeyNoncePerEpoch()

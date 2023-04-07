@@ -8,7 +8,7 @@ import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
-const { FIELD_COUNT, EPOCH_TREE_ARITY, SUM_FIELD_COUNT } = defaultConfig
+const { FIELD_COUNT, SUM_FIELD_COUNT } = defaultConfig
 
 const EPOCH_TREE_DEPTH = 3
 
@@ -46,7 +46,7 @@ describe('Attestations max', function () {
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
-        for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH; x++) {
+        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
             const val = hash1([Math.floor(Math.random() * 10000000000)])
@@ -68,7 +68,7 @@ describe('Attestations max', function () {
             attester.address
         )
 
-        for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH; x++) {
+        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
             const val = hash1([Math.floor(Math.random() * 10000000000)])
@@ -77,7 +77,7 @@ describe('Attestations max', function () {
                 .attest(epochKey, epoch, fieldIndex, val)
                 .then((t) => t.wait())
         }
-        for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH; x++) {
+        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
             const val = hash1([Math.floor(Math.random() * 10000000000)])
