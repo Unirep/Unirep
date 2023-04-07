@@ -158,17 +158,6 @@ Build the latest epoch tree for a certain epoch.
 synchronizer.genEpochTree(epoch: bigint): Promise<IncrementalMerkleTree>
 ```
 
-## genEpochTreePreimages
-
-Get the pre-images for the leaves in an epoch tree.
-
-```ts
-synchronizer.genEpochTreePreimages(
-  epoch: bigint | number,
-  attesterId: bigint | string = this.attesterId
-): Promise<bigint[][]>
-```
-
 ## stateRootExists
 
 Determine if a state root exists in a certain epoch.
@@ -192,21 +181,3 @@ Get the number of state tree leaves in a certain epoch.
 ```ts
 synchronizer.numStateTreeLeaves(epoch: number): Promise<number>
 ```
-
-## genSealedEpochProof
-
-Generate the sealed epoch proof. See [`sealEpoch`](../contracts-api/unirep-sol.md#sealepoch)
-
-```ts
-synchronizer.genSealedEpochProof(
-  options: {
-    epoch?: bigint
-    attesterId?: bigint
-    preimages?: bigint[]
-  } = {}
-): Promise<BuildOrderedTree>
-```
-
-:::tip
-This proof is large and best made with `rapidsnark`. This function should only be used for small trees.
-:::

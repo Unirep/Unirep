@@ -10,9 +10,9 @@ import {IUnirep} from './interfaces/IUnirep.sol';
 import {IVerifier} from './interfaces/IVerifier.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
-import {Polysum, PolysumData} from './libraries/Polysum.sol';
+import {ReusableMerkleTree, ReusableTreeData} from './libraries/ReusableMerkleTree.sol';
 
-import 'poseidon-solidity/PoseidonT2.sol';
+import 'poseidon-solidity/PoseidonT3.sol';
 
 /**
  * @title Unirep
@@ -28,16 +28,9 @@ contract Unirep is IUnirep, VerifySignature {
     IVerifier public immutable reputationVerifier;
     IVerifier public immutable epochKeyVerifier;
     IVerifier public immutable epochKeyLiteVerifier;
-    IVerifier public immutable buildOrderedTreeVerifier;
 
     uint256 public constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
-    uint256 public immutable PoseidonT2_zero = PoseidonT2.hash([uint(0)]);
-
-    uint256 public constant OMT_R =
-        19840472963655813647419884432877523255831900116552197704230384899846353674447;
-    uint256 public constant EPK_R =
-        11105707062209303735980536775061420040143715723438319441848723820903914190159;
 
     // Attester id == address
     mapping(uint160 => AttesterData) attesters;
@@ -58,8 +51,7 @@ contract Unirep is IUnirep, VerifySignature {
         IVerifier _userStateTransitionVerifier,
         IVerifier _reputationVerifier,
         IVerifier _epochKeyVerifier,
-        IVerifier _epochKeyLiteVerifier,
-        IVerifier _buildOrderedTreeVerifier
+        IVerifier _epochKeyLiteVerifier
     ) {
         stateTreeDepth = _config.stateTreeDepth;
         epochTreeDepth = _config.epochTreeDepth;
@@ -74,9 +66,7 @@ contract Unirep is IUnirep, VerifySignature {
         reputationVerifier = _reputationVerifier;
         epochKeyVerifier = _epochKeyVerifier;
         epochKeyLiteVerifier = _epochKeyLiteVerifier;
-        buildOrderedTreeVerifier = _buildOrderedTreeVerifier;
 
-        // for initializing other trees without using poseidon function
         emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint64).max;
         attesters[uint160(0)].startTimestamp = block.timestamp;
@@ -163,27 +153,26 @@ contract Unirep is IUnirep, VerifySignature {
             revert UserAlreadySignedUp(identityCommitment);
         attester.identityCommitments[identityCommitment] = true;
 
-        if (attester.currentEpoch != epoch) revert EpochNotMatch();
+        uint256 currentEpoch = attester.currentEpoch;
+        if (currentEpoch != epoch) revert EpochNotMatch();
 
         emit UserSignedUp(
-            attester.currentEpoch,
+            currentEpoch,
             identityCommitment,
             attesterId,
-            attester.stateTrees[attester.currentEpoch].numberOfLeaves
+            attester.stateTree.numberOfLeaves
         );
         emit StateTreeLeaf(
             attester.currentEpoch,
             attesterId,
-            attester.stateTrees[attester.currentEpoch].numberOfLeaves,
+            attester.stateTree.numberOfLeaves,
             stateTreeLeaf
         );
-        IncrementalBinaryTree.insert(
-            attester.stateTrees[attester.currentEpoch],
+        uint256 root = ReusableMerkleTree.insert(
+            attester.stateTree,
             stateTreeLeaf
         );
-        attester.stateTreeRoots[attester.currentEpoch][
-            attester.stateTrees[attester.currentEpoch].root
-        ] = true;
+        attester.stateTreeRoots[currentEpoch][root] = true;
         IncrementalBinaryTree.insert(
             attester.semaphoreGroup,
             identityCommitment
@@ -199,17 +188,16 @@ contract Unirep is IUnirep, VerifySignature {
             revert AttesterAlreadySignUp(uint160(attesterId));
         attester.startTimestamp = block.timestamp;
 
-        // initialize the first state tree
-        IncrementalBinaryTree.initWithDefaultZeroes(
-            attester.stateTrees[0],
-            stateTreeDepth
-        );
-        attester.stateTreeRoots[0][attester.stateTrees[0].root] = true;
+        // initialize the state tree
+        ReusableMerkleTree.init(attester.stateTree, stateTreeDepth);
+
+        // initialize the epoch tree
+        ReusableMerkleTree.init(attester.epochTree, epochTreeDepth);
 
         // initialize the semaphore group tree
         IncrementalBinaryTree.initWithDefaultZeroes(
             attester.semaphoreGroup,
-            stateTreeDepth
+            stateTreeDepth // TODO: increase this
         );
 
         // set the epoch length
@@ -254,130 +242,64 @@ contract Unirep is IUnirep, VerifySignature {
         uint fieldIndex,
         uint change
     ) public {
-        {
-            uint currentEpoch = updateEpochIfNeeded(uint160(msg.sender));
-            if (epoch != currentEpoch) revert EpochNotMatch();
-        }
-        if (epochKey >= SNARK_SCALAR_FIELD || epochKey == 0 || epochKey == 1)
-            revert InvalidEpochKey();
+        uint256 currentEpoch = updateEpochIfNeeded(uint160(msg.sender));
+        if (epoch != currentEpoch) revert EpochNotMatch();
+
+        if (epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
 
         if (fieldIndex >= fieldCount) revert InvalidField();
 
-        AttesterState storage state = attesters[uint160(msg.sender)].state[
-            epoch
+        EpochKeyData storage epkData = attesters[uint160(msg.sender)].epkData[
+            epochKey
         ];
-        PolysumData storage epkPolysum = state.epkPolysum[epochKey];
 
-        bool newKey;
-        {
-            uint[30] storage data = state.data[epochKey];
-            uint[30] storage dataHashes = state.dataHashes[epochKey];
-
-            // First handle updating the epoch tree leaf polysum
-            // lazily initialize the epk polysum state
-            newKey = epkPolysum.hash == 0;
-            if (newKey) {
-                uint[] memory vals = new uint[](fieldCount + 1);
-                vals[0] = PoseidonT2.hash([epochKey]);
-                for (uint8 x = 0; x < fieldCount; x++) {
-                    vals[x + 1] = PoseidonT2_zero;
-                }
-                Polysum.add(epkPolysum, vals, EPK_R);
-            }
-            if (fieldIndex < sumFieldCount) {
-                // do a sum field change
-                uint oldVal = data[fieldIndex];
-                uint newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
-                uint oldHash = oldVal == 0
-                    ? PoseidonT2_zero
-                    : dataHashes[fieldIndex];
-                uint newHash = PoseidonT2.hash([newVal]);
-                Polysum.update(
-                    epkPolysum,
-                    fieldIndex + 1,
-                    oldHash,
-                    newHash,
-                    EPK_R
-                );
-                data[fieldIndex] = newVal;
-                dataHashes[fieldIndex] = newHash;
-            } else {
-                if (fieldIndex % 2 != sumFieldCount % 2) {
-                    // cannot attest to a timestamp
-                    revert InvalidField();
-                }
-                if (change >= SNARK_SCALAR_FIELD) revert OutOfRange();
-                {
-                    uint oldVal = data[fieldIndex];
-
-                    uint newValHash = PoseidonT2.hash([change]);
-                    uint oldValHash = oldVal == 0
-                        ? PoseidonT2_zero
-                        : dataHashes[fieldIndex];
-                    data[fieldIndex] = change;
-                    dataHashes[fieldIndex] = newValHash;
-                    // update data
-                    Polysum.update(
-                        epkPolysum,
-                        fieldIndex + 1,
-                        oldValHash,
-                        newValHash,
-                        EPK_R
-                    );
-                }
-                {
-                    // update timestamp
-                    uint oldTimestamp = data[fieldIndex + 1];
-                    uint oldTimestampHash = oldTimestamp == 0
-                        ? PoseidonT2_zero
-                        : dataHashes[fieldIndex + 1];
-                    uint newTimestampHash = PoseidonT2.hash([block.timestamp]);
-                    data[fieldIndex + 1] = block.timestamp;
-                    dataHashes[fieldIndex + 1] = newTimestampHash;
-                    Polysum.update(
-                        epkPolysum,
-                        fieldIndex + 2,
-                        oldTimestampHash,
-                        newTimestampHash,
-                        EPK_R
-                    );
-                }
-            }
+        uint256 epkEpoch = epkData.epoch;
+        if (epkEpoch != 0 && epkEpoch != currentEpoch) {
+            revert InvalidEpoch(epkEpoch);
+        }
+        // only allow an epoch key to be used in a single epoch
+        // this is to prevent frontrunning DOS in UST
+        // e.g. insert a tx attesting to the epk revealed by the UST
+        // then the UST can never succeed
+        if (epkEpoch != currentEpoch) {
+            epkData.epoch = uint64(currentEpoch);
         }
 
-        // now handle the epoch tree polysum
-
-        uint256 newLeaf = epkPolysum.hash;
-
-        uint index;
-        if (newKey) {
-            // check that we're not at max capacity
-            if (
-                state.polysum.index ==
-                uint(epochTreeArity) ** uint(epochTreeDepth) - 2 + 1
-            ) {
-                revert MaxAttestations();
-            }
-            if (state.polysum.index == 0) {
-                state.polysum.index = 1;
-            }
-            // this epoch key has received no attestations
-            index = Polysum.add(state.polysum, newLeaf, OMT_R);
-            state.epochKeyIndex[epochKey] = index;
-            state.epochKeyLeaves[epochKey] = newLeaf;
+        if (fieldIndex < sumFieldCount) {
+            uint256 oldVal = epkData.data[fieldIndex];
+            uint256 newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
+            epkData.data[fieldIndex] = newVal;
         } else {
-            index = state.epochKeyIndex[epochKey];
-            // we need to update the value in the polysussssssss
-            Polysum.update(
-                state.polysum,
-                index,
-                state.epochKeyLeaves[epochKey],
-                newLeaf,
-                OMT_R
-            );
-            state.epochKeyLeaves[epochKey] = newLeaf;
+            if (fieldIndex % 2 != sumFieldCount % 2) {
+                // cannot attest to a timestamp
+                revert InvalidField();
+            }
+            if (change >= SNARK_SCALAR_FIELD) revert OutOfRange();
+            epkData.data[fieldIndex] = change;
+            epkData.data[fieldIndex + 1] = block.timestamp;
         }
-        emit EpochTreeLeaf(epoch, uint160(msg.sender), index, newLeaf);
+
+        // now construct the leaf
+        // TODO: only rebuild the hashchain as needed
+        // e.g. if data[4] if attested to, don't hash 0,1,2,3
+
+        uint256 leaf = epochKey;
+        for (uint8 x = 0; x < fieldCount; x++) {
+            leaf = PoseidonT3.hash([leaf, epkData.data[x]]);
+        }
+        bool newLeaf = epkData.leaf == 0;
+        epkData.leaf = leaf;
+
+        ReusableTreeData storage epochTree = attesters[uint160(msg.sender)]
+            .epochTree;
+        if (newLeaf) {
+            epkData.leafIndex = uint64(epochTree.numberOfLeaves);
+            ReusableMerkleTree.insert(epochTree, leaf);
+        } else {
+            ReusableMerkleTree.update(epochTree, epkData.leafIndex, leaf);
+        }
+
+        emit EpochTreeLeaf(epoch, uint160(msg.sender), epkData.leafIndex, leaf);
         emit Attestation(
             epoch,
             epochKey,
@@ -386,42 +308,6 @@ contract Unirep is IUnirep, VerifySignature {
             change,
             block.timestamp
         );
-    }
-
-    function sealEpoch(
-        uint256 epoch,
-        uint160 attesterId,
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) public {
-        if (!buildOrderedTreeVerifier.verifyProof(publicSignals, proof))
-            revert InvalidProof();
-        AttesterData storage attester = attesters[attesterId];
-        AttesterState storage state = attester.state[epoch];
-        updateEpochIfNeeded(attesterId);
-        if (attester.currentEpoch <= epoch) revert EpochNotMatch();
-        // build the epoch tree root
-        uint256 root = publicSignals[0];
-        uint256 polysum = publicSignals[1];
-        //~~ if the hash is 0, don't allow the epoch to be manually sealed
-        //~~ no attestations happened
-        if (state.polysum.hash == 0) {
-            revert NoAttestations();
-        }
-        //~~ we seal the polysum by adding the largest value possible to
-        //~~ tree
-        Polysum.add(state.polysum, SNARK_SCALAR_FIELD - 1, OMT_R);
-        // otherwise the root was already set
-        if (attester.epochTreeRoots[epoch] != 0) {
-            revert DoubleSeal();
-        }
-        // otherwise it's bad data in the proof
-        if (polysum != state.polysum.hash) {
-            revert IncorrectHash();
-        }
-        attester.epochTreeRoots[epoch] = root;
-        // emit an event sealing the epoch
-        emit EpochSealed(epoch, attesterId);
     }
 
     /**
@@ -434,52 +320,65 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
-        if (publicSignals[6] >= type(uint160).max) revert AttesterInvalid();
-        uint160 attesterId = uint160(publicSignals[6]);
+        uint256 attesterSignalIndex = 4 + numEpochKeyNoncePerEpoch;
+        uint256 fromEpochIndex = 2 + numEpochKeyNoncePerEpoch;
+        uint256 toEpochIndex = 3 + numEpochKeyNoncePerEpoch;
+        uint256 epochTreeRootIndex = 5 + numEpochKeyNoncePerEpoch;
+        if (publicSignals[attesterSignalIndex] >= type(uint160).max)
+            revert AttesterInvalid();
+        uint160 attesterId = uint160(publicSignals[attesterSignalIndex]);
         updateEpochIfNeeded(attesterId);
         AttesterData storage attester = attesters[attesterId];
         // verify that the transition nullifier hasn't been used
+        // just use the first outputted EPK as the nullifier
         if (usedNullifiers[publicSignals[2]])
             revert NullifierAlreadyUsed(publicSignals[2]);
         usedNullifiers[publicSignals[2]] = true;
 
-        // verify that we're transition to the current epoch
-        if (attester.currentEpoch != publicSignals[5]) revert EpochNotMatch();
+        uint256 fromEpoch = publicSignals[fromEpochIndex];
 
-        uint256 fromEpoch = publicSignals[4];
-        // check for attestation processing
-        if (!attesterEpochSealed(attesterId, fromEpoch))
-            revert EpochNotSealed();
+        for (uint8 x = 0; x < numEpochKeyNoncePerEpoch; x++) {
+            if (
+                attester.epkData[publicSignals[2 + x]].epoch == fromEpoch &&
+                attester.epkData[publicSignals[2 + x]].leaf != 0
+            ) {
+                revert EpochKeyNotProcessed();
+            }
+        }
+
+        // verify that we're transition to the current epoch
+        if (attester.currentEpoch != publicSignals[toEpochIndex])
+            revert EpochNotMatch();
 
         // make sure from state tree root is valid
         if (!attester.stateTreeRoots[fromEpoch][publicSignals[0]])
             revert InvalidStateTreeRoot(publicSignals[0]);
 
         // make sure from epoch tree root is valid
-        if (attester.epochTreeRoots[fromEpoch] != publicSignals[3])
-            revert InvalidEpochTreeRoot(publicSignals[3]);
+        if (
+            attester.epochTreeRoots[fromEpoch] !=
+            publicSignals[epochTreeRootIndex]
+        ) revert InvalidEpochTreeRoot(publicSignals[epochTreeRootIndex]);
 
         // update the current state tree
         emit StateTreeLeaf(
             attester.currentEpoch,
             attesterId,
-            attester.stateTrees[attester.currentEpoch].numberOfLeaves,
+            attester.stateTree.numberOfLeaves,
             publicSignals[1]
         );
         emit UserStateTransitioned(
             attester.currentEpoch,
             attesterId,
-            attester.stateTrees[attester.currentEpoch].numberOfLeaves,
+            attester.stateTree.numberOfLeaves,
             publicSignals[1],
             publicSignals[2]
         );
-        IncrementalBinaryTree.insert(
-            attester.stateTrees[attester.currentEpoch],
+        uint256 root = ReusableMerkleTree.insert(
+            attester.stateTree,
             publicSignals[1]
         );
-        attester.stateTreeRoots[attester.currentEpoch][
-            attester.stateTrees[attester.currentEpoch].root
-        ] = true;
+        attester.stateTreeRoots[attester.currentEpoch][root] = true;
     }
 
     /**
@@ -498,15 +397,15 @@ contract Unirep is IUnirep, VerifySignature {
     ) public returns (uint epoch) {
         AttesterData storage attester = attesters[attesterId];
         epoch = attesterCurrentEpoch(attesterId);
-        if (epoch == attester.currentEpoch) return epoch;
+        uint256 fromEpoch = attester.currentEpoch;
+        if (epoch == fromEpoch) return epoch;
 
-        // otherwise initialize the new epoch structures
+        // otherwise reset the trees for the new epoch
 
-        IncrementalBinaryTree.initWithDefaultZeroes(
-            attester.stateTrees[epoch],
-            stateTreeDepth
-        );
-        attester.stateTreeRoots[epoch][attester.stateTrees[epoch].root] = true;
+        ReusableMerkleTree.reset(attester.stateTree);
+
+        attester.epochTreeRoots[fromEpoch] = attester.epochTree.root;
+        ReusableMerkleTree.reset(attester.epochTree);
 
         emit EpochEnded(epoch - 1, attesterId);
 
@@ -714,20 +613,6 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.epochLength;
     }
 
-    function attesterEpochSealed(
-        uint160 attesterId,
-        uint256 epoch
-    ) public view returns (bool) {
-        uint256 currentEpoch = attesterCurrentEpoch(attesterId);
-        AttesterData storage attester = attesters[attesterId];
-        if (currentEpoch <= epoch) return false;
-        // either the attestations were processed, or no
-        // attestations were received
-        return
-            attester.epochTreeRoots[epoch] != 0 ||
-            attester.state[epoch].polysum.hash == 0;
-    }
-
     function attesterStateTreeRootExists(
         uint160 attesterId,
         uint256 epoch,
@@ -738,19 +623,17 @@ contract Unirep is IUnirep, VerifySignature {
     }
 
     function attesterStateTreeRoot(
-        uint160 attesterId,
-        uint256 epoch
+        uint160 attesterId
     ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
-        return attester.stateTrees[epoch].root;
+        return attester.stateTree.root;
     }
 
     function attesterStateTreeLeafCount(
-        uint160 attesterId,
-        uint256 epoch
+        uint160 attesterId
     ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
-        return attester.stateTrees[epoch].numberOfLeaves;
+        return attester.stateTree.numberOfLeaves;
     }
 
     function attesterSemaphoreGroupRoot(
@@ -772,6 +655,9 @@ contract Unirep is IUnirep, VerifySignature {
         uint256 epoch
     ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
+        if (epoch == attesterCurrentEpoch(attesterId)) {
+            return attester.epochTree.root;
+        }
         return attester.epochTreeRoots[epoch];
     }
 }

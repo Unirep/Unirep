@@ -170,25 +170,6 @@ describe('User state transition', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
         await userState.waitForSync()
-        const preimages = await userState.sync.genEpochTreePreimages(newEpoch)
-        const { circuitInputs } =
-            BuildOrderedTree.buildInputsForLeaves(preimages)
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.buildOrderedTree,
-            stringifyBigInts(circuitInputs)
-        )
-        const { publicSignals, proof } = new BuildOrderedTree(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
-
-        await unirepContract
-            .connect(accounts[5])
-            .sealEpoch(newEpoch, attester.address, publicSignals, proof)
-            .then((t) => t.wait())
-
-        await userState.waitForSync()
 
         {
             const toEpoch = newEpoch + 1

@@ -10,7 +10,7 @@ include "./incrementalMerkleTree.circom";
 include "./epochKeyLite.circom";
 include "./leafHasher.circom";
 
-template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT, EPK_R) {
+template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
@@ -38,7 +38,7 @@ template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT, EPK_
     /* 1. Check if user exists in the Global State Tree */
 
     // Compute user state tree root
-    component leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    component leaf_hasher = StateTreeLeaf(FIELD_COUNT);
     leaf_hasher.identity_secret <== identity_secret;
     leaf_hasher.attester_id <== attester_id;
     leaf_hasher.epoch <== epoch;

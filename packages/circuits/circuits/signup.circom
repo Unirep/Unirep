@@ -6,7 +6,7 @@ include "./circomlib/circuits/poseidon.circom";
 include "./identity.circom";
 include "./leafHasher.circom";
 
-template Signup(FIELD_COUNT, EPK_R) {
+template Signup(FIELD_COUNT) {
 
     signal output identity_commitment;
     signal output state_tree_leaf;
@@ -22,7 +22,7 @@ template Signup(FIELD_COUNT, EPK_R) {
     commitment_calc.trapdoor <== identity_trapdoor;
     identity_commitment <== commitment_calc.out;
 
-    component leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    component leaf_hasher = StateTreeLeaf(FIELD_COUNT);
     leaf_hasher.identity_secret <== commitment_calc.secret;
     leaf_hasher.attester_id <== attester_id;
     leaf_hasher.epoch <== epoch;

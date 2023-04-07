@@ -1,12 +1,7 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import {
-    BuildOrderedTree,
-    Circuit,
-    Prover,
-    SNARK_SCALAR_FIELD,
-} from '@unirep/circuits'
+import { Circuit, Prover, SNARK_SCALAR_FIELD } from '@unirep/circuits'
 import { F, IncrementalMerkleTree, stringifyBigInts } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
@@ -373,7 +368,6 @@ export class Synchronizer extends EventEmitter {
                     'UserStateTransitioned',
                     'Attestation',
                     'EpochEnded',
-                    'EpochSealed',
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
                     'AttesterSignedUp',
@@ -488,14 +482,6 @@ export class Synchronizer extends EventEmitter {
         return epoch.toNumber()
     }
 
-    async isEpochSealed(epoch: number) {
-        const sealed = await this.unirepContract.attesterEpochSealed(
-            this.attesterId,
-            epoch
-        )
-        return sealed
-    }
-
     async epochTreeRoot(epoch: number) {
         return this.unirepContract.attesterEpochRoot(this.attesterId, epoch)
     }
@@ -545,16 +531,14 @@ export class Synchronizer extends EventEmitter {
                 epoch,
                 attesterId: this.attesterId.toString(),
             },
+            orderBy: {
+                index: 'asc',
+            },
         })
-        const leafInts = leaves
-            .map(({ hash }) => BigInt(hash))
-            .sort((a, b) => (a > b ? 1 : -1))
-        // Epoch trees always start with a 0 leaf
-        tree.insert(0)
-        for (const hash of leafInts) {
+        if (leaves.length === 0) tree.insert(0)
+        for (const { hash } of leaves) {
             tree.insert(hash)
         }
-        tree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
         return tree
     }
 
@@ -594,58 +578,6 @@ export class Synchronizer extends EventEmitter {
             }
         }
         return preimages
-    }
-
-    async genSealedEpochProof(
-        options: {
-            epoch?: bigint
-            attesterId?: bigint
-            preimages?: bigint[]
-        } = {}
-    ): Promise<BuildOrderedTree> {
-        const attesterId =
-            options.attesterId?.toString() ?? this.attesterId.toString()
-        const unsealedEpoch = await this._db.findOne('Epoch', {
-            where: {
-                sealed: false,
-                number: options.epoch ? Number(options.epoch) : undefined,
-                attesterId,
-            },
-            orderBy: {
-                epoch: 'asc',
-            },
-        })
-
-        if (!unsealedEpoch) {
-            throw new Error(`Synchronizer: sealing epoch is not required.`)
-        }
-        const attestation = await this._db.findOne('Attestation', {
-            where: {
-                attesterId: attesterId.toString(),
-                epoch: unsealedEpoch.number,
-            },
-        })
-        if (!attestation) {
-            throw new Error(
-                `Synchronizer: no attestation is made in epoch ${unsealedEpoch.number}.`
-            )
-        }
-        const epoch = options.epoch ?? unsealedEpoch.number
-        const preimages =
-            options.preimages ??
-            (await this.genEpochTreePreimages(epoch, attesterId))
-        const { circuitInputs } = BuildOrderedTree.buildInputsForLeaves(
-            preimages,
-            this.settings.epochTreeArity,
-            this.settings.epochTreeDepth,
-            this.settings.fieldCount
-        )
-        const r = await this.prover.genProofAndPublicSignals(
-            Circuit.buildOrderedTree,
-            stringifyBigInts(circuitInputs)
-        )
-
-        return new BuildOrderedTree(r.publicSignals, r.proof, this.prover)
     }
 
     /**
@@ -860,14 +792,14 @@ export class Synchronizer extends EventEmitter {
                     attesterId,
                 },
                 update: {
-                    sealed: false,
+                    sealed: true,
                 },
             })
         } else {
             db.create('Epoch', {
                 number: epoch,
                 attesterId,
-                sealed: false,
+                sealed: true,
             })
         }
         // create the next stub entry
@@ -893,41 +825,6 @@ export class Synchronizer extends EventEmitter {
             epochLength,
             startTimestamp,
         })
-        return true
-    }
-
-    async handleEpochSealed({ decodedData, event, db }: EventHandlerArgs) {
-        const epoch = Number(decodedData.epoch)
-        const attesterId = BigInt(decodedData.attesterId).toString()
-
-        if (
-            attesterId !== this.attesterId.toString() &&
-            this.attesterId !== BigInt(0)
-        )
-            return
-        const existingDoc = await this._db.findOne('Epoch', {
-            where: {
-                number: epoch,
-                attesterId,
-            },
-        })
-        if (existingDoc) {
-            db.update('Epoch', {
-                where: {
-                    number: epoch,
-                    attesterId,
-                },
-                update: {
-                    sealed: true,
-                },
-            })
-        } else {
-            db.create('Epoch', {
-                number: epoch,
-                attesterId,
-                sealed: true,
-            })
-        }
         return true
     }
 }

@@ -96,55 +96,6 @@ describe('Attestations', function () {
         )
     })
 
-    it('should fail to submit too many attestations', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
-            const epochKey = BigInt(x + 100000)
-            const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
-            const val = hash1([Math.floor(Math.random() * 10000000000)])
-            await unirepContract
-                .connect(attester)
-                .attest(epochKey, epoch, fieldIndex, val)
-                .then((t) => t.wait())
-        }
-        await expect(
-            unirepContract.connect(attester).attest(2, epoch, 0, 1)
-        ).to.be.revertedWithCustomError(unirepContract, 'MaxAttestations')
-    })
-
-    it('should submit attestations after max attestations', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-
-        for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
-            const epochKey = BigInt(x + 100000)
-            const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
-            const val = hash1([Math.floor(Math.random() * 10000000000)])
-            await unirepContract
-                .connect(attester)
-                .attest(epochKey, epoch, fieldIndex, val)
-                .then((t) => t.wait())
-        }
-        for (let x = 0; x < EPOCH_TREE_ARITY ** EPOCH_TREE_DEPTH - 2; x++) {
-            const epochKey = BigInt(x + 100000)
-            const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
-            const val = hash1([Math.floor(Math.random() * 10000000000)])
-            await unirepContract
-                .connect(attester)
-                .attest(epochKey, epoch, fieldIndex, val)
-                .then((t) => t.wait())
-        }
-    })
-
     it('should fail to submit attestation with wrong epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
@@ -163,14 +114,6 @@ describe('Attestations', function () {
             unirepContract
                 .connect(attester)
                 .attest(SNARK_SCALAR_FIELD, epoch, 1, 3)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
-
-        await expect(
-            unirepContract.connect(attester).attest(0, epoch, 1, 3)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
-
-        await expect(
-            unirepContract.connect(attester).attest(1, epoch, 1, 3)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpochKey')
     })
 

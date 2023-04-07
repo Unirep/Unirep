@@ -4,20 +4,13 @@ description: The tree structures that are used in UniRep protocol.
 
 # Trees
 
-Each attester has a separate version of each tree for each epoch.
+Each attester has a single epoch and state tree that is progressively overwritten each epoch.
 
 ## **State tree**
 
-* A state tree stores the updated user state after a user signs up and after a [user state transition](user-state-transition.md) is performed.
+* The state tree stores the updated user state after a user signs up and after a [user state transition](user-state-transition.md) is performed.
 * This is an **incremental merkle tree**, with its leaves storing users' `identitySecret`s and starting data, e.g.
-  * a state tree leaf: `hash(identitySecret, attesterId, epoch, polysum)`
-  * A polysum in state tree is defined by 
-    ```
-    H(data[0]) * R**(0 + 1) + 
-    H(data[1]) * R**(1 + 1) + 
-          ...               + 
-    H(data[FIELD_COUNT-1]) * R**(FIELD_COUNT)
-    ```
+  * a state tree leaf: `hash(identitySecret, attesterId, epoch, H(data))`
   * The default state tree leaf is `0`
 
 :::info
@@ -30,10 +23,10 @@ Each attester has a separate version of each tree for each epoch.
 
 * An epoch tree is used to **track the data received by epoch keys**. Non-repudiability is enforced at the circuit and smart contract level.
 
-* This is an **ordered merkle tree**, with its leaves storing the hash of epoch key and data received, e.g.,
-  * leaf value: Polysum of `[H(epochKey), H(data[0]), H(data[1]), ... H(data[n]))` using [`EPK_R`](../utils-api/constants#epk_r)
+* This is an **incremental merkle tree**, with its leaves storing the hash of epoch key and data received, e.g.,
+  * leaf value: `H(epochKey, H(data[0]), H(data[1]), ... H(data[n]))`
 
-The ordered merkle tree is constructed in ZK at the end of each epoch. For more info see the [ordered merkle tree proof](../circuits-api/circuits#build-ordered-tree).
+The epoch tree exists onchain and is overwritten each epoch. Only the tree root is stored.
 
 :::info
 See also: [Data](data.md)

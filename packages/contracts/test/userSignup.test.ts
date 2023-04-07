@@ -139,14 +139,12 @@ describe('User Signup', function () {
 
                 stateTree.insert(gstLeaf)
                 const currentRoot = await unirepContract.attesterStateTreeRoot(
-                    attester.address,
-                    epoch
+                    attester.address
                 )
                 roots[epoch].push(currentRoot.toString())
                 const leafCount =
                     await unirepContract.attesterStateTreeLeafCount(
-                        attester.address,
-                        epoch
+                        attester.address
                     )
                 expect(leafCount).to.equal(i + 1)
                 expect(currentRoot.toString(), 'state tree root').to.equal(

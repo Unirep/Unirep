@@ -5,8 +5,6 @@ include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/mux1.circom";
 include "./circomlib/circuits/gates.circom";
 include "./incrementalMerkleTree.circom";
-include "./modulo.circom";
-include "./inclusionNoninclusion.circom";
 include "./leafHasher.circom";
 
 template UserStateTransition(
@@ -14,43 +12,38 @@ template UserStateTransition(
   EPOCH_TREE_DEPTH,
   EPOCH_TREE_ARITY,
   EPOCH_KEY_NONCE_PER_EPOCH,
-  EPK_R,
   FIELD_COUNT,
   SUM_FIELD_COUNT
 ) {
     signal input from_epoch;
     signal input to_epoch;
 
-    // Global state tree leaf: Identity & user state root
+    // State tree leaf: Identity & user state root
     signal input identity_secret;
-    // Global state tree
+    // State tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
+
     signal output state_tree_root;
     signal output state_tree_leaf;
+
     // Attester to prove reputation from
     signal input attester_id;
-    // Attestation by the attester
+
+    // The starting data in fromEpoch
     signal input data[FIELD_COUNT];
 
-    // prove what we've received in from epoch
+    // prove what we've received in fromEpoch
     signal input new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
 
-    // the common subtree
-    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1][EPOCH_TREE_ARITY];
-    signal input epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1];
+    // A root to prove against
+    signal input epoch_tree_root;
 
-    signal input noninclusion_leaf[EPOCH_KEY_NONCE_PER_EPOCH][2];
-    signal input noninclusion_leaf_index[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal input noninclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][2][EPOCH_TREE_ARITY];
+    // the inclusion proofs
+    signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
+    signal input epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
 
-    // The index of the epoch tree leaf in the set of elements
-    signal input inclusion_leaf_index[EPOCH_KEY_NONCE_PER_EPOCH];
-    // The sibling elements for the epoch tree leaf
-    signal input inclusion_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_ARITY];
-
-    signal output transition_nullifier;
-    signal output epoch_tree_root;
+    signal output epks[EPOCH_KEY_NONCE_PER_EPOCH];
 
     // to_epoch will be checked on chain
     // from_epoch is implicitly checked by the
@@ -62,7 +55,7 @@ template UserStateTransition(
 
     /* 1. Check if user exists in the Global State Tree */
 
-    component leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    component leaf_hasher = StateTreeLeaf(FIELD_COUNT);
     leaf_hasher.identity_secret <== identity_secret;
     leaf_hasher.attester_id <== attester_id;
     leaf_hasher.epoch <== from_epoch;
@@ -91,120 +84,56 @@ template UserStateTransition(
         epoch_key_hashers[i].inputs[2] <== from_epoch;
         epoch_key_hashers[i].inputs[3] <== i; // nonce
 
-        leaf_hashers[i] = EpochTreeLeaf(FIELD_COUNT, EPK_R);
+        leaf_hashers[i] = EpochTreeLeaf(FIELD_COUNT);
         leaf_hashers[i].epoch_key <== epoch_key_hashers[i].out;
         for (var x = 0; x < FIELD_COUNT; x++) {
           leaf_hashers[i].data[x] <== new_data[i][x];
         }
     }
 
-    // if the leaf balance is 0 we do a non-inclusion
-    // else we do an inclusion
-    component inc_noninc[EPOCH_KEY_NONCE_PER_EPOCH];
-    component inc_mux[EPOCH_KEY_NONCE_PER_EPOCH];
-    signal has_no_attestations[EPOCH_KEY_NONCE_PER_EPOCH];
-    component zero_check[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
-    component not_check[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
-    component fin_zero_check[EPOCH_KEY_NONCE_PER_EPOCH];
+    // do an inclusion proof for each epoch key
 
-
-    signal roots[EPOCH_KEY_NONCE_PER_EPOCH];
-
-    var proven_inc_or_noninc = 0;
-
-    for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-        inc_noninc[i] = ProveInclusionOrNoninclusion(EPOCH_TREE_DEPTH, EPOCH_TREE_ARITY);
-        inc_noninc[i].leaf <== leaf_hashers[i].out;
-
-        //~~ multiple levels of elements of the parent tree'
-
-        for (var j = 0; j < EPOCH_TREE_DEPTH - 1; j++) {
-            inc_noninc[i].parent_indices[j] <== epoch_tree_indices[i][j];
-            for (var k = 0; k < EPOCH_TREE_ARITY; k++) {
-                inc_noninc[i].parent_elements[j][k] <== epoch_tree_elements[i][j][k];
-            }
-        }
-
-        inc_noninc[i].inclusion_leaf_index <== inclusion_leaf_index[i];
-        inc_noninc[i].noninclusion_leaf_index <== noninclusion_leaf_index[i];
-        inc_noninc[i].noninclusion_leaf[0] <== noninclusion_leaf[i][0];
-        inc_noninc[i].noninclusion_leaf[1] <== noninclusion_leaf[i][1];
-        for (var j = 0; j < EPOCH_TREE_ARITY; j++) {
-            inc_noninc[i].inclusion_elements[j] <== inclusion_elements[i][j];
-            inc_noninc[i].noninclusion_elements[0][j] <== noninclusion_elements[i][0][j];
-            inc_noninc[i].noninclusion_elements[1][j] <== noninclusion_elements[i][1][j];
-        }
-
-
-        //~~ inc_noninc.inclusion
-        //~~ inc_noninc.noninclusion
-
-        /*~~~~
-
-        Now check if the epoch key has attestations. If they do we expect
-        inclusion === 1.
-
-        Otherwise we expect noninclusion === 1.
-        */
-        var fields_nonzero = 0;
-        for (var j = 0; j < FIELD_COUNT; j++) {
-          zero_check[i][j] = IsZero();
-          zero_check[i][j].in <== new_data[i][j];
-          not_check[i][j] = NOT();
-          not_check[i][j].in <== zero_check[i][j].out;
-          fields_nonzero += not_check[i][j].out;
-        }
-        // if fields_zero is not 0 we have
-        fin_zero_check[i] = IsZero();
-        fin_zero_check[i].in <== fields_nonzero;
-
-        // we have no attestation if fin_zero_check is 1
-        // e.g. there are no fields with non-zero data
-        has_no_attestations[i] <== fin_zero_check[i].out;
-
-        /***~~~~~
-
-        if (has_no_attestations) {
-          require(noninclusion)
-        } else {
-          require(inclusion)
-        }
-        */
-
-        inc_mux[i] = Mux1();
-
-        inc_mux[i].s <== has_no_attestations[i];
-        inc_mux[i].c[0] <== inc_noninc[i].inclusion;
-        inc_mux[i].c[1] <== inc_noninc[i].noninclusion;
-
-        proven_inc_or_noninc += inc_mux[i].out;
-
-        //~~ check that all roots are equal
-        roots[i] <== inc_noninc[i].root;
-        roots[0] === roots[i];
-    }
-
-    component has_proven_inc_or_noninc = IsZero();
-    has_proven_inc_or_noninc.in <== proven_inc_or_noninc - EPOCH_KEY_NONCE_PER_EPOCH;
-
-
-    //~~ output the root, or 0 if we haven't proven membership (no attestations)
-    epoch_tree_root <== has_proven_inc_or_noninc.out * roots[0];
-
-    //~~ if root is 0 no new reputation must be supplied
-    var no_attestations_sum = 0;
+    component epoch_tree_proof[EPOCH_KEY_NONCE_PER_EPOCH];
+    component epoch_tree_proof_valid[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var x = 0; x < EPOCH_KEY_NONCE_PER_EPOCH; x++) {
-        no_attestations_sum += has_no_attestations[x];
+      epoch_tree_proof[x] = MerkleTreeInclusionProof(EPOCH_TREE_DEPTH);
+      epoch_tree_proof[x].leaf <== leaf_hashers[x].out;
+      for (var y = 0; y < EPOCH_TREE_DEPTH; y++) {
+        epoch_tree_proof[x].path_index[y] <== epoch_tree_indices[x][y];
+        epoch_tree_proof[x].path_elements[y] <== epoch_tree_elements[x][y];
+      }
+      epoch_tree_proof_valid[x] = IsEqual();
+      epoch_tree_proof_valid[x].in[0] <== epoch_tree_root;
+      epoch_tree_proof_valid[x].in[1] <== epoch_tree_proof[x].root;
     }
-    component zero_rep_check = Mux1();
-    zero_rep_check.s <== has_proven_inc_or_noninc.out;
-    zero_rep_check.c[0] <== no_attestations_sum;
-    zero_rep_check.c[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
-    zero_rep_check.out === EPOCH_KEY_NONCE_PER_EPOCH;
+
+    component epk_out_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
+    for (var x = 0; x < EPOCH_KEY_NONCE_PER_EPOCH; x++) {
+        epk_out_hashers[x] = Poseidon(4);
+        epk_out_hashers[x].inputs[0] <== identity_secret;
+        epk_out_hashers[x].inputs[1] <== attester_id;
+        epk_out_hashers[x].inputs[2] <== from_epoch;
+        epk_out_hashers[x].inputs[3] <== epoch_tree_proof_valid[x].out * EPOCH_KEY_NONCE_PER_EPOCH + x; // nonce
+        epks[x] <== epk_out_hashers[x].out;
+    }
+
+    // if an inclusion proof is not valid the newData must be 0
+    component data_check[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
+    component proof_invalid[EPOCH_KEY_NONCE_PER_EPOCH];
+    for (var x = 0; x < EPOCH_KEY_NONCE_PER_EPOCH; x++) {
+        proof_invalid[x] = IsZero();
+        proof_invalid[x].in <== epoch_tree_proof_valid[x].out;
+        for (var y = 0; y < FIELD_COUNT; y++) {
+            data_check[x][y] = ForceEqualIfEnabled();
+            data_check[x][y].enabled <== proof_invalid[x].out;
+            data_check[x][y].in[0] <== 0;
+            data_check[x][y].in[1] <== new_data[x][y];
+        }
+    }
 
     /* End of check 2 */
 
-    /* 3. Calculate the new gst leaf */
+    /* 3. Calculate the new state tree leaf */
 
     var final_data[FIELD_COUNT];
     for (var x = 0; x < FIELD_COUNT; x++) {
@@ -241,7 +170,7 @@ template UserStateTransition(
       }
     }
 
-    component out_leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    component out_leaf_hasher = StateTreeLeaf(FIELD_COUNT);
     out_leaf_hasher.identity_secret <== identity_secret;
     out_leaf_hasher.attester_id <== attester_id;
     out_leaf_hasher.epoch <== to_epoch;
@@ -251,14 +180,4 @@ template UserStateTransition(
     state_tree_leaf <== out_leaf_hasher.out;
 
     /* End of check 3 */
-
-    /* 4. Output epoch transition nullifier */
-
-    component nullifier_hasher = Poseidon(3);
-    nullifier_hasher.inputs[0] <== attester_id;
-    nullifier_hasher.inputs[1] <== from_epoch;
-    nullifier_hasher.inputs[2] <== identity_secret;
-    transition_nullifier <== nullifier_hasher.out;
-
-    /* End of check 4 */
 }
