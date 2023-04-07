@@ -208,6 +208,11 @@ export class Synchronizer extends EventEmitter {
     }
 
     checkAttesterId(attesterId: string | bigint) {
+        if (this._attesterId.length === 0) {
+            throw new Error(
+                `@unirep/core:Synchronizer: no attester ID is synchronized`
+            )
+        }
         if (!this.attesterExist(attesterId)) {
             throw new Error(
                 `@unirep/core:Synchronizer: attester ID ${attesterId.toString()} is not synchronized`
