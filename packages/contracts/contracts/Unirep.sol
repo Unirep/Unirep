@@ -388,7 +388,7 @@ contract Unirep is IUnirep, VerifySignature {
     function _updateEpochIfNeeded(
         uint256 attesterId
     ) public returns (uint epoch) {
-        require(attesterId < type(uint160).max);
+        if (attesterId >= type(uint160).max) revert AttesterInvalid();
         return updateEpochIfNeeded(uint160(attesterId));
     }
 
