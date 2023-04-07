@@ -399,21 +399,24 @@ contract Unirep is IUnirep, VerifySignature {
 
         // otherwise reset the trees for the new epoch
 
-        uint256 historyTreeLeaf = PoseidonT3.hash(
-            [attester.stateTree.root, attester.epochTree.root]
-        );
-        uint256 root = IncrementalBinaryTree.insert(
-            attester.historyTree,
-            historyTreeLeaf
-        );
-        attester.historyTreeRoots[root] = true;
+        if (attester.stateTree.numberOfLeaves > 0) {
+            uint256 historyTreeLeaf = PoseidonT3.hash(
+                [attester.stateTree.root, attester.epochTree.root]
+            );
+            uint256 root = IncrementalBinaryTree.insert(
+                attester.historyTree,
+                historyTreeLeaf
+            );
+            attester.historyTreeRoots[root] = true;
 
-        ReusableMerkleTree.reset(attester.stateTree);
+            ReusableMerkleTree.reset(attester.stateTree);
 
-        attester.epochTreeRoots[fromEpoch] = attester.epochTree.root;
+            attester.epochTreeRoots[fromEpoch] = attester.epochTree.root;
+
+            emit HistoryTreeLeaf(attesterId, historyTreeLeaf);
+        }
+
         ReusableMerkleTree.reset(attester.epochTree);
-
-        emit HistoryTreeLeaf(attesterId, historyTreeLeaf);
 
         emit EpochEnded(epoch - 1, attesterId);
 
