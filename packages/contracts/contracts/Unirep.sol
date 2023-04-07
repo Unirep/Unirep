@@ -70,6 +70,8 @@ contract Unirep is IUnirep, VerifySignature {
         emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint64).max;
         attesters[uint160(0)].startTimestamp = block.timestamp;
+
+        require(epochTreeArity == 2, 'epochtreearity');
     }
 
     function config() public view returns (Config memory) {
