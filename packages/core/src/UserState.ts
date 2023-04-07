@@ -82,7 +82,7 @@ export default class UserState {
         const signup = await this.sync._db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
-                attesterId: attesterId.toString(),
+                attesterId: toDecString(attesterId),
             },
         })
         return !!signup
@@ -94,11 +94,11 @@ export default class UserState {
      * @returns The latest epoch where user performs user state transition.
      */
     async latestTransitionedEpoch(
-        attesterId: bigint | string = this.sync.attesterId
+        _attesterId: bigint | string = this.sync.attesterId
     ): Promise<number> {
         this._checkSync()
+        const attesterId = toDecString(_attesterId)
         this.sync.checkAttesterId(attesterId)
-        const decAttesterId = toDecString(attesterId)
         const currentEpoch = await this.sync.loadCurrentEpoch(attesterId)
         let latestTransitionedEpoch = 0
         for (let x = currentEpoch; x >= 0; x--) {
@@ -106,7 +106,7 @@ export default class UserState {
                 0,
                 this.sync.settings.numEpochKeyNoncePerEpoch,
             ].map((v) =>
-                genEpochKey(this.id.secret, decAttesterId, x, v).toString()
+                genEpochKey(this.id.secret, attesterId, x, v).toString()
             )
             const n = await this.sync._db.findOne('Nullifier', {
                 where: {
@@ -122,7 +122,7 @@ export default class UserState {
             const signup = await this.sync._db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
-                    attesterId: decAttesterId,
+                    attesterId,
                 },
             })
             if (!signup) return 0
@@ -342,12 +342,14 @@ export default class UserState {
 
     public getEpochKeyIndex = async (
         epoch: number,
-        _epochKey: bigint | string
+        _epochKey: bigint | string,
+        _attesterId: bigint | string
     ) => {
         this._checkSync()
         const attestations = await this.sync._db.findMany('Attestation', {
             where: {
                 epoch,
+                attesterId: toDecString(_attesterId),
             },
             orderBy: {
                 index: 'asc',
@@ -373,7 +375,9 @@ export default class UserState {
         } = {}
     ): Promise<UserStateTransitionProof> => {
         const { toEpoch: _toEpoch } = options
-        const attesterId = options.attesterId ?? this.sync.attesterId
+        const attesterId = toDecString(
+            options.attesterId ?? this.sync.attesterId
+        )
         const fromEpoch = await this.latestTransitionedEpoch(attesterId)
         const data = await this.getData(fromEpoch - 1, attesterId)
         const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch(attesterId)
@@ -386,10 +390,12 @@ export default class UserState {
         const epochKeys = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
-                genEpochKey(this.id.secret, attesterId.toString(), fromEpoch, i)
+                genEpochKey(this.id.secret, attesterId, fromEpoch, i)
             )
         const epochKeyLeafIndices = await Promise.all(
-            epochKeys.map(async (epk) => this.getEpochKeyIndex(fromEpoch, epk))
+            epochKeys.map(async (epk) =>
+                this.getEpochKeyIndex(fromEpoch, epk, attesterId)
+            )
         )
         const epochKeyRep = await Promise.all(
             epochKeys.map(async (epochKey, i) => {
@@ -405,8 +411,11 @@ export default class UserState {
                 return { epochKey, hasChanges, newData, proof }
             })
         )
-        const latestLeafIndex = await this.latestStateTreeLeafIndex(fromEpoch)
-        const stateTree = await this.sync.genStateTree(fromEpoch)
+        const latestLeafIndex = await this.latestStateTreeLeafIndex(
+            fromEpoch,
+            attesterId
+        )
+        const stateTree = await this.sync.genStateTree(fromEpoch, attesterId)
         const stateTreeProof = stateTree.createProof(latestLeafIndex)
         const circuitInputs = {
             from_epoch: fromEpoch,
@@ -456,7 +465,9 @@ export default class UserState {
         const { minRep, maxRep, graffitiPreImage, proveZeroRep, revealNonce } =
             options
         const nonce = options.epkNonce ?? 0
-        const attesterId = options.attesterId ?? this.sync.attesterId
+        const attesterId = toDecString(
+            options.attesterId ?? this.sync.attesterId
+        )
         this._checkEpkNonce(nonce)
         const epoch = await this.latestTransitionedEpoch(attesterId)
         const leafIndex = await this.latestStateTreeLeafIndex(epoch, attesterId)
@@ -502,13 +513,15 @@ export default class UserState {
     public genUserSignUpProof = async (
         options: { epoch?: number | bigint; attesterId?: bigint | string } = {}
     ): Promise<SignupProof> => {
-        const attesterId = options.attesterId ?? this.sync.attesterId
+        const attesterId = toDecString(
+            options.attesterId ?? this.sync.attesterId
+        )
         const epoch = options.epoch ?? this.sync.calcCurrentEpoch(attesterId)
         const circuitInputs = {
             epoch,
             identity_nullifier: this.id.nullifier,
             identity_trapdoor: this.id.trapdoor,
-            attester_id: attesterId.toString(),
+            attester_id: attesterId,
         }
         const results = await this.sync.prover.genProofAndPublicSignals(
             Circuit.signup,
@@ -531,7 +544,9 @@ export default class UserState {
         } = {}
     ): Promise<EpochKeyProof> => {
         const nonce = options.nonce ?? 0
-        const attesterId = options.attesterId ?? this.sync.attesterId
+        const attesterId = toDecString(
+            options.attesterId ?? this.sync.attesterId
+        )
         const epoch =
             options.epoch ?? (await this.latestTransitionedEpoch(attesterId))
         const tree = await this.sync.genStateTree(epoch, attesterId)
@@ -546,7 +561,7 @@ export default class UserState {
             state_tree_indexes: proof.pathIndices,
             epoch,
             nonce,
-            attester_id: attesterId.toString(),
+            attester_id: attesterId,
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
         const results = await this.sync.prover.genProofAndPublicSignals(
@@ -570,7 +585,9 @@ export default class UserState {
         } = {}
     ): Promise<EpochKeyLiteProof> => {
         const nonce = options.nonce ?? 0
-        const attesterId = options.attesterId ?? this.sync.attesterId
+        const attesterId = toDecString(
+            options.attesterId ?? this.sync.attesterId
+        )
         const epoch =
             options.epoch ?? (await this.latestTransitionedEpoch(attesterId))
         const circuitInputs = {
@@ -578,7 +595,7 @@ export default class UserState {
             sig_data: options.data ?? BigInt(0),
             epoch,
             nonce,
-            attester_id: attesterId.toString(),
+            attester_id: attesterId,
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
         const results = await this.sync.prover.genProofAndPublicSignals(
