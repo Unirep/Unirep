@@ -27,7 +27,7 @@
 
 
 ​
-## 💡 About Unirep 
+## 💡 About Unirep
 **UniRep** is a *private* and *non-repudiable* **reputation system**. Users can receive positive and negative reputation from attesters, and voluntarily prove that they have at least certain amount of reputation without revealing the exact amount. Moreover, users cannot refuse to receive reputation from an attester.
 
 ## 📘 Documentation
@@ -36,14 +36,13 @@ Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep
 For more information, refer to the [documentation](https://developer.unirep.io/)
 
 ## 📦 Project Structure
-- 
+-
     | Package | Version | Description |
     |:--:|:--:|--|
     | [`core`](./packages/core/) | <a href="https://www.npmjs.com/package/@unirep/core"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/core?color=%230004&style=flat-square" /></a> | Unirep protocol related functions. |
     | [`contracts`](./packages/contracts/) | <a href="https://www.npmjs.com/package/@unirep/contracts"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/contracts?color=%230004&style=flat-square" /></a> | Unirep smart contracts, ZKP verifiers and contract related functions. |
     | [`circuits`](./packages/circuits/) | <a href="https://www.npmjs.com/package/@unirep/circuits"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/circuits?color=%230004&style=flat-square" /></a> | Unirep circom circuits and circuit related functions. |
     | [`utils`](./packages/utils) | <a href="https://www.npmjs.com/package/@unirep/utils"><img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/utils?color=%230004&style=flat-square" /></a> | Utils which are used in unirep protocol. |
-    | [`subgraph`](./packages/subgraph/) | - | Subgraph of unirep smart contract. |
 ​
 ## 🔋 Requirements
 
