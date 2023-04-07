@@ -12,7 +12,6 @@ import { randomData, combineData, genProofAndVerify } from './utils'
 import { UserStateTransitionProof } from '../src/UserStateTransitionProof'
 const {
     EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     STATE_TREE_DEPTH,
     SUM_FIELD_COUNT,

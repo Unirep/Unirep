@@ -22,26 +22,11 @@ import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 const {
     EPOCH_TREE_DEPTH,
-    EPOCH_TREE_ARITY,
     STATE_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     FIELD_COUNT,
     SUM_FIELD_COUNT,
 } = defaultConfig
-
-const emptyEpochTree = () => {
-    const epochTree = new IncrementalMerkleTree(
-        EPOCH_TREE_DEPTH,
-        0,
-        EPOCH_TREE_ARITY
-    )
-    epochTree.insert(BigInt(0))
-    epochTree.insert(BigInt(SNARK_SCALAR_FIELD) - BigInt(1))
-    for (let x = 0; x < EPOCH_TREE_ARITY; x++) {
-        epochTree.insert(BigInt(0))
-    }
-    return epochTree
-}
 
 const signupUser = async (id, unirepContract, attesterId, account) => {
     const epoch = await unirepContract.attesterCurrentEpoch(attesterId)

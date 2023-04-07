@@ -10,7 +10,6 @@ include "./leafHasher.circom";
 template UserStateTransition(
   STATE_TREE_DEPTH,
   EPOCH_TREE_DEPTH,
-  EPOCH_TREE_ARITY,
   EPOCH_KEY_NONCE_PER_EPOCH,
   FIELD_COUNT,
   SUM_FIELD_COUNT
