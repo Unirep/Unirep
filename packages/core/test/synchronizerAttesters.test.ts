@@ -239,11 +239,14 @@ describe('Synchronizer watch multiple attesters', function () {
             .fill(0)
             .map((_, i) => accounts[i])
 
+        const ids = [] as any[]
         for (const attester of attesters) {
+            const id = new Identity()
+            ids.push(id)
             const userState = await genUserState(
                 ethers.provider,
                 unirepContract.address,
-                new Identity(),
+                id,
                 attester.address
             )
             const { publicSignals, proof } =
@@ -277,6 +280,12 @@ describe('Synchronizer watch multiple attesters', function () {
             await state.start()
             await state.waitForSync()
             state.stop()
+        }
+        for (const id of ids) {
+            const count = await db.count('UserSignUp', {
+                commitment: id.commitment.toString(),
+            })
+            expect(count).to.equal(1)
         }
     })
 
