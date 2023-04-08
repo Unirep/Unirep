@@ -37,7 +37,7 @@ const _schema = [
         rows: [
             ['epoch', 'Int'],
             ['epochKey', 'String'],
-            ['index', 'String'], // event index, tx index, block index
+            ['index', 'String', { unique: true }], // event index, tx index, block index
             ['attesterId', 'String'],
             ['fieldIndex', 'Int'],
             ['change', 'String'],
@@ -73,7 +73,7 @@ const _schema = [
         rows: [
             ['index', 'Int'],
             ['attesterId', 'String'],
-            ['leaf', 'String'],
+            ['leaf', 'String', { unique: true }],
         ],
     },
     {

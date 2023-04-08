@@ -681,6 +681,12 @@ export class Synchronizer extends EventEmitter {
         const attesterId = toDecString(decodedData.attesterId)
         const hash = toDecString(decodedData.leaf)
         if (!this.attesterExist(attesterId)) return
+        const existing = await this._db.findOne('StateTreeLeaf', {
+            where: {
+                hash,
+            },
+        })
+        if (existing) return true
         db.create('StateTreeLeaf', {
             epoch,
             hash,
@@ -726,6 +732,13 @@ export class Synchronizer extends EventEmitter {
         const leafIndex = toDecString(decodedData.leafIndex)
         const { blockNumber } = event
         if (!this.attesterExist(attesterId)) return
+        const existing = await this._db.findOne('UserSignUp', {
+            where: {
+                commitment,
+                attesterId,
+            },
+        })
+        if (existing) return true
         db.create('UserSignUp', {
             commitment,
             epoch,
@@ -757,16 +770,21 @@ export class Synchronizer extends EventEmitter {
                 `Synchronizer: Epoch (${epoch}) must be the same as the current synced epoch ${currentEpoch.number}`
             )
         }
-
-        db.create('Attestation', {
-            epoch,
-            epochKey,
-            index,
-            attesterId,
-            fieldIndex,
-            change,
-            timestamp,
-            blockNumber,
+        db.upsert('Attestation', {
+            where: {
+                index,
+            },
+            update: {},
+            create: {
+                epoch,
+                epochKey,
+                index,
+                attesterId,
+                fieldIndex,
+                change,
+                timestamp,
+                blockNumber,
+            },
         })
         const findEpoch = await this._db.findOne('Epoch', {
             where: {
@@ -795,15 +813,19 @@ export class Synchronizer extends EventEmitter {
         const nullifier = toDecString(decodedData.nullifier)
         const { blockNumber } = event
         if (!this.attesterExist(attesterId)) return
-
-        db.create('Nullifier', {
-            epoch,
-            attesterId,
-            nullifier,
-            transactionHash,
-            blockNumber,
+        db.upsert('Nullifier', {
+            where: {
+                nullifier,
+            },
+            update: {},
+            create: {
+                epoch,
+                attesterId,
+                nullifier,
+                transactionHash,
+                blockNumber,
+            },
         })
-
         return true
     }
 
@@ -836,11 +858,18 @@ export class Synchronizer extends EventEmitter {
                 sealed,
             })
         }
+        const newEpochExists = await this._db.findOne('Epoch', {
+            where: {
+                number: number + 1,
+                attesterId,
+            },
+        })
+        if (newEpochExists) return true
         // create the next stub entry
         db.create('Epoch', {
             number: number + 1,
             attesterId,
-            sealed,
+            sealed: false,
         })
         return true
     }
@@ -856,9 +885,15 @@ export class Synchronizer extends EventEmitter {
                 epochLength,
             }
             this._attesterId.push(BigInt(_id))
-            db.create('SynchronizerState', {
-                attesterId: _id,
-                latestCompleteBlock: event.blockNumber - 1,
+            db.upsert('SynchronizerState', {
+                where: {
+                    attesterId: _id,
+                },
+                update: {},
+                create: {
+                    attesterId: _id,
+                    latestCompleteBlock: event.blockNumber - 1,
+                },
             })
         }
         if (!this.attesterExist(_id)) return
@@ -888,10 +923,16 @@ export class Synchronizer extends EventEmitter {
         const index = await this._db.count('HistoryTreeLeaf', {
             attesterId,
         })
-        db.create('HistoryTreeLeaf', {
-            index,
-            attesterId,
-            leaf,
+        db.upsert('HistoryTreeLeaf', {
+            where: {
+                leaf,
+            },
+            update: {},
+            create: {
+                index,
+                attesterId,
+                leaf,
+            },
         })
         return true
     }
