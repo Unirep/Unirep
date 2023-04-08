@@ -5,8 +5,8 @@ import {
     ZkIdentity,
     genEpochKey,
     genStateTreeLeaf,
-    genNullifier,
-    genIdCommitment,
+    hash1,
+    hash2,
 } from '@unirep/utils'
 import {
     Circuit,
@@ -69,15 +69,11 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = genNullifier(
-                id.identityNullifier,
-                externalNullifier
-            )
+            const nullifier = hash2([id.identityNullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = genIdCommitment(
-                id.identityNullifier,
-                id.trapdoor
-            )
+            const identityCommitment = hash1([
+                hash2([id.identityNullifier, id.trapdoor]),
+            ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
 
             const p = new PreventDoubleActionProof(publicSignals, proof)
@@ -138,10 +134,7 @@ describe('Prevent double action circuit', function () {
                 genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = genNullifier(
-                id.identityNullifier,
-                externalNullifier
-            )
+            const nullifier = hash2([id.identityNullifier, externalNullifier])
             expect(publicSignals[2]).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
@@ -151,10 +144,9 @@ describe('Prevent double action circuit', function () {
                 }).toString()
             )
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = genIdCommitment(
-                id.identityNullifier,
-                id.trapdoor
-            )
+            const identityCommitment = hash1([
+                hash2([id.identityNullifier, id.trapdoor]),
+            ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
 
             const p = new PreventDoubleActionProof(publicSignals, proof)
@@ -215,15 +207,11 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = genNullifier(
-                id.identityNullifier,
-                externalNullifier
-            )
+            const nullifier = hash2([id.identityNullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = genIdCommitment(
-                id.identityNullifier,
-                id.trapdoor
-            )
+            const identityCommitment = hash1([
+                hash2([id.identityNullifier, id.trapdoor]),
+            ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
             expect(publicSignals[5].toString()).to.equal(sigData.toString())
 
@@ -285,15 +273,11 @@ describe('Prevent double action circuit', function () {
                 genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = genNullifier(
-                id.identityNullifier,
-                externalNullifier
-            )
+            const nullifier = hash2([id.identityNullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = genIdCommitment(
-                id.identityNullifier,
-                id.trapdoor
-            )
+            const identityCommitment = hash1([
+                hash2([id.identityNullifier, id.trapdoor]),
+            ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
             expect(publicSignals[5].toString()).to.equal(sigData.toString())
 
