@@ -28,8 +28,8 @@ Used to store information about what blocks/transactions/events have been proces
 ```ts
 {
   attesterId: string,
-  latestProcessedBlock: number,
-  latestProcessedTransactionIndex: number,
+  latestProcessedBlock: number
+  latestProcessedTransactionIndex: number
   latestCompleteBlock: number
 }
 ```
@@ -40,13 +40,13 @@ An attestation given to an epoch key.
 
 ```ts
 {
-  epoch: number,
-  epochKey: string, // base 10
-  index: string,
-  attesterId: string,
-  fieldIndex: number,
-  change: number,
-  timestamp: number,
+  epoch: number
+  epochKey: string // base 10
+  index: string
+  attesterId: string
+  fieldIndex: number
+  change: number
+  timestamp: number
   blockNumber: number
 }
 ```
@@ -57,9 +57,9 @@ A leaf from a state tree.
 
 ```ts
 {
-  epoch: number,
-  hash: string,
-  index: number,
+  epoch: number
+  hash: string
+  index: number
   attesterId: string
   blockNumber: number
 }
@@ -71,12 +71,24 @@ A leaf from an epoch tree.
 
 ```ts
 {
-  id: string,
-  epoch: number,
-  hash: string,
-  index: string,
+  id: string
+  epoch: number
+  hash: string
+  index: string
   attesterId: string
   blockNumber: number
+}
+```
+
+## HistoryTreeLeaf
+
+A leaf from an attester history tree.
+
+```ts
+{
+  index: number
+  attesterId: string
+  leaf: string
 }
 ```
 
@@ -86,8 +98,8 @@ An epoch entry.
 
 ```ts
 {
-  number: number,
-  attesterId: string,
+  number: number
+  attesterId: string
   sealed: boolean
 }
 ```
@@ -96,10 +108,10 @@ An epoch entry.
 
 ```ts
 {
-  epoch: number,
-  attesterId: string,
-  nullifier: string,
-  transactionHash: string,
+  epoch: number
+  attesterId: string
+  nullifier: string
+  transactionHash: string
   blockNumber: number
 }
 ```
@@ -110,8 +122,8 @@ An object created when a user joins an attester.
 
 ```ts
 {
-  commitment: string,
-  epoch: number,
+  commitment: string
+  epoch: number
   attesterId: string
   blockNumber: number
 }

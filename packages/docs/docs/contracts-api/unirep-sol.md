@@ -337,14 +337,6 @@ A contract address for a user state transition proof verifier. See [IVerifier](i
 IVerifier public immutable userStateTransitionVerifier;
 ```
 
-## buildOrderedTreeVerifier
-
-A contract address for an build ordered tree proof verifier. See [IVerifier](iverifier-sol) for more info.
-
-```sol
-IVerifier public immutable buildOrderedTreeVerifier;
-```
-
 ## attesterStartTimestamp
 
 Get the start timestamp for an attester (in seconds). This is the start of the 0th epoch.
@@ -447,6 +439,14 @@ Get the epoch tree depth for the Unirep contract.
 
 ```sol
 function epochTreeDepth() public view returns (uint8)
+```
+
+## historyTreeDepth
+
+Get the history tree depth for the Unirep contract.
+
+```sol
+function historyTreeDepth() public view returns (uint8)
 ```
 
 ## numEpochKeyNoncePerEpoch
@@ -552,6 +552,17 @@ event EpochTreeLeaf(
     uint256 indexed epoch,
     uint160 indexed attesterId,
     uint256 indexed index,
+    uint256 leaf
+);
+```
+
+### HistoryTreeLeaf
+
+Emitted when a leaf is added to the history tree.
+
+```sol
+event HistoryTreeLeaf(
+    uint160 indexed attesterId,
     uint256 leaf
 );
 ```

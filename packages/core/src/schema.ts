@@ -69,6 +69,14 @@ const _schema = [
         ],
     },
     {
+        name: 'HistoryTreeLeaf',
+        rows: [
+            ['index', 'Int'],
+            ['attesterId', 'String'],
+            ['leaf', 'String'],
+        ],
+    },
+    {
         name: 'Epoch',
         indexes: [{ keys: ['attesterId', 'number'] }],
         rows: [

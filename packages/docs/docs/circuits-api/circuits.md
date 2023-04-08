@@ -157,20 +157,21 @@ TODO: add a graphic for this
 
 Inputs:
 - `identity_secret`
-- `from_epoch` (public)
+- `from_epoch`
 - `to_epoch` (public)
 - `attester_id` (public)
-- `epoch_tree_root` (public)
+- `epoch_tree_root`
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `data[FIELD_COUNT]`
 - `new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT]`
-- `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1][EPOCH_TREE_ARITY]`
-- `epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH - 1]`
+- `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY]`
+- `epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
+- `history_tree_indices[HISTORY_TREE_DEPTH]`
+- `history_tree_elements[HISTORY_TREE_DEPTH]`
 
 Outputs:
-- `state_tree_root`
+- `history_tree_root`
 - `state_tree_leaf`
-- `transition_nullifier`
-- `epoch_tree_root`
+- `epoch_keys[EPOCH_KEY_NONCE_PER_EPOCH]`
 

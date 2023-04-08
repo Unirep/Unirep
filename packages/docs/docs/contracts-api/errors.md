@@ -93,7 +93,7 @@ Please make sure the signature is signed through the correct attester.
     3. `userSignUp` transaction or `userStateTransition` transaction is pending
     4. Epoch and state tree root does not match
 
-## 0xfa2e644d
-- `InvalidEpochTreeRoot(uint256 epochTreeRoot)`<br/>
-    The [epoch tree](../protocol/trees.md#epoch-tree) root of given epoch does not match the current Unirep contract. <br/>
+## 0xd542f669
+- `InvalidHistoryTreeRoot(uint256 historyTreeRoot)`<br/>
+    The [epoch tree](../protocol/trees.md#history-tree) root of given epoch does not match the current Unirep contract. <br/>
     Please check if all attestations are processed correctly and successfully.
