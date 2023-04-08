@@ -9,21 +9,17 @@ import { CircuitConfig } from './CircuitConfig'
  */
 export class UserStateTransitionProof extends BaseProof {
     readonly idx = {
-        fromStateTreeRoot: 0,
+        historyTreeRoot: 0,
         stateTreeLeaf: 1,
         epochKeys: 2,
-        fromEpoch: 3,
-        toEpoch: 4,
-        attesterId: 5,
-        epochTreeRoot: 6,
+        toEpoch: 3,
+        attesterId: 4,
     }
-    public fromStateTreeRoot: BigNumberish
+    public historyTreeRoot: BigNumberish
     public stateTreeLeaf: BigNumberish
     public epochKeys: BigNumberish[]
-    public fromEpoch: BigNumberish
     public toEpoch: BigNumberish
     public attesterId: BigNumberish
-    public epochTreeRoot: BigNumberish
 
     /**
      * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
@@ -38,17 +34,13 @@ export class UserStateTransitionProof extends BaseProof {
     ) {
         super(_publicSignals, _proof, prover)
         const { NUM_EPOCH_KEY_NONCE_PER_EPOCH } = config
-        this.fromStateTreeRoot =
-            _publicSignals[this.idx.fromStateTreeRoot].toString()
+        this.historyTreeRoot =
+            _publicSignals[this.idx.historyTreeRoot].toString()
         this.stateTreeLeaf = _publicSignals[this.idx.stateTreeLeaf].toString()
         this.epochKeys = _publicSignals.slice(
             this.idx.epochKeys,
             this.idx.epochKeys + NUM_EPOCH_KEY_NONCE_PER_EPOCH
         )
-        this.fromEpoch =
-            _publicSignals[
-                this.idx.fromEpoch + NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
-            ].toString()
         this.toEpoch =
             _publicSignals[
                 this.idx.toEpoch + NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
@@ -56,10 +48,6 @@ export class UserStateTransitionProof extends BaseProof {
         this.attesterId =
             _publicSignals[
                 this.idx.attesterId + NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
-            ].toString()
-        this.epochTreeRoot =
-            _publicSignals[
-                this.idx.epochTreeRoot + NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
             ].toString()
         this.circuit = Circuit.userStateTransition
     }

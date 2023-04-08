@@ -40,6 +40,7 @@ contract Unirep is IUnirep, VerifySignature {
 
     uint8 public immutable stateTreeDepth;
     uint8 public immutable epochTreeDepth;
+    uint8 public immutable historyTreeDepth;
     uint8 public immutable fieldCount;
     uint8 public immutable sumFieldCount;
     uint8 public immutable numEpochKeyNoncePerEpoch;
@@ -54,6 +55,7 @@ contract Unirep is IUnirep, VerifySignature {
     ) {
         stateTreeDepth = _config.stateTreeDepth;
         epochTreeDepth = _config.epochTreeDepth;
+        historyTreeDepth = _config.historyTreeDepth;
         fieldCount = _config.fieldCount;
         sumFieldCount = _config.sumFieldCount;
         numEpochKeyNoncePerEpoch = _config.numEpochKeyNoncePerEpoch;
@@ -75,6 +77,7 @@ contract Unirep is IUnirep, VerifySignature {
             Config({
                 stateTreeDepth: stateTreeDepth,
                 epochTreeDepth: epochTreeDepth,
+                historyTreeDepth: historyTreeDepth,
                 fieldCount: fieldCount,
                 sumFieldCount: sumFieldCount,
                 numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch
@@ -197,6 +200,12 @@ contract Unirep is IUnirep, VerifySignature {
             stateTreeDepth // TODO: increase this
         );
 
+        // initialize history tree
+        IncrementalBinaryTree.initWithDefaultZeroes(
+            attester.historyTree,
+            historyTreeDepth
+        );
+
         // set the epoch length
         attester.epochLength = epochLength;
 
@@ -317,10 +326,8 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
-        uint256 attesterSignalIndex = 4 + numEpochKeyNoncePerEpoch;
-        uint256 fromEpochIndex = 2 + numEpochKeyNoncePerEpoch;
-        uint256 toEpochIndex = 3 + numEpochKeyNoncePerEpoch;
-        uint256 epochTreeRootIndex = 5 + numEpochKeyNoncePerEpoch;
+        uint256 attesterSignalIndex = 3 + numEpochKeyNoncePerEpoch;
+        uint256 toEpochIndex = 2 + numEpochKeyNoncePerEpoch;
         if (publicSignals[attesterSignalIndex] >= type(uint160).max)
             revert AttesterInvalid();
         uint160 attesterId = uint160(publicSignals[attesterSignalIndex]);
@@ -332,30 +339,23 @@ contract Unirep is IUnirep, VerifySignature {
             revert NullifierAlreadyUsed(publicSignals[2]);
         usedNullifiers[publicSignals[2]] = true;
 
-        uint256 fromEpoch = publicSignals[fromEpochIndex];
+        uint256 toEpoch = publicSignals[toEpochIndex];
+
+        // verify that we're transition to the current epoch
+        if (attester.currentEpoch != toEpoch) revert EpochNotMatch();
 
         for (uint8 x = 0; x < numEpochKeyNoncePerEpoch; x++) {
             if (
-                attester.epkData[publicSignals[2 + x]].epoch == fromEpoch &&
+                attester.epkData[publicSignals[2 + x]].epoch < toEpoch &&
                 attester.epkData[publicSignals[2 + x]].leaf != 0
             ) {
                 revert EpochKeyNotProcessed();
             }
         }
 
-        // verify that we're transition to the current epoch
-        if (attester.currentEpoch != publicSignals[toEpochIndex])
-            revert EpochNotMatch();
-
         // make sure from state tree root is valid
-        if (!attester.stateTreeRoots[fromEpoch][publicSignals[0]])
-            revert InvalidStateTreeRoot(publicSignals[0]);
-
-        // make sure from epoch tree root is valid
-        if (
-            attester.epochTreeRoots[fromEpoch] !=
-            publicSignals[epochTreeRootIndex]
-        ) revert InvalidEpochTreeRoot(publicSignals[epochTreeRootIndex]);
+        if (!attester.historyTreeRoots[publicSignals[0]])
+            revert InvalidHistoryTreeRoot(publicSignals[0]);
 
         // update the current state tree
         emit StateTreeLeaf(
@@ -399,9 +399,23 @@ contract Unirep is IUnirep, VerifySignature {
 
         // otherwise reset the trees for the new epoch
 
-        ReusableMerkleTree.reset(attester.stateTree);
+        if (attester.stateTree.numberOfLeaves > 0) {
+            uint256 historyTreeLeaf = PoseidonT3.hash(
+                [attester.stateTree.root, attester.epochTree.root]
+            );
+            uint256 root = IncrementalBinaryTree.insert(
+                attester.historyTree,
+                historyTreeLeaf
+            );
+            attester.historyTreeRoots[root] = true;
 
-        attester.epochTreeRoots[fromEpoch] = attester.epochTree.root;
+            ReusableMerkleTree.reset(attester.stateTree);
+
+            attester.epochTreeRoots[fromEpoch] = attester.epochTree.root;
+
+            emit HistoryTreeLeaf(attesterId, historyTreeLeaf);
+        }
+
         ReusableMerkleTree.reset(attester.epochTree);
 
         emit EpochEnded(epoch - 1, attesterId);

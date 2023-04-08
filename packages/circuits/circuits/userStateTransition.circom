@@ -10,6 +10,7 @@ include "./leafHasher.circom";
 template UserStateTransition(
   STATE_TREE_DEPTH,
   EPOCH_TREE_DEPTH,
+  HISTORY_TREE_DEPTH,
   EPOCH_KEY_NONCE_PER_EPOCH,
   FIELD_COUNT,
   SUM_FIELD_COUNT
@@ -23,8 +24,12 @@ template UserStateTransition(
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
 
-    signal output state_tree_root;
+    signal output history_tree_root;
     signal output state_tree_leaf;
+
+    // History tree
+    signal input history_tree_indices[HISTORY_TREE_DEPTH];
+    signal input history_tree_elements[HISTORY_TREE_DEPTH];
 
     // Attester to prove reputation from
     signal input attester_id;
@@ -68,7 +73,18 @@ template UserStateTransition(
         state_merkletree.path_index[i] <== state_tree_indexes[i];
         state_merkletree.path_elements[i] <== state_tree_elements[i];
     }
-    state_tree_root <== state_merkletree.root;
+
+    component history_leaf_hasher = Poseidon(2);
+    history_leaf_hasher.inputs[0] <== state_merkletree.root;
+    history_leaf_hasher.inputs[1] <== epoch_tree_root;
+
+    component history_merkletree = MerkleTreeInclusionProof(HISTORY_TREE_DEPTH);
+    history_merkletree.leaf <== history_leaf_hasher.out;
+    for (var i = 0; i < HISTORY_TREE_DEPTH; i++) {
+        history_merkletree.path_index[i] <== history_tree_indices[i];
+        history_merkletree.path_elements[i] <== history_tree_elements[i];
+    }
+    history_tree_root <== history_merkletree.root;
 
     /* End of check 1 */
 

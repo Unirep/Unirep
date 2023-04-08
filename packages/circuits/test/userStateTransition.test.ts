@@ -6,12 +6,14 @@ import {
     stringifyBigInts,
     genStateTreeLeaf,
     genEpochTreeLeaf,
+    hash2,
 } from '@unirep/utils'
 import { Circuit, CircuitConfig } from '../src'
 import { randomData, combineData, genProofAndVerify } from './utils'
 import { UserStateTransitionProof } from '../src/UserStateTransitionProof'
 const {
     EPOCH_TREE_DEPTH,
+    HISTORY_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     STATE_TREE_DEPTH,
     SUM_FIELD_COUNT,
@@ -40,6 +42,9 @@ describe('User state transition', function () {
             .map((_, i) =>
                 genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
             )
+        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
+        historyTree.insert(hash2([stateTree.root, epochTree.root]))
+        const historyTreeProof = historyTree.createProof(0)
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.userStateTransition,
             {
@@ -48,6 +53,8 @@ describe('User state transition', function () {
                 identity_secret: id.secret,
                 state_tree_indexes: stateTreeProof.pathIndices,
                 state_tree_elements: stateTreeProof.siblings,
+                history_tree_indices: historyTreeProof.pathIndices,
+                history_tree_elements: historyTreeProof.siblings,
                 attester_id: attesterId,
                 data,
                 new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
@@ -61,7 +68,7 @@ describe('User state transition', function () {
             }
         )
         expect(isValid, 'invalid proof').to.be.true
-        expect(publicSignals[0]).to.equal(stateTree.root.toString())
+        expect(publicSignals[0]).to.equal(historyTree.root.toString())
         const newLeaf = genStateTreeLeaf(id.secret, attesterId, toEpoch, data)
         expect(publicSignals[1]).to.equal(newLeaf.toString())
         const expectedKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
@@ -74,16 +81,12 @@ describe('User state transition', function () {
             expect(publicSignals[2 + x]).to.equal(expectedKeys[x].toString())
             expect(ustProof.epochKeys[x]).to.equal(expectedKeys[x].toString())
         }
-        expect(ustProof.fromStateTreeRoot.toString()).to.equal(
-            stateTree.root.toString()
+        expect(ustProof.historyTreeRoot.toString()).to.equal(
+            historyTree.root.toString()
         )
         expect(ustProof.stateTreeLeaf.toString()).to.equal(newLeaf.toString())
-        expect(ustProof.fromEpoch.toString()).to.equal(fromEpoch.toString())
         expect(ustProof.toEpoch.toString()).to.equal(toEpoch.toString())
         expect(ustProof.attesterId.toString()).to.equal(attesterId.toString())
-        expect(ustProof.epochTreeRoot.toString()).to.equal(
-            epochTree.root.toString()
-        )
     })
 
     it('should do a user state transition with new rep', async () => {
@@ -116,6 +119,9 @@ describe('User state transition', function () {
                         return epochTree.createProof(0)
                     }
                 })
+            const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
+            historyTree.insert(hash2([stateTree.root, epochTree.root]))
+            const historyTreeProof = historyTree.createProof(0)
             const { isValid, publicSignals } = await genProofAndVerify(
                 Circuit.userStateTransition,
                 {
@@ -124,6 +130,8 @@ describe('User state transition', function () {
                     identity_secret: id.secret,
                     state_tree_indexes: stateTreeProof.pathIndices,
                     state_tree_elements: stateTreeProof.siblings,
+                    history_tree_indices: historyTreeProof.pathIndices,
+                    history_tree_elements: historyTreeProof.siblings,
                     attester_id: attesterId,
                     data,
                     new_data: epochKeys.map((_, i) => {
@@ -140,7 +148,7 @@ describe('User state transition', function () {
                 }
             )
             expect(isValid, 'invalid proof').to.be.true
-            expect(publicSignals[0]).to.equal(stateTree.root.toString())
+            expect(publicSignals[0]).to.equal(historyTree.root.toString())
             const newLeaf = genStateTreeLeaf(
                 id.secret,
                 attesterId,
@@ -188,12 +196,17 @@ describe('User state transition', function () {
             .map((_, i) =>
                 genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
             )
+        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
+        historyTree.insert(hash2([stateTree.root, epochTree.root]))
+        const historyTreeProof = historyTree.createProof(0)
         const circuitInputs = {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
             identity_secret: id.secret,
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
+            history_tree_indices: historyTreeProof.pathIndices,
+            history_tree_elements: historyTreeProof.siblings,
             attester_id: attesterId,
             data,
             new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(1)),

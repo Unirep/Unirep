@@ -6,6 +6,7 @@ import {
     genEpochKey,
     genStateTreeLeaf,
     F,
+    hash2,
 } from '@unirep/utils'
 import {
     Circuit,
@@ -387,11 +388,32 @@ export default class UserState {
             )
         }
         const epochTree = await this.sync.genEpochTree(fromEpoch, attesterId)
+        const stateTree = await this.sync.genStateTree(fromEpoch, attesterId)
         const epochKeys = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
                 genEpochKey(this.id.secret, attesterId, fromEpoch, i)
             )
+        const historyTree = await this.sync.genHistoryTree(attesterId)
+        const leafHash = hash2([stateTree.root, epochTree.root])
+        const leaf = await this.sync._db.findOne('HistoryTreeLeaf', {
+            where: {
+                attesterId,
+                leaf: leafHash.toString(),
+            },
+        })
+        let historyTreeProof
+        if (leaf) {
+            historyTreeProof = historyTree.createProof(leaf.index)
+        } else {
+            // the epoch hasn't been ended onchain yet
+            // add the leaf offchain to make the proof
+            const leafCount = await this.sync._db.count('HistoryTreeLeaf', {
+                attesterId,
+            })
+            historyTree.insert(leafHash)
+            historyTreeProof = historyTree.createProof(leafCount)
+        }
         const epochKeyLeafIndices = await Promise.all(
             epochKeys.map(async (epk) =>
                 this.getEpochKeyIndex(fromEpoch, epk, attesterId)
@@ -415,7 +437,6 @@ export default class UserState {
             fromEpoch,
             attesterId
         )
-        const stateTree = await this.sync.genStateTree(fromEpoch, attesterId)
         const stateTreeProof = stateTree.createProof(latestLeafIndex)
         const circuitInputs = {
             from_epoch: fromEpoch,
@@ -424,6 +445,8 @@ export default class UserState {
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             attester_id: attesterId.toString(),
+            history_tree_indices: historyTreeProof.pathIndices,
+            history_tree_elements: historyTreeProof.siblings,
             data,
             new_data: epochKeyRep.map(({ newData }) => newData),
             epoch_tree_elements: epochKeyRep.map(({ proof }) => proof.siblings),

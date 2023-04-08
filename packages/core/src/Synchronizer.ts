@@ -89,6 +89,7 @@ export class Synchronizer extends EventEmitter {
         this.settings = {
             stateTreeDepth: 0,
             epochTreeDepth: 0,
+            historyTreeDepth: 0,
             numEpochKeyNoncePerEpoch: 0,
             epochLength: 0,
             fieldCount: 0,
@@ -219,6 +220,7 @@ export class Synchronizer extends EventEmitter {
         const config = await this.unirepContract.config()
         this.settings.stateTreeDepth = config.stateTreeDepth
         this.settings.epochTreeDepth = config.epochTreeDepth
+        this.settings.historyTreeDepth = config.historyTreeDepth
         this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
         this.settings.fieldCount = config.fieldCount
         this.settings.sumFieldCount = config.sumFieldCount
@@ -412,6 +414,7 @@ export class Synchronizer extends EventEmitter {
                     'StateTreeLeaf',
                     'EpochTreeLeaf',
                     'AttesterSignedUp',
+                    'HistoryTreeLeaf',
                 ],
             },
         }
@@ -572,6 +575,26 @@ export class Synchronizer extends EventEmitter {
         })
         for (const leaf of leaves) {
             tree.insert(leaf.hash)
+        }
+        return tree
+    }
+
+    async genHistoryTree(
+        _attesterId: bigint | string = this.attesterId
+    ): Promise<IncrementalMerkleTree> {
+        const tree = new IncrementalMerkleTree(this.settings.historyTreeDepth)
+        const attesterId = toDecString(_attesterId)
+        this.checkAttesterId(attesterId)
+        const leaves = await this._db.findMany('HistoryTreeLeaf', {
+            where: {
+                attesterId,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+        for (const { leaf } of leaves) {
+            tree.insert(leaf)
         }
         return tree
     }
@@ -850,6 +873,25 @@ export class Synchronizer extends EventEmitter {
                 startTimestamp,
             },
             update: {},
+        })
+        return true
+    }
+
+    async handleHistoryTreeLeaf({ decodedData, event, db }: EventHandlerArgs) {
+        const attesterId = BigInt(decodedData.attesterId).toString()
+        const leaf = BigInt(decodedData.leaf).toString()
+        if (
+            attesterId !== this.attesterId.toString() &&
+            this.attesterId !== BigInt(0)
+        )
+            return
+        const index = await this._db.count('HistoryTreeLeaf', {
+            attesterId,
+        })
+        db.create('HistoryTreeLeaf', {
+            index,
+            attesterId,
+            leaf,
         })
         return true
     }

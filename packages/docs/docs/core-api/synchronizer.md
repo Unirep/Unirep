@@ -187,6 +187,14 @@ Build the latest epoch tree for a certain epoch.
 synchronizer.genEpochTree(epoch: bigint, attesterId?: bigint | string): Promise<IncrementalMerkleTree>
 ```
 
+## genHistoryTree
+
+Build the latest history tree for the current attester.
+
+```ts
+synchronizer.genHistoryTree(): Promise<IncrementalMerkleTree>
+```
+
 ## stateTreeRootExists
 
 Determine if a state root exists in a certain epoch.
