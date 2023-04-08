@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
 import { Prover } from '@unirep/circuits'
-import { F, IncrementalMerkleTree } from '@unirep/utils'
+import { IncrementalMerkleTree } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
 import { nanoid } from 'nanoid'
@@ -246,41 +246,40 @@ export class Synchronizer extends EventEmitter {
             )
         }
 
-        const docs: any[] = []
-        for (let event of events) {
-            const decodedData = this.unirepContract.interface.decodeEventLog(
-                'AttesterSignedUp',
-                event.data,
-                event.topics
-            )
-            const { timestamp, epochLength, attesterId } = decodedData
-            this._attesterSettings[toDecString(attesterId)] = {
-                startTimestamp: Number(timestamp),
-                epochLength: Number(epochLength),
-            }
-            if (
-                this._syncAll &&
-                !this.attesterExist(attesterId) &&
-                BigInt(attesterId) !== BigInt(0)
-            ) {
-                this._attesterId.push(BigInt(attesterId))
-            }
-            const syncStartBlock = event.blockNumber - 1
+        await this._db.transaction(async (db) => {
+            for (let event of events) {
+                const decodedData =
+                    this.unirepContract.interface.decodeEventLog(
+                        'AttesterSignedUp',
+                        event.data,
+                        event.topics
+                    )
+                const { timestamp, epochLength, attesterId } = decodedData
+                this._attesterSettings[toDecString(attesterId)] = {
+                    startTimestamp: Number(timestamp),
+                    epochLength: Number(epochLength),
+                }
+                if (
+                    this._syncAll &&
+                    !this.attesterExist(attesterId) &&
+                    BigInt(attesterId) !== BigInt(0)
+                ) {
+                    this._attesterId.push(BigInt(attesterId))
+                }
+                const syncStartBlock = event.blockNumber - 1
 
-            const findDoc = await this._db.findOne('SynchronizerState', {
-                where: {
-                    attesterId: toDecString(attesterId),
-                },
-            })
-            if (!findDoc) {
-                docs.push({
-                    attesterId: toDecString(attesterId),
-                    latestCompleteBlock: syncStartBlock,
+                db.upsert('SynchronizerState', {
+                    where: {
+                        attesterId: toDecString(attesterId),
+                    },
+                    create: {
+                        attesterId: toDecString(attesterId),
+                        latestCompleteBlock: syncStartBlock,
+                    },
+                    update: {},
                 })
             }
-        }
-
-        await this._db.create('SynchronizerState', docs)
+        })
     }
 
     /**
