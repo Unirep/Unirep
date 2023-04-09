@@ -8,7 +8,6 @@ export * from './EpochKeyLiteProof'
 export * from './ReputationProof'
 export * from './SignupProof'
 export * from './UserStateTransitionProof'
-export * from './BuildOrderedTree'
 export * from './PreventDoubleActionProof'
 
 export * from './CircuitConfig'

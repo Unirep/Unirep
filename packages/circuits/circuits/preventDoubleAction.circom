@@ -7,7 +7,7 @@ include "./epochKeyLite.circom";
 include "./leafHasher.circom";
 include "./identity.circom";
 
-template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT, EPK_R) {
+template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
 
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
@@ -50,7 +50,7 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
 
     /* 3. Check if user exists in the Global State Tree*/
     // Compute user state tree root
-    component leaf_hasher = StateTreeLeaf(FIELD_COUNT, EPK_R);
+    component leaf_hasher = StateTreeLeaf(FIELD_COUNT);
     leaf_hasher.identity_secret <== commitment.secret;
     leaf_hasher.attester_id <== attester_id;
     leaf_hasher.epoch <== epoch;

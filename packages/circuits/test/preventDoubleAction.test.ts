@@ -1,8 +1,7 @@
 import { expect } from 'chai'
-
+import { Identity } from '@semaphore-protocol/identity'
 import {
     IncrementalMerkleTree,
-    ZkIdentity,
     genEpochKey,
     genStateTreeLeaf,
     hash1,
@@ -33,14 +32,9 @@ describe('Prevent double action circuit', function () {
             const attesterId = BigInt(10210)
             const epoch = 120958
             const data = randomData()
-            const id = new ZkIdentity()
+            const id = new Identity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = genStateTreeLeaf(
-                id.secretHash,
-                attesterId,
-                epoch,
-                data
-            )
+            const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
             const externalNullifier = BigInt(1)
             const circuitInputs = genPreventDoubleActionCircuitInput({
@@ -59,7 +53,7 @@ describe('Prevent double action circuit', function () {
             )
             expect(isValid).to.be.true
             expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[2]).to.equal(
@@ -69,10 +63,10 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = hash2([id.identityNullifier, externalNullifier])
+            const nullifier = hash2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
             const identityCommitment = hash1([
-                hash2([id.identityNullifier, id.trapdoor]),
+                hash2([id.nullifier, id.trapdoor]),
             ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
 
@@ -82,7 +76,7 @@ describe('Prevent double action circuit', function () {
             expect(p.revealNonce.toString()).to.equal('0')
             expect(p.attesterId.toString()).to.equal(attesterId.toString())
             expect(p.epochKey.toString()).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal('0')
@@ -104,14 +98,9 @@ describe('Prevent double action circuit', function () {
             const epoch = 120958
             const data = randomData()
             const revealNonce = 1
-            const id = new ZkIdentity()
+            const id = new Identity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = genStateTreeLeaf(
-                id.secretHash,
-                attesterId,
-                epoch,
-                data
-            )
+            const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
             const externalNullifier = BigInt(1)
             const circuitInputs = genPreventDoubleActionCircuitInput({
@@ -131,10 +120,10 @@ describe('Prevent double action circuit', function () {
             )
             expect(isValid).to.be.true
             expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = hash2([id.identityNullifier, externalNullifier])
+            const nullifier = hash2([id.nullifier, externalNullifier])
             expect(publicSignals[2]).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
@@ -145,7 +134,7 @@ describe('Prevent double action circuit', function () {
             )
             expect(publicSignals[3]).to.equal(nullifier.toString())
             const identityCommitment = hash1([
-                hash2([id.identityNullifier, id.trapdoor]),
+                hash2([id.nullifier, id.trapdoor]),
             ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
 
@@ -155,7 +144,7 @@ describe('Prevent double action circuit', function () {
             expect(p.revealNonce.toString()).to.equal(revealNonce.toString())
             expect(p.attesterId.toString()).to.equal(attesterId.toString())
             expect(p.epochKey.toString()).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal('0')
@@ -170,14 +159,9 @@ describe('Prevent double action circuit', function () {
             const epoch = 120958
             const data = randomData()
             const sigData = BigInt(1288972090)
-            const id = new ZkIdentity()
+            const id = new Identity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = genStateTreeLeaf(
-                id.secretHash,
-                attesterId,
-                epoch,
-                data
-            )
+            const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
             const externalNullifier = BigInt(1)
             const circuitInputs = genPreventDoubleActionCircuitInput({
@@ -197,7 +181,7 @@ describe('Prevent double action circuit', function () {
             )
             expect(isValid).to.be.true
             expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
             expect(publicSignals[2]).to.equal(
@@ -207,10 +191,10 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = hash2([id.identityNullifier, externalNullifier])
+            const nullifier = hash2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
             const identityCommitment = hash1([
-                hash2([id.identityNullifier, id.trapdoor]),
+                hash2([id.nullifier, id.trapdoor]),
             ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
             expect(publicSignals[5].toString()).to.equal(sigData.toString())
@@ -221,7 +205,7 @@ describe('Prevent double action circuit', function () {
             expect(p.revealNonce.toString()).to.equal('0')
             expect(p.attesterId.toString()).to.equal(attesterId.toString())
             expect(p.epochKey.toString()).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal(sigData.toString())
@@ -243,14 +227,9 @@ describe('Prevent double action circuit', function () {
             const epoch = 120958
             const data = randomData()
             const sigData = BigInt(1288972090)
-            const id = new ZkIdentity()
+            const id = new Identity()
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-            const leaf = genStateTreeLeaf(
-                id.secretHash,
-                attesterId,
-                epoch,
-                data
-            )
+            const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
             const externalNullifier = BigInt(1)
             const circuitInputs = genPreventDoubleActionCircuitInput({
@@ -270,13 +249,13 @@ describe('Prevent double action circuit', function () {
             )
             expect(isValid).to.be.true
             expect(publicSignals[0]).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = hash2([id.identityNullifier, externalNullifier])
+            const nullifier = hash2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
             const identityCommitment = hash1([
-                hash2([id.identityNullifier, id.trapdoor]),
+                hash2([id.nullifier, id.trapdoor]),
             ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
             expect(publicSignals[5].toString()).to.equal(sigData.toString())
@@ -287,7 +266,7 @@ describe('Prevent double action circuit', function () {
             expect(p.revealNonce.toString()).to.equal('0')
             expect(p.attesterId.toString()).to.equal(attesterId.toString())
             expect(p.epochKey.toString()).to.equal(
-                genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+                genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal(sigData.toString())
@@ -316,9 +295,9 @@ describe('Prevent double action circuit', function () {
         const epoch = 120958
         const data = randomData()
         const nonce = 0
-        const id = new ZkIdentity()
+        const id = new Identity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, data)
+        const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
         tree.insert(leaf)
         const externalNullifier = BigInt(1)
         const circuitInputs = genPreventDoubleActionCircuitInput({
@@ -338,7 +317,7 @@ describe('Prevent double action circuit', function () {
         )
         expect(isValid).to.be.true
         expect(publicSignals[0]).to.equal(
-            genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+            genEpochKey(id.secret, attesterId, epoch, nonce).toString()
         )
         expect(publicSignals[1]).to.not.equal(tree.root.toString())
     })
@@ -348,9 +327,9 @@ describe('Prevent double action circuit', function () {
         const epoch = 120958
         const data = randomData()
         const nonce = 0
-        const id = new ZkIdentity()
+        const id = new Identity()
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const leaf = genStateTreeLeaf(id.secretHash, attesterId, epoch, data)
+        const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
         tree.insert(leaf)
         const externalNullifier = BigInt(1)
         const circuitInputs = genPreventDoubleActionCircuitInput({
@@ -372,7 +351,7 @@ describe('Prevent double action circuit', function () {
         expect(isValid).to.be.true
 
         expect(publicSignals[0]).to.not.equal(
-            genEpochKey(id.secretHash, attesterId, epoch, nonce).toString()
+            genEpochKey(id.secret, attesterId, epoch, nonce).toString()
         )
         expect(publicSignals[1]).to.not.equal(tree.root.toString())
     })

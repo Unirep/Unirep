@@ -166,7 +166,7 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
 }
 
 const genPreventDoubleActionCircuitInput = (config: {
-    id: utils.ZkIdentity
+    id: Identity
     tree: utils.IncrementalMerkleTree
     leafIndex: number
     epoch: number
@@ -205,7 +205,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         epoch,
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
-        identity_nullifier: id.identityNullifier,
+        identity_nullifier: id.nullifier,
         external_nullifier: externalNullifier,
         identity_trapdoor: id.trapdoor,
     }
@@ -214,10 +214,8 @@ const genPreventDoubleActionCircuitInput = (config: {
 }
 
 export {
-    genNewEpochTree,
     genEpochKeyCircuitInput,
     genReputationCircuitInput,
-    genUserStateTransitionCircuitInput,
     genProofAndVerify,
     genPreventDoubleActionCircuitInput,
 }
