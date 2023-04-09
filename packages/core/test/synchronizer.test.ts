@@ -34,8 +34,7 @@ describe('Synchronizer process events', function () {
                 .then((t) => t.wait())
             synchronizer = await genUnirepState(
                 ethers.provider,
-                unirepContract.address,
-                BigInt(attester.address)
+                unirepContract.address
             )
             const epoch = await synchronizer.loadCurrentEpoch()
             await bootstrapUsers(synchronizer, attester)
@@ -60,6 +59,47 @@ describe('Synchronizer process events', function () {
             await ethers.provider.send('evm_revert', [snapshot])
         })
     }
+
+    it('should process attester sign up event', async () => {
+        const [AttesterSignedUp] =
+            synchronizer.unirepContract.filters.AttesterSignedUp()
+                .topics as string[]
+        const signUpEvent = new Promise((rs, rj) =>
+            synchronizer.once(AttesterSignedUp, (event) => rs(event))
+        )
+        const attesterCount = await (synchronizer as any)._db.count(
+            'Attester',
+            {}
+        )
+
+        const accounts = await ethers.getSigners()
+        const attester = accounts[2]
+        const epochLength = 100
+        const tx = await synchronizer.unirepContract
+            .connect(attester)
+            .attesterSignUp(epochLength)
+
+        const { timestamp } = await tx
+            .wait()
+            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
+
+        await signUpEvent
+        const attesterId = BigInt(attester.address).toString()
+        await synchronizer.waitForSync()
+        const docs = await (synchronizer as any)._db.findMany('Attester', {
+            where: {
+                _id: attesterId,
+            },
+        })
+        expect(docs.length).to.equal(1)
+        expect(docs[0].epochLength).to.equal(epochLength)
+        expect(docs[0].startTimestamp).to.equal(timestamp)
+        const finalUserCount = await (synchronizer as any)._db.count(
+            'Attester',
+            {}
+        )
+        expect(finalUserCount).to.equal(attesterCount + 1)
+    })
 
     it('should process sign up event', async () => {
         const [UserSignedUp] =

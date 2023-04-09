@@ -55,8 +55,8 @@ describe('Attester signs up and gives attestation', function () {
         await userState.waitForSync()
         // we're signed up, now run an attestation
         const epoch = await userState.sync.loadCurrentEpoch()
-        const epochKeys = userState.getEpochKeys(epoch)
-        const [epk] = epochKeys as bigint[]
+        const epochKeys = userState.getEpochKeys(epoch) as bigint[]
+        const [epk] = epochKeys
         const fieldIndex = 1
         const val = 5
         // now submit the attestation from the attester

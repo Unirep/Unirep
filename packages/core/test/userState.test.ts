@@ -64,7 +64,7 @@ describe('User state', function () {
             .connect(attester)
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
-        const epk = userState.getEpochKeys(epoch, 1)
+        const epk = userState.getEpochKeys(epoch, 1) as bigint
         const fieldIndex = 1
         const v0 = F - BigInt(1)
         const v1 = BigInt(12409124)

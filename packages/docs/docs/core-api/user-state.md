@@ -25,14 +25,19 @@ const state = new UserState(synchronizer, identity)
 Can be constructed using an existing synchronizer, or by initializing a new synchronizer.
 
 ```ts
-constructor(config: Synchronizer | {
-    db?: DB
-    attesterId: bigint
-    unirepAddress: string
-    prover: Prover
-    provider: ethers.Provider
-    _id?: ZkIdentity
-}, id?: ZkIdentity) {
+constructor(
+  config:
+    | {
+        db?: DB
+        attesterId?: bigint | bigint[]
+        unirepAddress: string
+        prover: Prover
+        provider: ethers.providers.Provider
+        _id?: ZkIdentity
+      }
+    | Synchronizer,
+  id: ZkIdentity
+) {
 ```
 
 ## sync
@@ -43,25 +48,41 @@ The underlying synchronizer object.
 state.sync: Synchronizer
 ```
 
+## start
+
+Convenience accessor for synchronizer [`start`](./synchronizer.md#start).
+
+```ts
+state.start(): Promise<void>
+```
+
 ## waitForSync
 
-Convenience accessor for synchronizer `waitForSync`.
+Convenience accessor for synchronizer [`waitForSync`](./synchronizer.md#waitforsync).
 
 ```ts
 state.waitForSync(blockNumber?: number): Promise<void>
 ```
 
+## stop
+
+Convenience accessor for synchronizer [`stop`](./synchronizer.md#stop).
+
+```ts
+state.stop(): void
+```
+
 ## hasSignedUp
 
 ```ts
-state.hasSignedUp(): Promise<boolean>
+state.hasSignedUp(attesterId?: bigint | string): Promise<boolean>
 ```
 
 ## latestTransitionedEpoch
 
 
 ```ts
-state.latestTransitionedEpoch(): Promise<number>
+state.latestTransitionedEpoch(attesterId?: bigint | string): Promise<number>
 ```
 
 ## latestStateTreeLeafIndex
@@ -69,7 +90,7 @@ state.latestTransitionedEpoch(): Promise<number>
 Get the latest state tree leaf index for either the latest transitioned epoch, or the epoch specified.
 
 ```ts
-state.latestStateTreeLeafIndex(epoch?: number): Promise<number>
+state.latestStateTreeLeafIndex(epoch?: number, attesterId?: bigint | string): Promise<number>
 ```
 
 ## getEpochKeys
@@ -79,7 +100,7 @@ Get epoch keys for the current user, for an epoch. If a `nonce` value is supplie
 If no `epoch` is supplied the current epoch will be used (as determined by [`calcCurrentEpoch`](synchronizer#calcCurrentEpoch)).
 
 ```ts
-state.getEpochKeys(epoch?: number, nonce?: number): bigint | bigint[]
+state.getEpochKeys(epoch?: number, nonce?: number, attesterId?: bigint | string): bigint | bigint[]
 ```
 
 ## getData
@@ -91,7 +112,7 @@ If you want to make a proof of data make sure to use [`getProvableData`](#getpro
 :::
 
 ```ts
-state.getData(toEpoch?: number): Promise<bigint[]>
+state.getData(toEpoch?: number, attesterId?: bigint | string): Promise<bigint[]>
 ```
 
 ## getProvableData
@@ -99,7 +120,7 @@ state.getData(toEpoch?: number): Promise<bigint[]>
 Get the data that can be proven by the user using a state tree leaf. This is the data up to, but not including, the epoch the user has transitioned into.
 
 ```ts
-state.getProvableData(): Promise<bigint[]>
+state.getProvableData(attesterId?: bigint | string): Promise<bigint[]>
 ```
 
 ## getDataByEpochKey
@@ -107,7 +128,15 @@ state.getProvableData(): Promise<bigint[]>
 Get the pending changes to the data owned by an epoch key.
 
 ```ts
-state.getDataByEpochKey(epochKey: bigint, epoch: number): Promise<bigint[]>
+state.getDataByEpochKey(epochKey: bigint, epoch: number, attesterId?: bigint | string): Promise<bigint[]>
+```
+
+## getEpochKeyIndex
+
+Get the index of epoch key among all attestations.
+
+```ts
+state.getEpochKeyIndex(epoch: number, epochKey: bigint | string): Promise<number>
 ```
 
 ## genUserStateTransitionProof
@@ -117,6 +146,7 @@ Generate a user state transition proof. Returns a [`UserStateTransitionProof`](.
 ```ts
 state.genUserStateTransitionProof(options?: {
   toEpoch?: bigint | number
+  attesterId?: bigint | string
 }): Promise<UserStateTransitionProof>
 ```
 
@@ -133,6 +163,7 @@ state.genProveReputationProof(options: {
   proveZeroRep?: boolean
   revealNonce?: boolean
   data?: bigint | string
+  attesterId?: bigint | string
 }): Promise<ReputationProof>
 ```
 
@@ -143,6 +174,7 @@ Generate a proof that can be used to signup. Returns a [`SignupProof`](../circui
 ```ts
 state.genUserSignUpProof(options: {
   epoch?: bigint | number
+  attesterId?: bigint | string
 }): Promise<SignupProof>
 ```
 
@@ -156,6 +188,7 @@ state.genEpochKeyProof(options: {
   nonce?: number,
   epoch?: number,
   data?: bigint,
+  attesterId?: bigint | string
 }): Promise<EpochKeyProof>
 ```
 
@@ -169,5 +202,6 @@ state.genEpochKeyLiteProof(options: {
   nonce?: number,
   epoch?: number,
   data?: bigint,
+  attesterId?: bigint | string
 }): Promise<EpochKeyLiteProof>
 ```

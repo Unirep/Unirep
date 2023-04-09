@@ -1,17 +1,19 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { EPOCH_LENGTH } from '@unirep/contracts'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import { Synchronizer } from '../src/Synchronizer'
+import { genUnirepState, genUserState } from './utils'
+import { Identity } from '@semaphore-protocol/identity'
+import { schema } from '../src/schema'
+import { SQLiteConnector } from 'anondb/node'
 
 const ATTESTER_COUNT = 5
 
 describe('Synchronizer watch multiple attesters', function () {
     this.timeout(0)
 
-    let unirepContract
+    let unirepContract: Unirep
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -39,26 +41,23 @@ describe('Synchronizer watch multiple attesters', function () {
         const accounts = await ethers.getSigners()
         for (let x = 0; x < ATTESTER_COUNT; x++) {
             await unirepContract
-                .connect(accounts[0])
+                .connect(accounts[x])
                 .attest(x + 2, 0, 1, x + 1)
                 .then((t) => t.wait())
         }
-        const sync = new Synchronizer({
-            unirepAddress: unirepContract.address,
-            provider: ethers.provider,
-            prover: defaultProver,
+        const sync = await genUnirepState(
+            ethers.provider,
+            unirepContract.address
+        )
+
+        const seenAttestations = await sync._db.findMany('Attestation', {
+            where: {},
         })
-        const seenAttestations = []
-        sync.on('Attestation', ({ decodedData }) => {
-            seenAttestations.push(decodedData)
-        })
-        sync.start()
-        await sync.waitForSync()
         expect(seenAttestations.length).to.equal(ATTESTER_COUNT)
         for (let x = 0; x < ATTESTER_COUNT; x++) {
             const { attesterId, epochKey } = seenAttestations[x]
             expect(attesterId.toString()).to.equal(
-                BigInt(accounts[0].address).toString()
+                BigInt(accounts[x].address).toString()
             )
             expect(epochKey.toString()).to.equal((x + 2).toString())
         }
@@ -67,13 +66,10 @@ describe('Synchronizer watch multiple attesters', function () {
 
     it('should catch attester sign up event', async () => {
         const accounts = await ethers.getSigners()
-        const sync = new Synchronizer({
-            unirepAddress: unirepContract.address,
-            provider: ethers.provider,
-            prover: defaultProver,
-        })
-        await sync.start()
-        await sync.waitForSync()
+        const sync = await genUnirepState(
+            ethers.provider,
+            unirepContract.address
+        )
         const p = new Promise((r) => sync.on('AttesterSignedUp', r))
         await unirepContract
             .connect(accounts[10])
@@ -83,14 +79,45 @@ describe('Synchronizer watch multiple attesters', function () {
         sync.stop()
     })
 
+    it('should access attesters epochs', async () => {
+        const accounts = await ethers.getSigners()
+        const sync = await genUnirepState(
+            ethers.provider,
+            unirepContract.address
+        )
+        for (let i = 0; i < ATTESTER_COUNT; i++) {
+            expect(sync.calcCurrentEpoch(accounts[i].address)).to.equal(0)
+        }
+        // should not access epoch if attester is not signed up
+        expect(() =>
+            sync.calcCurrentEpoch(accounts[ATTESTER_COUNT].address)
+        ).to.throw('is not synchronized')
+    })
+
+    it('should access attesters epochs after syn starts', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[ATTESTER_COUNT]
+        const sync = await genUnirepState(
+            ethers.provider,
+            unirepContract.address
+        )
+        expect(() => sync.calcCurrentEpoch(attester.address)).to.throw(
+            'is not synchronized'
+        )
+        await unirepContract
+            .connect(attester)
+            .attesterSignUp(EPOCH_LENGTH)
+            .then((t) => t.wait())
+        await sync.waitForSync()
+        expect(sync.calcCurrentEpoch(attester.address)).to.equal(0)
+    })
+
     it('should finish multiple epochs', async () => {
         const accounts = await ethers.getSigners()
-        const synchronizer = new Synchronizer({
-            unirepAddress: unirepContract.address,
-            provider: ethers.provider,
-            prover: defaultProver,
-        })
-        await synchronizer.start()
+        const synchronizer = await genUnirepState(
+            ethers.provider,
+            unirepContract.address
+        )
         for (let x = 0; x < 4; x++) {
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             await ethers.provider.send('evm_mine', [])
@@ -100,11 +127,254 @@ describe('Synchronizer watch multiple attesters', function () {
                     .connect(attester)
                     .updateEpochIfNeeded(attester.address)
                     .then((t) => t.wait())
+                await synchronizer.waitForSync()
+                const epoch = await synchronizer.loadCurrentEpoch(
+                    attester.address
+                )
+                expect(epoch).to.equal(x + 1)
             }
         }
-        await synchronizer.waitForSync()
         synchronizer.stop()
     })
 
     // TODO: test for other events
+
+    it('should sync two and more attesters', async () => {
+        const accounts = await ethers.getSigners()
+        const count = 2
+        const attesters = accounts.slice(0, count).map((a) => a.address)
+        const synchronizer = await genUnirepState(
+            ethers.provider,
+            unirepContract.address,
+            attesters
+        )
+
+        for (let i = 0; i < count; i++) {
+            const epoch = await synchronizer.readCurrentEpoch(attesters[i])
+            expect(epoch).not.equal(null)
+        }
+        synchronizer.stop()
+    })
+
+    it('should sync before event happens', async () => {
+        const accounts = await ethers.getSigners()
+        const count = 2
+        const attesters = accounts.slice(0, count).map((a) => a.address)
+
+        const id = new Identity()
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesters
+        )
+
+        for (let i = 0; i < count; i++) {
+            const attesterId = BigInt(accounts[i].address)
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                {
+                    attesterId,
+                }
+            )
+            await unirepContract
+                .connect(accounts[i])
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+
+            await userState.waitForSync()
+            const userCount = await userState.sync._db.count('UserSignUp', {
+                attesterId: BigInt(accounts[i].address).toString(),
+                commitment: id.commitment.toString(),
+            })
+            expect(userCount).to.equal(1)
+        }
+        userState.sync.stop()
+    })
+
+    it('should sync after event happens', async () => {
+        const accounts = await ethers.getSigners()
+        const count = 2
+        const attesters = accounts.slice(0, count).map((a) => a.address)
+
+        const id = new Identity()
+        {
+            const userState = await genUserState(
+                ethers.provider,
+                unirepContract.address,
+                id,
+                attesters
+            )
+            for (let i = 0; i < count; i++) {
+                const attesterId = BigInt(accounts[i].address)
+                const { publicSignals, proof } =
+                    await userState.genUserSignUpProof({
+                        attesterId,
+                    })
+                await unirepContract
+                    .connect(accounts[i])
+                    .userSignUp(publicSignals, proof)
+                    .then((t) => t.wait())
+            }
+            userState.sync.stop()
+        }
+
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesters
+        )
+        const userCount = await userState.sync._db.count('UserSignUp', {
+            attesterId: BigInt(accounts[0].address).toString(),
+            commitment: id.commitment.toString(),
+        })
+        expect(userCount).to.equal(1)
+        userState.sync.stop()
+    })
+
+    it('should stop and sync with different attesters', async () => {
+        const accounts = await ethers.getSigners()
+
+        const attesters = Array(ATTESTER_COUNT)
+            .fill(0)
+            .map((_, i) => accounts[i])
+
+        const ids = [] as any[]
+        for (const attester of attesters) {
+            const id = new Identity()
+            ids.push(id)
+            const userState = await genUserState(
+                ethers.provider,
+                unirepContract.address,
+                id,
+                attester.address
+            )
+            const { publicSignals, proof } =
+                await userState.genUserSignUpProof()
+            await unirepContract
+                .connect(attester)
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+            userState.stop()
+        }
+
+        const db = await SQLiteConnector.create(schema, ':memory:')
+        {
+            const state = await genUnirepState(
+                ethers.provider,
+                unirepContract.address,
+                attesters[0].address,
+                db
+            )
+            await state.start()
+            await state.waitForSync()
+            state.stop()
+        }
+        {
+            const state = await genUnirepState(
+                ethers.provider,
+                unirepContract.address,
+                attesters.map((a) => a.address),
+                db
+            )
+            await state.start()
+            await state.waitForSync()
+            state.stop()
+        }
+        for (const id of ids) {
+            const count = await db.count('UserSignUp', {
+                commitment: id.commitment.toString(),
+            })
+            expect(count).to.equal(1)
+        }
+    })
+
+    it('should generate proofs for different attester', async () => {
+        const accounts = await ethers.getSigners()
+        const count = 2
+        const attesters = accounts.slice(0, count).map((a) => a.address)
+
+        const id = new Identity()
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesters
+        )
+
+        for (let i = 0; i < count; i++) {
+            const attesterId = BigInt(accounts[i].address)
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                {
+                    attesterId,
+                }
+            )
+            await unirepContract
+                .connect(accounts[i])
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+
+            await userState.waitForSync()
+            const userCount = await userState.sync._db.count('UserSignUp', {
+                attesterId: BigInt(accounts[i].address).toString(),
+                commitment: id.commitment.toString(),
+            })
+            expect(userCount).to.equal(1)
+        }
+
+        const index = 0
+        const change = 10
+        // attest
+        for (let i = 0; i < count; i++) {
+            const attesterId = BigInt(accounts[i].address).toString()
+            const { publicSignals, proof, epochKey, epoch } =
+                await userState.genEpochKeyProof({ attesterId })
+            await unirepContract
+                .verifyEpochKeyProof(publicSignals, proof)
+                .then((t) => t.wait())
+            await unirepContract
+                .connect(accounts[i])
+                .attest(epochKey, epoch, index, change)
+                .then((t) => t.wait())
+            await userState.waitForSync()
+            const userCount = await userState.sync._db.count('Attestation', {
+                attesterId,
+                epochKey: epochKey.toString(),
+            })
+            expect(userCount).to.equal(1)
+        }
+
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+
+        // ust
+        await userState.waitForSync()
+        for (let i = 0; i < 2; i++) {
+            const toEpoch = 1
+            const attesterId = BigInt(accounts[i].address).toString()
+            const { publicSignals, proof, epochKeys } =
+                await userState.genUserStateTransitionProof({
+                    attesterId,
+                    toEpoch,
+                })
+            await unirepContract
+                .userStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+            await userState.waitForSync()
+            const userCount = await userState.sync._db.count('Nullifier', {
+                attesterId,
+                nullifier: epochKeys[0].toString(),
+            })
+            expect(userCount).to.equal(1)
+        }
+
+        // get data
+        await userState.waitForSync()
+        for (let i = 0; i < count; i++) {
+            const attesterId = BigInt(accounts[i].address)
+            const data = await userState.getData(undefined, attesterId)
+            expect(data[index].toString()).to.equal(change.toString())
+        }
+        userState.sync.stop()
+    })
 })
