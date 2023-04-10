@@ -245,15 +245,15 @@ export default class UserState {
                 )
             )
         }
-        const foundNullifiers = await this.sync._db.findMany('Nullifier', {
+        const sortedNullifiers = await this.sync._db.findMany('Nullifier', {
             where: {
                 attesterId,
                 nullifier: allNullifiers,
             },
+            orderBy: {
+                epoch: 'asc',
+            },
         })
-        const sortedNullifiers = foundNullifiers.sort((a, b) =>
-            a.epoch > b.epoch ? 1 : -1
-        )
         for (let x = signup?.epoch ?? 0; x <= toEpoch; x++) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
