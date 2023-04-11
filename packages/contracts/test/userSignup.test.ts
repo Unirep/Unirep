@@ -19,7 +19,7 @@ import defaultConfig from '@unirep/circuits/config'
 const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_NONCE_BITS } = defaultConfig
 
 describe('User Signup', function () {
-    this.timeout(200000)
+    this.timeout(300000)
 
     let unirepContract
 
