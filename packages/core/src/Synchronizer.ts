@@ -22,7 +22,7 @@ type AttesterSetting = {
     epochLength: number
 }
 
-export function toDecString(content: bigint | string) {
+export function toDecString(content: bigint | string | number) {
     return BigInt(content).toString()
 }
 
@@ -562,7 +562,7 @@ export class Synchronizer extends EventEmitter {
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
-        const epoch = toDecString(_epoch)
+        const epoch = toDecString(_epoch.toString())
         const tree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
@@ -607,7 +607,7 @@ export class Synchronizer extends EventEmitter {
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
-        const epoch = toDecString(_epoch)
+        const epoch = toDecString(_epoch.toString())
         const tree = new IncrementalMerkleTree(
             this.settings.epochTreeDepth,
             this.defaultEpochTreeLeaf
