@@ -146,7 +146,7 @@ describe('Synchronizer process events', function () {
             },
         })
         expect(docs.length).to.equal(1)
-        expect(docs[0].epoch).to.equal(epoch.toString())
+        expect(docs[0].epoch).to.equal(epoch)
         expect(docs[0].attesterId).to.equal(attesterId)
         const finalUserCount = await (synchronizer as any)._db.count(
             'UserSignUp',
@@ -179,7 +179,7 @@ describe('Synchronizer process events', function () {
             }
         )
         expect(storedLeaves.length).to.equal(1)
-        expect(storedLeaves[0].epoch).to.equal(Number(epoch))
+        expect(storedLeaves[0].epoch).to.equal(epoch)
         expect(storedLeaves[0].index).to.equal(leafIndex - 1)
         // now look for a new GSTRoot
         expect(
@@ -267,7 +267,7 @@ describe('Synchronizer process events', function () {
             },
         })
         expect(docs.length).to.equal(1)
-        expect(docs[0].epoch).to.equal(epoch.toString())
+        expect(docs[0].epoch).to.equal(epoch)
         expect(docs[0].attesterId).to.equal(attesterId.toString())
         const finalAttestCount = await (synchronizer as any)._db.count(
             'Attestation',
