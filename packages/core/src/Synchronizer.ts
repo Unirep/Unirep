@@ -94,6 +94,7 @@ export class Synchronizer extends EventEmitter {
             epochLength: 0,
             fieldCount: 0,
             sumFieldCount: 0,
+            replNonceBits: 0,
         }
         const allEventNames = {} as any
 
@@ -224,6 +225,7 @@ export class Synchronizer extends EventEmitter {
         this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
         this.settings.fieldCount = config.fieldCount
         this.settings.sumFieldCount = config.sumFieldCount
+        this.settings.replNonceBits = config.replNonceBits
 
         await this._findStartBlock()
         this.setupComplete = true
