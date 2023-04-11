@@ -8,7 +8,8 @@ import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
-const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT } = defaultConfig
+const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
+    defaultConfig
 
 describe('Attestations', function () {
     this.timeout(120000)
@@ -159,7 +160,8 @@ describe('Attestations', function () {
                 epochKey,
                 attester.address,
                 fieldIndex,
-                BigInt(val) + (BigInt(timestamp) << BigInt(190))
+                BigInt(val) +
+                    (BigInt(timestamp) << BigInt(254 - REPL_NONCE_BITS))
             )
     })
 
@@ -177,7 +179,7 @@ describe('Attestations', function () {
                     epochKey,
                     epoch,
                     SUM_FIELD_COUNT,
-                    BigInt(2) ** BigInt(190)
+                    BigInt(2) ** BigInt(254 - REPL_NONCE_BITS)
                 )
         ).to.be.revertedWithCustomError(unirepContract, 'OutOfRange')
     })

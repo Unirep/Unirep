@@ -502,7 +502,7 @@ export class Synchronizer extends EventEmitter {
         })
         return (
             currentEpoch || {
-                number: '0',
+                number: 0,
                 sealed: false,
             }
         )
@@ -532,7 +532,7 @@ export class Synchronizer extends EventEmitter {
 
     async loadCurrentEpoch(attesterId: bigint | string = this.attesterId) {
         const epoch = await this.unirepContract.attesterCurrentEpoch(attesterId)
-        return epoch.toNumber()
+        return Number(epoch)
     }
 
     async epochTreeRoot(
@@ -562,14 +562,14 @@ export class Synchronizer extends EventEmitter {
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
-        const epoch = toDecString(_epoch.toString())
+        const epoch = Number(_epoch.toString())
         const tree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
         )
         const leaves = await this._db.findMany('StateTreeLeaf', {
             where: {
-                epoch: toDecString(epoch),
+                epoch,
                 attesterId: toDecString(attesterId),
             },
             orderBy: {
@@ -607,7 +607,7 @@ export class Synchronizer extends EventEmitter {
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
-        const epoch = toDecString(_epoch.toString())
+        const epoch = Number(_epoch.toString())
         const tree = new IncrementalMerkleTree(
             this.settings.epochTreeDepth,
             this.defaultEpochTreeLeaf
@@ -671,7 +671,7 @@ export class Synchronizer extends EventEmitter {
     ) {
         this.checkAttesterId(attesterId)
         return this._db.count('StateTreeLeaf', {
-            epoch: toDecString(epoch),
+            epoch,
             attesterId: toDecString(attesterId),
         })
     }
@@ -679,7 +679,7 @@ export class Synchronizer extends EventEmitter {
     // unirep event handlers
 
     async handleStateTreeLeaf({ event, db, decodedData }: EventHandlerArgs) {
-        const epoch = toDecString(decodedData.epoch)
+        const epoch = Number(decodedData.epoch)
         const index = Number(decodedData.index)
         const attesterId = toDecString(decodedData.attesterId)
         const hash = toDecString(decodedData.leaf)
@@ -701,7 +701,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleEpochTreeLeaf({ event, db, decodedData }: EventHandlerArgs) {
-        const epoch = toDecString(decodedData.epoch)
+        const epoch = Number(decodedData.epoch)
         const index = toDecString(decodedData.index)
         const attesterId = toDecString(decodedData.attesterId)
         const hash = toDecString(decodedData.leaf)
@@ -729,7 +729,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleUserSignedUp({ decodedData, event, db }: EventHandlerArgs) {
-        const epoch = toDecString(decodedData.epoch)
+        const epoch = Number(decodedData.epoch)
         const commitment = toDecString(decodedData.identityCommitment)
         const attesterId = toDecString(decodedData.attesterId)
         const leafIndex = toDecString(decodedData.leafIndex)
@@ -752,7 +752,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleAttestation({ decodedData, event, db }: EventHandlerArgs) {
-        const epoch = toDecString(decodedData.epoch)
+        const epoch = Number(decodedData.epoch)
         const epochKey = toDecString(decodedData.epochKey)
         const attesterId = toDecString(decodedData.attesterId)
         const fieldIndex = Number(decodedData.fieldIndex)
@@ -810,7 +810,7 @@ export class Synchronizer extends EventEmitter {
         db,
     }: EventHandlerArgs) {
         const transactionHash = event.transactionHash
-        const epoch = toDecString(decodedData.epoch)
+        const epoch = Number(decodedData.epoch)
         const attesterId = toDecString(decodedData.attesterId)
         const nullifier = toDecString(decodedData.nullifier)
         const { blockNumber } = event
@@ -832,7 +832,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleEpochEnded({ decodedData, event, db }: EventHandlerArgs) {
-        const number = toDecString(decodedData.epoch)
+        const number = Number(decodedData.epoch)
         const attesterId = toDecString(decodedData.attesterId)
         console.log(`Epoch ${number} ended`)
         if (!this.attesterExist(attesterId)) return
@@ -862,14 +862,14 @@ export class Synchronizer extends EventEmitter {
         }
         const newEpochExists = await this._db.findOne('Epoch', {
             where: {
-                number: (BigInt(number) + BigInt(1)).toString(),
+                number: number + 1,
                 attesterId,
             },
         })
         if (newEpochExists) return true
         // create the next stub entry
         db.create('Epoch', {
-            number: (BigInt(number) + BigInt(1)).toString(),
+            number: number + 1,
             attesterId,
             sealed: false,
         })

@@ -73,7 +73,7 @@ describe('Attester signs up and gives attestation', function () {
 
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const data = await userState.getDataByEpochKey(key, BigInt(epoch))
+            const data = await userState.getDataByEpochKey(key, epoch)
             if (key.toString() === epk.toString()) {
                 expect(data[fieldIndex].toString()).to.equal(val.toString())
                 data.forEach((d, i) => {

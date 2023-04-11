@@ -56,10 +56,10 @@ describe('User state transition', function () {
                     if (i < config.sumFieldCount) {
                         return v
                     }
-                    return v >> BigInt(64)
+                    return v >> BigInt(config.replNonceBits)
                 })
 
-        const users = Array(1)
+        const users = Array(3)
             .fill(null)
             .map(() => new Identity())
         const fromEpoch = await unirepContract.attesterCurrentEpoch(
@@ -176,7 +176,7 @@ describe('User state transition', function () {
         )
         {
             const { publicSignals, proof } = await userState.genUserSignUpProof(
-                { epoch: epoch.toNumber() }
+                { epoch }
             )
 
             await unirepContract
@@ -190,7 +190,7 @@ describe('User state transition', function () {
         await ethers.provider.send('evm_mine', [])
 
         // receive reputation
-        const newEpoch = epoch.toNumber() + 1
+        const newEpoch = epoch + 1
         const epochKey = genEpochKey(
             user.secret,
             BigInt(attester.address),

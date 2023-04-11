@@ -44,6 +44,7 @@ export const deployUnirep = async (
         NUM_EPOCH_KEY_NONCE_PER_EPOCH,
         FIELD_COUNT,
         SUM_FIELD_COUNT,
+        REPL_NONCE_BITS,
     } = { ...CircuitConfig.default, ..._settings }
 
     console.log(
@@ -57,6 +58,7 @@ export const deployUnirep = async (
     )
     console.log(`Total fields per user: ${FIELD_COUNT}`)
     console.log(`Sum fields per user: ${SUM_FIELD_COUNT}`)
+    console.log(`Replacement field nonce bits: ${REPL_NONCE_BITS}`)
     console.log(
         '-----------------------------------------------------------------'
     )
@@ -173,6 +175,7 @@ export const deployUnirep = async (
                 numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
                 fieldCount: FIELD_COUNT,
                 sumFieldCount: SUM_FIELD_COUNT,
+                replNonceBits: REPL_NONCE_BITS,
             },
             verifiers[Circuit.signup],
             verifiers[Circuit.userStateTransition],

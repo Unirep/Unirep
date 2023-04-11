@@ -15,7 +15,8 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
-const { STATE_TREE_DEPTH, FIELD_COUNT } = defaultConfig
+
+const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_NONCE_BITS } = defaultConfig
 
 describe('User Signup', function () {
     this.timeout(200000)
@@ -107,7 +108,7 @@ describe('User Signup', function () {
         )
         const semaphoreTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const roots = {}
-        for (let epoch = startEpoch.toNumber(); epoch < 3; epoch++) {
+        for (let epoch = startEpoch; epoch < 3; epoch++) {
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             roots[epoch] = []
             for (let i = 0; i < 3; i++) {
@@ -354,7 +355,7 @@ describe('User Signup', function () {
         const leaf = genStateTreeLeaf(
             id.secret,
             attester.address,
-            contractEpoch.toNumber(),
+            contractEpoch,
             data
         )
         const tx = await unirepContract
@@ -390,7 +391,7 @@ describe('User Signup', function () {
             .fill(0)
             .map((_, i) => {
                 if (i >= config.sumFieldCount) {
-                    return BigInt(2) ** BigInt(190)
+                    return BigInt(2) ** BigInt(254 - REPL_NONCE_BITS)
                 }
                 return 0
             })

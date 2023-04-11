@@ -102,8 +102,8 @@ interface IUnirep {
     struct EpochKeyData {
         uint256 leaf;
         uint256[30] data;
-        uint64 leafIndex;
-        uint64 epoch;
+        uint48 leafIndex;
+        uint48 epoch;
     }
 
     struct AttesterData {
@@ -115,9 +115,9 @@ interface IUnirep {
         // epoch keyed to root
         mapping(uint256 => uint256) epochTreeRoots;
         ReusableTreeData epochTree;
-        uint256 startTimestamp;
-        uint256 currentEpoch;
-        uint256 epochLength;
+        uint48 startTimestamp;
+        uint48 currentEpoch;
+        uint48 epochLength;
         mapping(uint256 => bool) identityCommitments;
         IncrementalTreeData semaphoreGroup;
         // epoch key management
@@ -132,5 +132,6 @@ interface IUnirep {
         uint8 fieldCount;
         uint8 sumFieldCount;
         uint8 numEpochKeyNoncePerEpoch;
+        uint8 replNonceBits;
     }
 }

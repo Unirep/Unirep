@@ -146,7 +146,7 @@ describe('Synchronizer process events', function () {
             },
         })
         expect(docs.length).to.equal(1)
-        expect(docs[0].epoch).to.equal(Number(epoch))
+        expect(docs[0].epoch).to.equal(epoch.toString())
         expect(docs[0].attesterId).to.equal(attesterId)
         const finalUserCount = await (synchronizer as any)._db.count(
             'UserSignUp',
@@ -161,7 +161,7 @@ describe('Synchronizer process events', function () {
         const leaf = genStateTreeLeaf(
             id.secret,
             BigInt(attester.address),
-            contractEpoch.toNumber(),
+            contractEpoch,
             Array(synchronizer.settings.fieldCount).fill(0)
         )
         const storedLeaves = await (synchronizer as any)._db.findMany(
@@ -267,7 +267,7 @@ describe('Synchronizer process events', function () {
             },
         })
         expect(docs.length).to.equal(1)
-        expect(docs[0].epoch).to.equal(Number(epoch))
+        expect(docs[0].epoch).to.equal(epoch.toString())
         expect(docs[0].attesterId).to.equal(attesterId.toString())
         const finalAttestCount = await (synchronizer as any)._db.count(
             'Attestation',

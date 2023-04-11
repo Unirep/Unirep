@@ -14,7 +14,8 @@ template UserStateTransition(
   HISTORY_TREE_DEPTH,
   EPOCH_KEY_NONCE_PER_EPOCH,
   FIELD_COUNT,
-  SUM_FIELD_COUNT
+  SUM_FIELD_COUNT,
+  REPL_NONCE_BITS
 ) {
     signal input from_epoch;
     signal input to_epoch;
@@ -172,7 +173,7 @@ template UserStateTransition(
       // then combine the replacement data
       for (var j = 0; j < REPL_FIELD_COUNT; j++) {
         var field_i = SUM_FIELD_COUNT + j;
-        index_check[i][j] = UpperLessThan(64);
+        index_check[i][j] = UpperLessThan(REPL_NONCE_BITS);
         index_check[i][j].in[0] <== new_data[i][field_i];
         if (i == 0) {
           index_check[i][j].in[1] <== data[field_i];

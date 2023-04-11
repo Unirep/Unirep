@@ -6,7 +6,7 @@ export const SNARK_SCALAR_FIELD =
     '21888242871839275222246405745257275088548364400416034343698204186575808495617'
 export const F = BigInt(SNARK_SCALAR_FIELD)
 
-export const MAX_EPOCH = (BigInt(2) ** BigInt(64) - BigInt(1)).toString()
+export const MAX_EPOCH = 2 ** 48 - 1
 
 export const genRandomSalt = () => randomf(F)
 
