@@ -128,7 +128,7 @@ export default class UserState {
                 },
             })
             if (!signup) return 0
-            return signup.epoch
+            return Number(signup.epoch)
         }
         return latestTransitionedEpoch
     }
@@ -147,8 +147,8 @@ export default class UserState {
         const currentEpoch = Number(
             _epoch ?? this.sync.calcCurrentEpoch(attesterId)
         )
-        const latestTransitionedEpoch = Number(
-            await this.latestTransitionedEpoch(attesterId)
+        const latestTransitionedEpoch = await this.latestTransitionedEpoch(
+            attesterId
         )
         if (latestTransitionedEpoch !== currentEpoch) return -1
         if (latestTransitionedEpoch === 0) {
