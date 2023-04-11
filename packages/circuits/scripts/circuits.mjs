@@ -20,4 +20,5 @@ export const circuitContents = {
     // test circuits
     incrementalMerkleTree: `pragma circom 2.0.0; include "../circuits/incrementalMerkleTree.circom"; \n\ncomponent main = MerkleTreeInclusionProof(${STATE_TREE_DEPTH});`,
     bigComparators: `pragma circom 2.0.0; include "../circuits/bigComparators.circom"; \n\ncomponent main = BigLessThan();`,
+    upperComparators: `pragma circom 2.0.0; include "../circuits/bigComparators.circom"; \n\ncomponent main = UpperLessThan(64);`,
 }
