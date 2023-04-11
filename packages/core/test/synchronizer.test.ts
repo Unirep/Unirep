@@ -246,7 +246,7 @@ describe('Synchronizer process events', function () {
 
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const data = await userState.getDataByEpochKey(key, BigInt(epoch))
+            const data = await userState.getDataByEpochKey(key, epoch)
             if (key.toString() === epk.toString()) {
                 expect(data[fieldIndex]).to.equal(val)
                 data.forEach((d, i) => {
@@ -325,7 +325,7 @@ describe('Synchronizer process events', function () {
 
         // now check the reputation
         const checkPromises = epochKeys.map(async (key) => {
-            const data = await userState.getDataByEpochKey(key, BigInt(epoch))
+            const data = await userState.getDataByEpochKey(key, epoch)
             if (key.toString() === epk.toString()) {
                 expect(data[fieldIndex]).to.equal(val)
                 data.forEach((d, i) => {
