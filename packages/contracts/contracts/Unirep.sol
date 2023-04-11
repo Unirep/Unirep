@@ -98,20 +98,14 @@ contract Unirep is IUnirep, VerifySignature {
         if (initialData.length > fieldCount) revert OutOfRange();
         for (uint8 x = 0; x < initialData.length; x++) {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
-            if (
-                x >= sumFieldCount &&
-                (x - sumFieldCount) % 2 == (sumFieldCount + 1) % 2 &&
-                initialData[x] != 0
-            ) {
-                revert InvalidTimestamp();
-            }
+            if (x >= sumFieldCount && initialData[x] >= 2 ** 190)
+                revert OutOfRange();
             emit Attestation(
-                epoch,
+                type(uint64).max,
                 identityCommitment,
                 uint160(msg.sender),
                 x,
-                initialData[x],
-                block.timestamp
+                initialData[x]
             );
         }
     }
@@ -276,14 +270,19 @@ contract Unirep is IUnirep, VerifySignature {
             uint256 newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
             epkData.data[fieldIndex] = newVal;
         } else {
-            if (fieldIndex % 2 != sumFieldCount % 2) {
-                // cannot attest to a timestamp
-                revert InvalidField();
+            if (change >= 2 ** 190) {
+                revert OutOfRange();
             }
-            if (change >= SNARK_SCALAR_FIELD) revert OutOfRange();
+            change += block.timestamp << 190;
             epkData.data[fieldIndex] = change;
-            epkData.data[fieldIndex + 1] = block.timestamp;
         }
+        emit Attestation(
+            epoch,
+            epochKey,
+            uint160(msg.sender),
+            fieldIndex,
+            change
+        );
 
         // now construct the leaf
         // TODO: only rebuild the hashchain as needed
@@ -306,14 +305,6 @@ contract Unirep is IUnirep, VerifySignature {
         }
 
         emit EpochTreeLeaf(epoch, uint160(msg.sender), epkData.leafIndex, leaf);
-        emit Attestation(
-            epoch,
-            epochKey,
-            uint160(msg.sender),
-            fieldIndex,
-            change,
-            block.timestamp
-        );
     }
 
     /**

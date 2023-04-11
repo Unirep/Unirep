@@ -35,13 +35,12 @@ const _schema = [
             { keys: ['index', 'epochKey', 'epoch'] },
         ],
         rows: [
-            ['epoch', 'Int'],
+            ['epoch', 'String'],
             ['epochKey', 'String'],
             ['index', 'String', { unique: true }], // event index, tx index, block index
             ['attesterId', 'String'],
             ['fieldIndex', 'Int'],
             ['change', 'String'],
-            ['timestamp', 'Int'],
             ['blockNumber', 'Int'],
         ],
     },
@@ -49,7 +48,7 @@ const _schema = [
         name: 'StateTreeLeaf',
         indexes: [{ keys: ['index'] }],
         rows: [
-            ['epoch', 'Int'],
+            ['epoch', 'String'],
             ['hash', 'String'],
             ['index', 'Int'],
             ['attesterId', 'String'],
@@ -61,7 +60,7 @@ const _schema = [
         primaryKey: 'id',
         rows: [
             ['id', 'String'],
-            ['epoch', 'Int'],
+            ['epoch', 'String'],
             ['hash', 'String'],
             ['index', 'String'],
             ['attesterId', 'String'],
@@ -80,7 +79,7 @@ const _schema = [
         name: 'Epoch',
         indexes: [{ keys: ['attesterId', 'number'] }],
         rows: [
-            ['number', 'Int'],
+            ['number', 'String'],
             ['attesterId', 'String'],
             ['sealed', 'Bool'],
         ],
@@ -88,7 +87,7 @@ const _schema = [
     {
         name: 'Nullifier',
         rows: [
-            ['epoch', 'Int'],
+            ['epoch', 'String'],
             ['attesterId', 'String'],
             ['nullifier', 'String', { unique: true }],
             ['transactionHash', 'String', { optional: true }],
@@ -100,7 +99,7 @@ const _schema = [
         indexes: [{ keys: ['commitment', 'attesterId'] }],
         rows: [
             ['commitment', 'String', { index: true }],
-            ['epoch', 'Int'],
+            ['epoch', 'String'],
             ['attesterId', 'String'],
             ['blockNumber', 'Int'],
         ],

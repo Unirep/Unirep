@@ -31,8 +31,7 @@ interface IUnirep {
         uint256 indexed epochKey,
         uint160 indexed attesterId,
         uint256 fieldIndex,
-        uint256 change,
-        uint256 timestamp
+        uint256 change
     );
 
     event StateTreeLeaf(

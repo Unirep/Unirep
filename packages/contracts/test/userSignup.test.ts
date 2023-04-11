@@ -7,6 +7,7 @@ import {
     stringifyBigInts,
     genStateTreeLeaf,
     F,
+    MAX_EPOCH,
 } from '@unirep/utils'
 import { Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -347,13 +348,6 @@ describe('User Signup', function () {
         const data = Array(config.fieldCount)
             .fill(0)
             .map((_, i) => {
-                if (
-                    i >= config.sumFieldCount &&
-                    (i - config.sumFieldCount) % 2 ===
-                        (config.sumFieldCount + 1) % 2
-                ) {
-                    return 0
-                }
                 return i + 100
             })
 
@@ -378,18 +372,11 @@ describe('User Signup', function () {
         for (const [i, d] of Object.entries(data)) {
             await expect(tx)
                 .to.emit(unirepContract, 'Attestation')
-                .withArgs(
-                    contractEpoch,
-                    id.commitment,
-                    attester.address,
-                    i,
-                    d,
-                    timestamp
-                )
+                .withArgs(MAX_EPOCH, id.commitment, attester.address, i, d)
         }
     })
 
-    it('should fail to sign up with non-zero timestamp data', async () => {
+    it('should fail to sign up with out of range replacement data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const config = await unirepContract.config()
@@ -402,14 +389,10 @@ describe('User Signup', function () {
         const data = Array(config.fieldCount)
             .fill(0)
             .map((_, i) => {
-                if (
-                    i >= config.sumFieldCount &&
-                    (i - config.sumFieldCount) % 2 ===
-                        (config.sumFieldCount + 1) % 2
-                ) {
-                    return 1
+                if (i >= config.sumFieldCount) {
+                    return BigInt(2) ** BigInt(190)
                 }
-                return i + 100
+                return 0
             })
 
         const tx = unirepContract
@@ -417,7 +400,7 @@ describe('User Signup', function () {
             .manualUserSignUp(contractEpoch, id.commitment, 0, data)
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
-            'InvalidTimestamp'
+            'OutOfRange'
         )
     })
 

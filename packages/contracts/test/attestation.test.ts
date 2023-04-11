@@ -50,21 +50,6 @@ describe('Attestations', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidField')
     })
 
-    it('should fail to attest to timestamp field', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        await expect(
-            unirepContract
-                .connect(attester)
-                .attest(190124, epoch, SUM_FIELD_COUNT + 1, 1)
-                .then((t) => t.wait())
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidField')
-    })
-
     it('should overflow in field', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
@@ -174,8 +159,7 @@ describe('Attestations', function () {
                 epochKey,
                 attester.address,
                 fieldIndex,
-                val,
-                timestamp
+                BigInt(val) + (BigInt(timestamp) << BigInt(190))
             )
     })
 
@@ -189,7 +173,12 @@ describe('Attestations', function () {
         await expect(
             unirepContract
                 .connect(attester)
-                .attest(epochKey, epoch, SUM_FIELD_COUNT, SNARK_SCALAR_FIELD)
+                .attest(
+                    epochKey,
+                    epoch,
+                    SUM_FIELD_COUNT,
+                    BigInt(2) ** BigInt(190)
+                )
         ).to.be.revertedWithCustomError(unirepContract, 'OutOfRange')
     })
 
@@ -208,19 +197,9 @@ describe('Attestations', function () {
             .connect(attester)
             .attest(epochKey, epoch, fieldIndex, val)
         await tx.wait()
-        const { timestamp } = await tx
-            .wait()
-            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
         await expect(tx)
             .to.emit(unirepContract, 'Attestation')
-            .withArgs(
-                epoch,
-                epochKey,
-                attester.address,
-                fieldIndex,
-                val,
-                timestamp
-            )
+            .withArgs(epoch, epochKey, attester.address, fieldIndex, val)
     })
 })

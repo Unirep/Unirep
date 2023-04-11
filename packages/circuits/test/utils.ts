@@ -11,20 +11,10 @@ const {
     FIELD_COUNT,
 } = CircuitConfig.default
 
-export const randomData = () => [
-    ...Array(SUM_FIELD_COUNT)
+export const randomData = () =>
+    Array(FIELD_COUNT)
         .fill(0)
-        .map(() => utils.hash1([Math.floor(Math.random() * 199191919)])),
-    ...Array(FIELD_COUNT - SUM_FIELD_COUNT)
-        .fill(0)
-        .map((_, i) => {
-            if (i % 2 === SUM_FIELD_COUNT % 2) {
-                return utils.hash1([Math.floor(Math.random() * 128289928892)])
-            } else {
-                return BigInt(Math.floor(Math.random() * 2 ** 10))
-            }
-        }),
-]
+        .map(() => utils.hash1([Math.floor(Math.random() * 199191919)]))
 
 export const combineData = (data0, data1) => {
     const out = [] as bigint[]
@@ -33,14 +23,8 @@ export const combineData = (data0, data1) => {
             (BigInt(data0[x]) + BigInt(data1[x])) % BigInt(SNARK_SCALAR_FIELD)
         )
     }
-    for (let x = SUM_FIELD_COUNT; x < FIELD_COUNT; x += 2) {
-        if (BigInt(data0[x + 1]) > BigInt(data1[x + 1])) {
-            out.push(data0[x])
-            out.push(data0[x + 1])
-        } else {
-            out.push(data1[x])
-            out.push(data1[x + 1])
-        }
+    for (let x = SUM_FIELD_COUNT; x < FIELD_COUNT; x++) {
+        out.push(BigInt(data0[x]) > BigInt(data1[x]) ? data0[x] : data1[x])
     }
     return out
 }

@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
 import { Prover } from '@unirep/circuits'
-import { IncrementalMerkleTree } from '@unirep/utils'
+import { IncrementalMerkleTree, MAX_EPOCH } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
 import { nanoid } from 'nanoid'
@@ -502,7 +502,7 @@ export class Synchronizer extends EventEmitter {
         })
         return (
             currentEpoch || {
-                number: 0,
+                number: '0',
                 sealed: false,
             }
         )
@@ -562,15 +562,18 @@ export class Synchronizer extends EventEmitter {
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
-        const epoch = Number(_epoch)
+        const epoch = toDecString(_epoch)
         const tree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
         )
         const leaves = await this._db.findMany('StateTreeLeaf', {
             where: {
-                epoch: Number(epoch),
+                epoch: toDecString(epoch),
                 attesterId: toDecString(attesterId),
+            },
+            orderBy: {
+                index: 'asc',
             },
         })
         for (const leaf of leaves) {
@@ -604,7 +607,7 @@ export class Synchronizer extends EventEmitter {
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
-        const epoch = Number(_epoch)
+        const epoch = toDecString(_epoch)
         const tree = new IncrementalMerkleTree(
             this.settings.epochTreeDepth,
             this.defaultEpochTreeLeaf
@@ -668,7 +671,7 @@ export class Synchronizer extends EventEmitter {
     ) {
         this.checkAttesterId(attesterId)
         return this._db.count('StateTreeLeaf', {
-            epoch: epoch,
+            epoch: toDecString(epoch),
             attesterId: toDecString(attesterId),
         })
     }
@@ -676,7 +679,7 @@ export class Synchronizer extends EventEmitter {
     // unirep event handlers
 
     async handleStateTreeLeaf({ event, db, decodedData }: EventHandlerArgs) {
-        const epoch = Number(decodedData.epoch)
+        const epoch = toDecString(decodedData.epoch)
         const index = Number(decodedData.index)
         const attesterId = toDecString(decodedData.attesterId)
         const hash = toDecString(decodedData.leaf)
@@ -698,7 +701,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleEpochTreeLeaf({ event, db, decodedData }: EventHandlerArgs) {
-        const epoch = Number(decodedData.epoch)
+        const epoch = toDecString(decodedData.epoch)
         const index = toDecString(decodedData.index)
         const attesterId = toDecString(decodedData.attesterId)
         const hash = toDecString(decodedData.leaf)
@@ -726,7 +729,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleUserSignedUp({ decodedData, event, db }: EventHandlerArgs) {
-        const epoch = Number(decodedData.epoch)
+        const epoch = toDecString(decodedData.epoch)
         const commitment = toDecString(decodedData.identityCommitment)
         const attesterId = toDecString(decodedData.attesterId)
         const leafIndex = toDecString(decodedData.leafIndex)
@@ -749,12 +752,11 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleAttestation({ decodedData, event, db }: EventHandlerArgs) {
-        const epoch = Number(decodedData.epoch)
+        const epoch = toDecString(decodedData.epoch)
         const epochKey = toDecString(decodedData.epochKey)
         const attesterId = toDecString(decodedData.attesterId)
         const fieldIndex = Number(decodedData.fieldIndex)
         const change = toDecString(decodedData.change)
-        const timestamp = Number(decodedData.timestamp)
         const { blockNumber } = event
         if (!this.attesterExist(attesterId)) return
 
@@ -765,7 +767,7 @@ export class Synchronizer extends EventEmitter {
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
         const currentEpoch = await this.readCurrentEpoch(attesterId)
-        if (epoch !== Number(currentEpoch.number)) {
+        if (epoch !== currentEpoch.number && epoch !== MAX_EPOCH) {
             throw new Error(
                 `Synchronizer: Epoch (${epoch}) must be the same as the current synced epoch ${currentEpoch.number}`
             )
@@ -782,10 +784,10 @@ export class Synchronizer extends EventEmitter {
                 attesterId,
                 fieldIndex,
                 change,
-                timestamp,
                 blockNumber,
             },
         })
+        if (epoch === MAX_EPOCH) return true
         const findEpoch = await this._db.findOne('Epoch', {
             where: {
                 attesterId,
@@ -808,7 +810,7 @@ export class Synchronizer extends EventEmitter {
         db,
     }: EventHandlerArgs) {
         const transactionHash = event.transactionHash
-        const epoch = Number(decodedData.epoch)
+        const epoch = toDecString(decodedData.epoch)
         const attesterId = toDecString(decodedData.attesterId)
         const nullifier = toDecString(decodedData.nullifier)
         const { blockNumber } = event
@@ -830,7 +832,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async handleEpochEnded({ decodedData, event, db }: EventHandlerArgs) {
-        const number = Number(decodedData.epoch)
+        const number = toDecString(decodedData.epoch)
         const attesterId = toDecString(decodedData.attesterId)
         console.log(`Epoch ${number} ended`)
         if (!this.attesterExist(attesterId)) return
@@ -860,14 +862,14 @@ export class Synchronizer extends EventEmitter {
         }
         const newEpochExists = await this._db.findOne('Epoch', {
             where: {
-                number: number + 1,
+                number: (BigInt(number) + BigInt(1)).toString(),
                 attesterId,
             },
         })
         if (newEpochExists) return true
         // create the next stub entry
         db.create('Epoch', {
-            number: number + 1,
+            number: (BigInt(number) + BigInt(1)).toString(),
             attesterId,
             sealed: false,
         })

@@ -49,7 +49,8 @@ describe('Attestations max', function () {
         for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
-            const val = hash1([Math.floor(Math.random() * 10000000000)])
+            const val =
+                hash1([Math.floor(Math.random() * 10000000000)]) >> BigInt(64)
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, val)
