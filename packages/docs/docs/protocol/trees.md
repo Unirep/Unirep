@@ -4,7 +4,7 @@ description: The tree structures that are used in UniRep protocol.
 
 # Trees
 
-Each attester has a single epoch and state tree that is progressively overwritten each epoch.
+Each attester has an epoch tree and a state tree that is overwritten each epoch. Attesters also have a history tree that stores all the final state tree/epoch tree root combinations.
 
 ## **State tree**
 

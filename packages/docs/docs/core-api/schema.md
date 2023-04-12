@@ -46,7 +46,6 @@ An attestation given to an epoch key.
   attesterId: string
   fieldIndex: number
   change: number
-  timestamp: number
   blockNumber: number
 }
 ```
