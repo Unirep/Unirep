@@ -4,45 +4,53 @@ description: Definition of user state transition in UniRep protocol.
 
 # User State Transition
 
-### Why do users have to perform user state transition?
+The user state transition is used to combine the data a user has received in an epoch. This happens in zk to ensure the user processes the data honestly and correctly. The proof then outputs a new state tree leaf for the epoch the user is transitioning to. This leaf contains the latest user data.
 
-User state transition is used to:
+## Logical Flow
 
-* Ensure users process their attestations correctly.
-* Generate a new state tree leaf in a new epoch to prove their latest data.
+### 1. Prove the from epoch state leaf
 
-After a user performs user state transition, they can:
+The user will prove that they have a state tree leaf in the epoch they are transitioning _from_. The user will prove the data in this leaf and use it as the base to apply changes to.
 
-1. Prove their latest data status.
-2. Generate new epoch key proofs to receive attestations in the latest epoch.
+### 2. Prove the history tree root
 
-### Workflow of a user state transition
+The user will prove that the epoch tree root and state tree root exist as a leaf in the history tree. This prevents the proof from revealing what epoch the user is transitioning from.
 
-#### 1. Compute epoch key of the latest transition (or sign up) epoch
+### 3. Prove epoch keys
 
-#### 2. Check the state tree leaf
-* The pre-image of the state tree leaf is checked to determine the user's starting data.
+The user will then compute their epoch keys for the epoch they are transitioning _from_. For each epoch key they will prove membership in the epoch tree.
 
-#### 3. Iterate over epoch keys
+Some epoch keys may not exist in the epoch tree. This is the case for keys that have not received attestations. The data for keys not proven to be in the epoch tree must be 0 (no change).
 
-* The pre-image of the epoch key leaves controlled by the user are verified. Data fields are combined using either sum logic or replacement logic depending on the field.
-* The summed rep values are added to the values proved from the old state tree leaf.
+### 4. Apply changes
 
-#### 4. Compute a new state tree leaf
+The proof will iterate over each data field for each epoch key. Each field will be combined using either summation or replacement (depending on field index and configuration).
 
-* A new state tree leaf is computed using the combined data fields.
-* See the [State Tree](trees.md) documentation for the full state tree structure.
+### 5. Generate outputs
 
-#### 5. Output epoch keys
+The proof will take the final data from step 3 and create a new state tree leaf containing this data. The proof will also iterate over all epoch keys and either:
 
-* Any epoch keys not in the epoch tree will be output as public signals.
-* Any epoch keys that are in the epoch tree will have random values output as public signals.
+<ol type="a">
+  <li>Output the epoch key</li>
+  <li>Output a random hash</li>
+</ol>
 
-#### 6. Call unirep smart contract to insert a new state tree leaf
 
-* User will attach a [User State Transition Proof](../circuits-api/circuits#user-state-transition-proof) to call [`userStateTransition()`](https://github.com/Unirep/Unirep/blob/f3502e1a551f63ab44b73444b60ead8731d45167/packages/contracts/contracts/Unirep.sol#L559). This proof and public signals will be verified onchain.
-* The new state tree leaf will be inserted into the state tree of the latest epoch.
-* If a user does not do a state transition during a certain epoch they will not have a leaf in the state tree for that epoch.
+If the epoch key _does not_ exist in the epoch tree it will do **a**. Otherwise it will do **b**.
+
+### 5. Submit the proof (or evaluate offchain)
+
+To safely evaluate a state transition proof you must check a few things (in addition to verifying the proof):
+
+<ol type="a">
+  <li>Check that the history tree root exists</li>
+  <li>Check that the output epoch keys did <i>not</i> receive attestations</li>
+  <li>Check that the first output epoch key has not been seen before</li>
+</ol>
+
+Item **c** only applies to onchain verification to prevent double UST.
+
+If all of this is valid the new state tree leaf may be inserted into the state tree (or otherwise used for proofs).
 
 :::info
 See also:

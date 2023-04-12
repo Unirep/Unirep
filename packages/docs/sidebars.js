@@ -43,6 +43,11 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
+                    label: 'User State Transition',
+                    id: 'protocol/user-state-transition',
+                },
+                {
+                    type: 'doc',
                     label: 'Epoch Key',
                     id: 'protocol/epoch-key',
                 },
@@ -50,11 +55,6 @@ const sidebars = {
                     type: 'doc',
                     label: 'Data',
                     id: 'protocol/data',
-                },
-                {
-                    type: 'doc',
-                    label: 'User State Transition',
-                    id: 'protocol/user-state-transition',
                 },
                 {
                     type: 'doc',

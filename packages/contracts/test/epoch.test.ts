@@ -42,7 +42,7 @@ describe('Epoch', function () {
             attester.address
         )
         const emptyStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        for (let x = startEpoch.toNumber(); x < 5; x++) {
+        for (let x = startEpoch; x < 5; x++) {
             const prevEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
             )
@@ -56,7 +56,7 @@ describe('Epoch', function () {
             const newEpoch = await unirepContract.attesterCurrentEpoch(
                 attester.address
             )
-            expect(prevEpoch.toNumber() + 1).to.equal(newEpoch.toNumber())
+            expect(prevEpoch + 1).to.equal(newEpoch)
 
             const stateTreeRoot = await unirepContract.attesterStateTreeRoot(
                 attester.address

@@ -41,7 +41,6 @@ const _schema = [
             ['attesterId', 'String'],
             ['fieldIndex', 'Int'],
             ['change', 'String'],
-            ['timestamp', 'Int'],
             ['blockNumber', 'Int'],
         ],
     },

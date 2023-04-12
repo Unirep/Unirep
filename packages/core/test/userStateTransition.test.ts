@@ -7,11 +7,12 @@ import {
     IncrementalMerkleTree,
     genEpochKey,
     stringifyBigInts,
+    hash1,
 } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState, genUnirepState } from './utils'
-import { BuildOrderedTree, Circuit } from '@unirep/circuits'
+import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const EPOCH_LENGTH = 1000
@@ -47,25 +48,62 @@ describe('User state transition', function () {
         const rootHistories = [] as any
         const config = await unirepContract.config()
         const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
-        const users = Array(5)
+        const randomData = () =>
+            Array(config.fieldCount)
+                .fill(0)
+                .map((_, i) => {
+                    const v = hash1([Math.floor(Math.random() * 199191919)])
+                    if (i < config.sumFieldCount) {
+                        return v
+                    }
+                    return v >> BigInt(config.replNonceBits)
+                })
+
+        const users = Array(3)
             .fill(null)
-            .map(() => {
-                return new Identity()
-            })
-        for (let i = 0; i < 5; i++) {
+            .map(() => new Identity())
+        const fromEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        for (let i = 0; i < users.length; i++) {
             const userState = await genUserState(
                 ethers.provider,
                 unirepContract.address,
                 users[i],
                 BigInt(attester.address)
             )
-            const { publicSignals, proof } =
-                await userState.genUserSignUpProof()
 
+            const startData = randomData()
+            const leaf = genStateTreeLeaf(
+                users[i].secret,
+                attester.address,
+                fromEpoch,
+                startData
+            )
             await unirepContract
                 .connect(attester)
-                .userSignUp(publicSignals, proof)
+                .manualUserSignUp(
+                    fromEpoch,
+                    userState.commitment,
+                    leaf,
+                    startData
+                )
                 .then((t) => t.wait())
+
+            const data = randomData()
+            for (const [i, d] of Object.entries(data)) {
+                await unirepContract
+                    .connect(attester)
+                    .attest(
+                        userState.getEpochKeys()[
+                            i % config.numEpochKeyNoncePerEpoch
+                        ],
+                        fromEpoch,
+                        i,
+                        d
+                    )
+                    .then((t) => t.wait())
+            }
 
             userState.sync.stop()
         }
@@ -74,7 +112,7 @@ describe('User state transition', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < users.length; i++) {
             const userState = await genUserState(
                 ethers.provider,
                 unirepContract.address,
@@ -95,7 +133,7 @@ describe('User state transition', function () {
                 users[i].secret,
                 attester.address,
                 toEpoch,
-                Array(userState.sync.settings.fieldCount).fill(0)
+                await userState.getData()
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
@@ -138,7 +176,7 @@ describe('User state transition', function () {
         )
         {
             const { publicSignals, proof } = await userState.genUserSignUpProof(
-                { epoch: epoch.toNumber() }
+                { epoch }
             )
 
             await unirepContract
@@ -152,7 +190,7 @@ describe('User state transition', function () {
         await ethers.provider.send('evm_mine', [])
 
         // receive reputation
-        const newEpoch = epoch.toNumber() + 1
+        const newEpoch = epoch + 1
         const epochKey = genEpochKey(
             user.secret,
             BigInt(attester.address),

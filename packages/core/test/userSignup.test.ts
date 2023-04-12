@@ -65,7 +65,7 @@ describe('User Signup', function () {
             const leaf = genStateTreeLeaf(
                 id.secret,
                 attester.address,
-                contractEpoch.toNumber(),
+                contractEpoch,
                 Array(userState.sync.settings.fieldCount).fill(0)
             )
             stateTree.insert(leaf)
@@ -130,7 +130,7 @@ describe('User Signup', function () {
         const leaf = genStateTreeLeaf(
             id.secret,
             attester.address,
-            contractEpoch.toNumber(),
+            contractEpoch,
             data
         )
 

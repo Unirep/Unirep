@@ -4,13 +4,15 @@ description: Definition of epoch key in UniRep
 
 # Epoch Key
 
+Epoch keys are public, temporary, identifiers for users.
+
 * Unique epoch keys are generated for each user in each epoch.
 * They are the users' temporary personas, allowing anonymous interaction with others.
-* Instead of giving attestations to an `identityCommitment`, an ever-changing, random-value-like `epochKey` is the **receiver** of an attestation.
+* Epoch keys receive attestations to change user data.
 * An epoch key is computed by:
 
 ```typescript
-hash(identitySecret, attesterId, epoch, nonce)
+hash4([identitySecret, attesterId, epoch, nonce])
 ```
 
 where `nonce` can be any value between `0` and `numEpochKeyNoncePerEpoch - 1`, so that a user can have `numEpochKeyNoncePerEpoch` epoch keys per epoch.

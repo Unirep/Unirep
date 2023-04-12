@@ -8,7 +8,7 @@ import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
-const { FIELD_COUNT, SUM_FIELD_COUNT } = defaultConfig
+const { FIELD_COUNT, SUM_FIELD_COUNT, REPL_NONCE_BITS } = defaultConfig
 
 const EPOCH_TREE_DEPTH = 3
 
@@ -49,7 +49,9 @@ describe('Attestations max', function () {
         for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
-            const val = hash1([Math.floor(Math.random() * 10000000000)])
+            const val =
+                hash1([Math.floor(Math.random() * 10000000000)]) >>
+                BigInt(REPL_NONCE_BITS)
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, val)

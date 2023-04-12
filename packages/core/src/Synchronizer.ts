@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
 import { Prover } from '@unirep/circuits'
-import { IncrementalMerkleTree } from '@unirep/utils'
+import { IncrementalMerkleTree, MAX_EPOCH } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
 import { nanoid } from 'nanoid'
@@ -22,7 +22,7 @@ type AttesterSetting = {
     epochLength: number
 }
 
-export function toDecString(content: bigint | string) {
+export function toDecString(content: bigint | string | number) {
     return BigInt(content).toString()
 }
 
@@ -94,6 +94,7 @@ export class Synchronizer extends EventEmitter {
             epochLength: 0,
             fieldCount: 0,
             sumFieldCount: 0,
+            replNonceBits: 0,
         }
         const allEventNames = {} as any
 
@@ -224,6 +225,7 @@ export class Synchronizer extends EventEmitter {
         this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
         this.settings.fieldCount = config.fieldCount
         this.settings.sumFieldCount = config.sumFieldCount
+        this.settings.replNonceBits = config.replNonceBits
 
         await this._findStartBlock()
         this.setupComplete = true
@@ -532,7 +534,7 @@ export class Synchronizer extends EventEmitter {
 
     async loadCurrentEpoch(attesterId: bigint | string = this.attesterId) {
         const epoch = await this.unirepContract.attesterCurrentEpoch(attesterId)
-        return epoch.toNumber()
+        return Number(epoch)
     }
 
     async epochTreeRoot(
@@ -562,15 +564,18 @@ export class Synchronizer extends EventEmitter {
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
-        const epoch = Number(_epoch)
+        const epoch = Number(_epoch.toString())
         const tree = new IncrementalMerkleTree(
             this.settings.stateTreeDepth,
             this.defaultStateTreeLeaf
         )
         const leaves = await this._db.findMany('StateTreeLeaf', {
             where: {
-                epoch: Number(epoch),
+                epoch,
                 attesterId: toDecString(attesterId),
+            },
+            orderBy: {
+                index: 'asc',
             },
         })
         for (const leaf of leaves) {
@@ -604,7 +609,7 @@ export class Synchronizer extends EventEmitter {
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
-        const epoch = Number(_epoch)
+        const epoch = Number(_epoch.toString())
         const tree = new IncrementalMerkleTree(
             this.settings.epochTreeDepth,
             this.defaultEpochTreeLeaf
@@ -668,7 +673,7 @@ export class Synchronizer extends EventEmitter {
     ) {
         this.checkAttesterId(attesterId)
         return this._db.count('StateTreeLeaf', {
-            epoch: epoch,
+            epoch,
             attesterId: toDecString(attesterId),
         })
     }
@@ -754,7 +759,6 @@ export class Synchronizer extends EventEmitter {
         const attesterId = toDecString(decodedData.attesterId)
         const fieldIndex = Number(decodedData.fieldIndex)
         const change = toDecString(decodedData.change)
-        const timestamp = Number(decodedData.timestamp)
         const { blockNumber } = event
         if (!this.attesterExist(attesterId)) return
 
@@ -765,7 +769,7 @@ export class Synchronizer extends EventEmitter {
             .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
 
         const currentEpoch = await this.readCurrentEpoch(attesterId)
-        if (epoch !== Number(currentEpoch.number)) {
+        if (epoch !== currentEpoch.number && epoch !== MAX_EPOCH) {
             throw new Error(
                 `Synchronizer: Epoch (${epoch}) must be the same as the current synced epoch ${currentEpoch.number}`
             )
@@ -782,10 +786,10 @@ export class Synchronizer extends EventEmitter {
                 attesterId,
                 fieldIndex,
                 change,
-                timestamp,
                 blockNumber,
             },
         })
+        if (epoch === MAX_EPOCH) return true
         const findEpoch = await this._db.findOne('Epoch', {
             where: {
                 attesterId,

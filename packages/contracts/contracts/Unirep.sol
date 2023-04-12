@@ -44,6 +44,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable fieldCount;
     uint8 public immutable sumFieldCount;
     uint8 public immutable numEpochKeyNoncePerEpoch;
+    uint8 public immutable replNonceBits;
 
     constructor(
         Config memory _config,
@@ -59,6 +60,7 @@ contract Unirep is IUnirep, VerifySignature {
         fieldCount = _config.fieldCount;
         sumFieldCount = _config.sumFieldCount;
         numEpochKeyNoncePerEpoch = _config.numEpochKeyNoncePerEpoch;
+        replNonceBits = _config.replNonceBits;
 
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
@@ -67,9 +69,9 @@ contract Unirep is IUnirep, VerifySignature {
         epochKeyVerifier = _epochKeyVerifier;
         epochKeyLiteVerifier = _epochKeyLiteVerifier;
 
-        emit AttesterSignedUp(0, type(uint64).max, block.timestamp);
-        attesters[uint160(0)].epochLength = type(uint64).max;
-        attesters[uint160(0)].startTimestamp = block.timestamp;
+        emit AttesterSignedUp(0, type(uint48).max, block.timestamp);
+        attesters[uint160(0)].epochLength = type(uint48).max;
+        attesters[uint160(0)].startTimestamp = uint48(block.timestamp);
     }
 
     function config() public view returns (Config memory) {
@@ -80,7 +82,8 @@ contract Unirep is IUnirep, VerifySignature {
                 historyTreeDepth: historyTreeDepth,
                 fieldCount: fieldCount,
                 sumFieldCount: sumFieldCount,
-                numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch
+                numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
+                replNonceBits: replNonceBits
             });
     }
 
@@ -89,7 +92,7 @@ contract Unirep is IUnirep, VerifySignature {
      * e.g. to insert a non-zero data field in the state tree leaf
      **/
     function manualUserSignUp(
-        uint64 epoch,
+        uint48 epoch,
         uint256 identityCommitment,
         uint256 stateTreeLeaf,
         uint256[] calldata initialData
@@ -100,18 +103,14 @@ contract Unirep is IUnirep, VerifySignature {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
             if (
                 x >= sumFieldCount &&
-                (x - sumFieldCount) % 2 == (sumFieldCount + 1) % 2 &&
-                initialData[x] != 0
-            ) {
-                revert InvalidTimestamp();
-            }
+                initialData[x] >= 2 ** (254 - replNonceBits)
+            ) revert OutOfRange();
             emit Attestation(
-                epoch,
+                type(uint48).max,
                 identityCommitment,
                 uint160(msg.sender),
                 x,
-                initialData[x],
-                block.timestamp
+                initialData[x]
             );
         }
     }
@@ -133,14 +132,14 @@ contract Unirep is IUnirep, VerifySignature {
             revert InvalidProof();
 
         _userSignUp(
-            uint64(publicSignals[3]),
+            uint48(publicSignals[3]),
             publicSignals[0],
             publicSignals[1]
         );
     }
 
     function _userSignUp(
-        uint64 epoch,
+        uint48 epoch,
         uint256 identityCommitment,
         uint256 stateTreeLeaf
     ) internal {
@@ -182,11 +181,11 @@ contract Unirep is IUnirep, VerifySignature {
     /**
      * @dev Allow an attester to signup and specify their epoch length
      */
-    function _attesterSignUp(address attesterId, uint256 epochLength) private {
+    function _attesterSignUp(address attesterId, uint48 epochLength) private {
         AttesterData storage attester = attesters[uint160(attesterId)];
         if (attester.startTimestamp != 0)
             revert AttesterAlreadySignUp(uint160(attesterId));
-        attester.startTimestamp = block.timestamp;
+        attester.startTimestamp = uint48(block.timestamp);
 
         // initialize the state tree
         ReusableMerkleTree.init(attester.stateTree, stateTreeDepth);
@@ -219,7 +218,7 @@ contract Unirep is IUnirep, VerifySignature {
     /**
      * @dev Sign up an attester using the address who sends the transaction
      */
-    function attesterSignUp(uint256 epochLength) public {
+    function attesterSignUp(uint48 epochLength) public {
         _attesterSignUp(msg.sender, epochLength);
     }
 
@@ -230,7 +229,7 @@ contract Unirep is IUnirep, VerifySignature {
      */
     function attesterSignUpViaRelayer(
         address attester,
-        uint256 epochLength,
+        uint48 epochLength,
         bytes calldata signature
     ) public {
         // TODO: verify epoch length in signature
@@ -244,11 +243,11 @@ contract Unirep is IUnirep, VerifySignature {
      */
     function attest(
         uint256 epochKey,
-        uint epoch,
+        uint48 epoch,
         uint fieldIndex,
         uint change
     ) public {
-        uint256 currentEpoch = updateEpochIfNeeded(uint160(msg.sender));
+        uint48 currentEpoch = updateEpochIfNeeded(uint160(msg.sender));
         if (epoch != currentEpoch) revert EpochNotMatch();
 
         if (epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
@@ -268,7 +267,7 @@ contract Unirep is IUnirep, VerifySignature {
         // e.g. insert a tx attesting to the epk revealed by the UST
         // then the UST can never succeed
         if (epkEpoch != currentEpoch) {
-            epkData.epoch = uint64(currentEpoch);
+            epkData.epoch = currentEpoch;
         }
 
         if (fieldIndex < sumFieldCount) {
@@ -276,14 +275,19 @@ contract Unirep is IUnirep, VerifySignature {
             uint256 newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
             epkData.data[fieldIndex] = newVal;
         } else {
-            if (fieldIndex % 2 != sumFieldCount % 2) {
-                // cannot attest to a timestamp
-                revert InvalidField();
+            if (change >= 2 ** (254 - replNonceBits)) {
+                revert OutOfRange();
             }
-            if (change >= SNARK_SCALAR_FIELD) revert OutOfRange();
+            change += block.timestamp << (254 - replNonceBits);
             epkData.data[fieldIndex] = change;
-            epkData.data[fieldIndex + 1] = block.timestamp;
         }
+        emit Attestation(
+            epoch,
+            epochKey,
+            uint160(msg.sender),
+            fieldIndex,
+            change
+        );
 
         // now construct the leaf
         // TODO: only rebuild the hashchain as needed
@@ -299,21 +303,13 @@ contract Unirep is IUnirep, VerifySignature {
         ReusableTreeData storage epochTree = attesters[uint160(msg.sender)]
             .epochTree;
         if (newLeaf) {
-            epkData.leafIndex = uint64(epochTree.numberOfLeaves);
+            epkData.leafIndex = uint48(epochTree.numberOfLeaves);
             ReusableMerkleTree.insert(epochTree, leaf);
         } else {
             ReusableMerkleTree.update(epochTree, epkData.leafIndex, leaf);
         }
 
         emit EpochTreeLeaf(epoch, uint160(msg.sender), epkData.leafIndex, leaf);
-        emit Attestation(
-            epoch,
-            epochKey,
-            uint160(msg.sender),
-            fieldIndex,
-            change,
-            block.timestamp
-        );
     }
 
     /**
@@ -391,10 +387,10 @@ contract Unirep is IUnirep, VerifySignature {
 
     function updateEpochIfNeeded(
         uint160 attesterId
-    ) public returns (uint epoch) {
+    ) public returns (uint48 epoch) {
         AttesterData storage attester = attesters[attesterId];
         epoch = attesterCurrentEpoch(attesterId);
-        uint256 fromEpoch = attester.currentEpoch;
+        uint48 fromEpoch = attester.currentEpoch;
         if (epoch == fromEpoch) return epoch;
 
         // otherwise reset the trees for the new epoch
@@ -599,11 +595,11 @@ contract Unirep is IUnirep, VerifySignature {
 
     function attesterCurrentEpoch(
         uint160 attesterId
-    ) public view returns (uint256) {
-        uint256 timestamp = attesters[attesterId].startTimestamp;
-        uint256 epochLength = attesters[attesterId].epochLength;
+    ) public view returns (uint48) {
+        uint48 timestamp = attesters[attesterId].startTimestamp;
+        uint48 epochLength = attesters[attesterId].epochLength;
         if (timestamp == 0) revert AttesterNotSignUp(attesterId);
-        return (block.timestamp - timestamp) / epochLength;
+        return (uint48(block.timestamp) - timestamp) / epochLength;
     }
 
     function attesterEpochRemainingTime(

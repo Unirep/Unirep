@@ -7,6 +7,7 @@ import {
     genStateTreeLeaf,
     F,
     hash2,
+    MAX_EPOCH,
 } from '@unirep/utils'
 import {
     Circuit,
@@ -234,7 +235,7 @@ export default class UserState {
         if (signup) {
             orClauses.push({
                 epochKey: signup.commitment,
-                epoch: signup.epoch,
+                epoch: MAX_EPOCH,
             })
         }
         const allNullifiers = [] as any
@@ -305,7 +306,6 @@ export default class UserState {
                 data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
             } else {
                 data[fieldIndex] = BigInt(a.change)
-                data[fieldIndex + 1] = BigInt(a.timestamp)
             }
         }
         return data
@@ -320,18 +320,22 @@ export default class UserState {
 
     public getDataByEpochKey = async (
         epochKey: bigint | string,
-        epoch: number | bigint | string,
+        epoch: number,
         _attesterId: bigint | string = this.sync.attesterId
     ) => {
         this._checkSync()
         const attesterId = toDecString(_attesterId)
         this.sync.checkAttesterId(attesterId)
         const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
+        if (typeof epoch !== 'number') throw new Error('epoch must be number')
         const attestations = await this.sync._db.findMany('Attestation', {
             where: {
-                epoch: Number(epoch),
+                epoch,
                 epochKey: epochKey.toString(),
                 attesterId: attesterId,
+            },
+            orderBy: {
+                index: 'asc',
             },
         })
         for (const a of attestations) {
@@ -340,7 +344,6 @@ export default class UserState {
                 data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
             } else {
                 data[fieldIndex] = BigInt(a.change)
-                data[fieldIndex + 1] = BigInt(a.timestamp)
             }
         }
         return data
@@ -391,7 +394,7 @@ export default class UserState {
 
     public genUserStateTransitionProof = async (
         options: {
-            toEpoch?: bigint | number
+            toEpoch?: number
             attesterId?: bigint | string
         } = {}
     ): Promise<UserStateTransitionProof> => {
@@ -402,7 +405,7 @@ export default class UserState {
         const fromEpoch = await this.latestTransitionedEpoch(attesterId)
         const data = await this.getData(fromEpoch - 1, attesterId)
         const toEpoch = _toEpoch ?? this.sync.calcCurrentEpoch(attesterId)
-        if (fromEpoch.toString() === toEpoch.toString()) {
+        if (fromEpoch === toEpoch) {
             throw new Error(
                 '@unirep/core:UserState: Cannot transition to same epoch'
             )
@@ -554,7 +557,7 @@ export default class UserState {
      * @returns The sign up proof of type `SignUpProof`.
      */
     public genUserSignUpProof = async (
-        options: { epoch?: number | bigint; attesterId?: bigint | string } = {}
+        options: { epoch?: number; attesterId?: bigint | string } = {}
     ): Promise<SignupProof> => {
         const attesterId = toDecString(
             options.attesterId ?? this.sync.attesterId

@@ -12,10 +12,11 @@ The elements in addition field are combined with addition and modulo by [`SNARK_
 
 ## Replacement field
 
-The elements in replacement field are combined by replacement. If the field `i` is the replacement field, the field `i+1` is the timestamp of the replacement field that will be emitted by the smart contract. E.g.
-```ts
-data[i]   = old_data[i+1] < new_data[i+1] ? new_data[i]   : old_data[i]
-data[i+1] = old_data[i+1] < new_data[i+1] ? new_data[i+1] : old_data[i+1]
-```
+The elements in replacement field are combined by replacement. Each replacement field contains 2 parts:
 
-There are `FIELD_COUNT - SUM_FIELD_COUNT` replacement fields and it should be `(FIELD_COUNT - SUM_FIELD_COUNT) % 2 == 0`.
+- 206 bits data (lower bits)
+- 48 bits index (upper bits)
+
+The maximum value that can be stored in a replacement field is `2**206-1`. The `index` value is used by the protocol to order the attestations. Because the index is stored as the higher order bits data field attestation can be sorted without bit operations.
+
+There are `FIELD_COUNT - SUM_FIELD_COUNT` replacement fields.

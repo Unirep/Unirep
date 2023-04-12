@@ -6,6 +6,7 @@ include "./circomlib/circuits/mux1.circom";
 include "./circomlib/circuits/gates.circom";
 include "./incrementalMerkleTree.circom";
 include "./leafHasher.circom";
+include "./bigComparators.circom";
 
 template UserStateTransition(
   STATE_TREE_DEPTH,
@@ -13,7 +14,8 @@ template UserStateTransition(
   HISTORY_TREE_DEPTH,
   EPOCH_KEY_NONCE_PER_EPOCH,
   FIELD_COUNT,
-  SUM_FIELD_COUNT
+  SUM_FIELD_COUNT,
+  REPL_NONCE_BITS
 ) {
     signal input from_epoch;
     signal input to_epoch;
@@ -150,38 +152,43 @@ template UserStateTransition(
 
     /* 3. Calculate the new state tree leaf */
 
-    var final_data[FIELD_COUNT];
-    for (var x = 0; x < FIELD_COUNT; x++) {
-      final_data[x] = data[x];
-    }
+    signal final_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
 
     var REPL_FIELD_COUNT = FIELD_COUNT - SUM_FIELD_COUNT;
 
-    component timestamp_check[EPOCH_KEY_NONCE_PER_EPOCH][REPL_FIELD_COUNT];
-    component data_select[EPOCH_KEY_NONCE_PER_EPOCH][REPL_FIELD_COUNT];
+    component index_check[EPOCH_KEY_NONCE_PER_EPOCH][REPL_FIELD_COUNT];
+    component field_select[EPOCH_KEY_NONCE_PER_EPOCH][REPL_FIELD_COUNT];
 
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
       // first combine the sum data
       for (var j = 0; j < SUM_FIELD_COUNT; j++) {
-        final_data[j] += new_data[i][j];
+        if (i == 0) {
+          final_data[i][j] <== data[j] + new_data[i][j];
+        } else {
+          final_data[i][j] <== final_data[i-1][j] + new_data[i][j];
+        }
       }
       // then combine the replacement data
-      for (var j = 0; j < REPL_FIELD_COUNT; j+=2) {
-        timestamp_check[i][j] = GreaterThan(64);
-        timestamp_check[i][j].in[0] <== new_data[i][j+SUM_FIELD_COUNT+1];
-        timestamp_check[i][j].in[1] <== final_data[j+SUM_FIELD_COUNT+1];
-        data_select[i][j] = MultiMux1(2);
-        // timestamp selection
-        data_select[i][j].c[0][0] <== final_data[j+SUM_FIELD_COUNT+1];
-        data_select[i][j].c[0][1] <== new_data[i][j+SUM_FIELD_COUNT+1];
-        // data selection
-        data_select[i][j].c[1][0] <== final_data[j+SUM_FIELD_COUNT];
-        data_select[i][j].c[1][1] <== new_data[i][j+SUM_FIELD_COUNT];
-        // select based on timestamp check
-        data_select[i][j].s <== timestamp_check[i][j].out;
-        // replace the old final data
-        final_data[j+SUM_FIELD_COUNT+1] = data_select[i][j].out[0];
-        final_data[j+SUM_FIELD_COUNT] = data_select[i][j].out[1];
+      for (var j = 0; j < REPL_FIELD_COUNT; j++) {
+        var field_i = SUM_FIELD_COUNT + j;
+        index_check[i][j] = UpperLessThan(REPL_NONCE_BITS);
+        index_check[i][j].in[0] <== new_data[i][field_i];
+        if (i == 0) {
+          index_check[i][j].in[1] <== data[field_i];
+        } else {
+          index_check[i][j].in[1] <== final_data[i-1][field_i];
+        }
+
+        field_select[i][j] = Mux1();
+        field_select[i][j].s <== index_check[i][j].out;
+        if (i == 0) {
+          field_select[i][j].c[1] <== data[field_i];
+        } else {
+          field_select[i][j].c[1] <== final_data[i-1][field_i];
+        }
+        field_select[i][j].c[0] <== new_data[i][field_i];
+
+        final_data[i][field_i] <== field_select[i][j].out;
       }
     }
 
@@ -190,7 +197,7 @@ template UserStateTransition(
     out_leaf_hasher.attester_id <== attester_id;
     out_leaf_hasher.epoch <== to_epoch;
     for (var x = 0; x < FIELD_COUNT; x++) {
-      out_leaf_hasher.data[x] <== final_data[x];
+      out_leaf_hasher.data[x] <== final_data[EPOCH_KEY_NONCE_PER_EPOCH - 1][x];
     }
     state_tree_leaf <== out_leaf_hasher.out;
 

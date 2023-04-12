@@ -7,6 +7,7 @@ import {
     stringifyBigInts,
     genStateTreeLeaf,
     F,
+    MAX_EPOCH,
 } from '@unirep/utils'
 import { Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -14,10 +15,11 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
-const { STATE_TREE_DEPTH, FIELD_COUNT } = defaultConfig
+
+const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_NONCE_BITS } = defaultConfig
 
 describe('User Signup', function () {
-    this.timeout(200000)
+    this.timeout(300000)
 
     let unirepContract
 
@@ -106,7 +108,7 @@ describe('User Signup', function () {
         )
         const semaphoreTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const roots = {}
-        for (let epoch = startEpoch.toNumber(); epoch < 3; epoch++) {
+        for (let epoch = startEpoch; epoch < 3; epoch++) {
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             roots[epoch] = []
             for (let i = 0; i < 3; i++) {
@@ -347,20 +349,13 @@ describe('User Signup', function () {
         const data = Array(config.fieldCount)
             .fill(0)
             .map((_, i) => {
-                if (
-                    i >= config.sumFieldCount &&
-                    (i - config.sumFieldCount) % 2 ===
-                        (config.sumFieldCount + 1) % 2
-                ) {
-                    return 0
-                }
                 return i + 100
             })
 
         const leaf = genStateTreeLeaf(
             id.secret,
             attester.address,
-            contractEpoch.toNumber(),
+            contractEpoch,
             data
         )
         const tx = await unirepContract
@@ -378,18 +373,11 @@ describe('User Signup', function () {
         for (const [i, d] of Object.entries(data)) {
             await expect(tx)
                 .to.emit(unirepContract, 'Attestation')
-                .withArgs(
-                    contractEpoch,
-                    id.commitment,
-                    attester.address,
-                    i,
-                    d,
-                    timestamp
-                )
+                .withArgs(MAX_EPOCH, id.commitment, attester.address, i, d)
         }
     })
 
-    it('should fail to sign up with non-zero timestamp data', async () => {
+    it('should fail to sign up with out of range replacement data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const config = await unirepContract.config()
@@ -402,14 +390,10 @@ describe('User Signup', function () {
         const data = Array(config.fieldCount)
             .fill(0)
             .map((_, i) => {
-                if (
-                    i >= config.sumFieldCount &&
-                    (i - config.sumFieldCount) % 2 ===
-                        (config.sumFieldCount + 1) % 2
-                ) {
-                    return 1
+                if (i >= config.sumFieldCount) {
+                    return BigInt(2) ** BigInt(254 - REPL_NONCE_BITS)
                 }
-                return i + 100
+                return 0
             })
 
         const tx = unirepContract
@@ -417,7 +401,7 @@ describe('User Signup', function () {
             .manualUserSignUp(contractEpoch, id.commitment, 0, data)
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
-            'InvalidTimestamp'
+            'OutOfRange'
         )
     })
 

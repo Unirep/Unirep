@@ -78,7 +78,7 @@ Apply a change to a user data field at index `fieldIndex`. Changes will be appli
 ```sol
 function attest(
   uint epochKey,
-  uint targetEpoch,
+  uint48 targetEpoch,
   uint fieldIndex,
   uint change
 ) public
@@ -102,7 +102,7 @@ Get the current epoch number for an attester.
 ```sol
 function attesterCurrentEpoch(
   uint160 attesterId
-) public view returns (uint)
+) public view returns (uint48)
 ```
 
 ## attesterEpochRemainingTime

@@ -431,9 +431,9 @@ describe('User State Transition', function () {
 
         const users = 3
         const epochs = 3
-        let fromEpoch = (
-            await unirepContract.attesterCurrentEpoch(attester.address)
-        ).toNumber()
+        let fromEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
         let fromEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const userState = Array(users)
             .fill(null)
@@ -455,9 +455,9 @@ describe('User State Transition', function () {
 
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const startEpoch = (
-            await unirepContract.attesterCurrentEpoch(attester.address)
-        ).toNumber()
+        const startEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
         for (let epoch = startEpoch; epoch < startEpoch + epochs; epoch++) {
             const toEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)

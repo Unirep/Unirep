@@ -89,7 +89,7 @@ describe('User state transition', function () {
         expect(ustProof.attesterId.toString()).to.equal(attesterId.toString())
     })
 
-    it('should do a user state transition with new rep', async () => {
+    it('should do a user state transition with new data', async () => {
         for (let x = 0; x < NUM_EPOCH_KEY_NONCE_PER_EPOCH; x++) {
             const id = new Identity()
             const fromEpoch = 1
@@ -107,17 +107,12 @@ describe('User state transition', function () {
                 genStateTreeLeaf(id.secret, attesterId, fromEpoch, data)
             )
             const stateTreeProof = stateTree.createProof(0)
-            epochTree.insert(0)
             const newData0 = randomData()
             epochTree.insert(genEpochTreeLeaf(epochKeys[x], newData0))
             const epochTreeProofs = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                 .fill(0)
                 .map((_, i) => {
-                    if (i === x) {
-                        return epochTree.createProof(1)
-                    } else {
-                        return epochTree.createProof(0)
-                    }
+                    return epochTree.createProof(0)
                 })
             const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
             historyTree.insert(hash2([stateTree.root, epochTree.root]))
