@@ -3386,19 +3386,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@semaphore-protocol/identity@npm:^3.6.0-beta.3":
-  version: 3.6.0-beta.3
-  resolution: "@semaphore-protocol/identity@npm:3.6.0-beta.3"
-  dependencies:
-    "@ethersproject/bignumber": ^5.5.0
-    "@ethersproject/keccak256": ^5.7.0
-    "@ethersproject/random": ^5.5.1
-    "@ethersproject/strings": ^5.6.1
-    js-sha512: ^0.8.0
-  checksum: f1c69a2af822034732d1495ce01da71e9b4ea35933b66e2059553cf82e3cf56814b00cac86e82e25485583e67a5746bb4919ad7275bdfb8b3ba92d18f4af3048
-  languageName: node
-  linkType: hard
-
 "@sentry/core@npm:5.30.0":
   version: 5.30.0
   resolution: "@sentry/core@npm:5.30.0"
@@ -4564,7 +4551,7 @@ __metadata:
   resolution: "@unirep/circuits@workspace:packages/circuits"
   dependencies:
     "@ethersproject/solidity": ^5.7.0
-    "@semaphore-protocol/identity": ^3.6.0-beta.3
+    "@semaphore-protocol/identity": ^3.5.0
     "@unirep/utils": 2.0.0-beta-1
     mocha: ^10.0.0
     snarkjs: ^0.5.0
