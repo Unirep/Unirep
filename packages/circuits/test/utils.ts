@@ -165,4 +165,57 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
     return { isValid, proof, publicSignals }
 }
 
-export { genEpochKeyCircuitInput, genReputationCircuitInput, genProofAndVerify }
+const genPreventDoubleActionCircuitInput = (config: {
+    id: Identity
+    tree: utils.IncrementalMerkleTree
+    leafIndex: number
+    epoch: number
+    nonce: number
+    attesterId: number | bigint
+    data?: bigint[]
+    sigData?: bigint
+    revealNonce?: number
+    externalNullifier: bigint
+}) => {
+    const {
+        id,
+        tree,
+        leafIndex,
+        epoch,
+        nonce,
+        attesterId,
+        data: _data,
+        sigData,
+        revealNonce,
+        externalNullifier,
+    } = Object.assign(
+        {
+            data: [],
+        },
+        config
+    )
+    const data = [..._data, ...Array(FIELD_COUNT - _data.length).fill(0)]
+    const proof = tree.createProof(leafIndex)
+    const circuitInputs = {
+        state_tree_elements: proof.siblings,
+        state_tree_indexes: proof.pathIndices,
+        data,
+        sig_data: sigData ?? BigInt(0),
+        nonce,
+        epoch,
+        attester_id: attesterId,
+        reveal_nonce: revealNonce ?? 0,
+        identity_nullifier: id.nullifier,
+        external_nullifier: externalNullifier,
+        identity_trapdoor: id.trapdoor,
+    }
+
+    return utils.stringifyBigInts(circuitInputs)
+}
+
+export {
+    genEpochKeyCircuitInput,
+    genReputationCircuitInput,
+    genProofAndVerify,
+    genPreventDoubleActionCircuitInput,
+}

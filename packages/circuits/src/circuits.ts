@@ -10,6 +10,7 @@ export enum Circuit {
     userStateTransition = 'userStateTransition',
     signup = 'signup',
     epochKeyLite = 'epochKeyLite',
+    preventDoubleAction = 'preventDoubleAction',
 }
 
 /**
