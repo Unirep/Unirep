@@ -152,8 +152,6 @@ template UserStateTransition(
 
     /* 3. Calculate the new state tree leaf */
 
-
-    // var final_data[FIELD_COUNT];
     signal final_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
 
     var REPL_FIELD_COUNT = FIELD_COUNT - SUM_FIELD_COUNT;
