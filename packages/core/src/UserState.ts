@@ -237,6 +237,23 @@ export default class UserState {
                 epoch: signup.epoch,
             })
         }
+        const allNullifiers = [] as any
+        for (let x = signup?.epoch ?? 0; x <= toEpoch; x++) {
+            allNullifiers.push(
+                ...[0, this.sync.settings.numEpochKeyNoncePerEpoch].map((v) =>
+                    genEpochKey(this.id.secret, attesterId, x, v).toString()
+                )
+            )
+        }
+        const sortedNullifiers = await this.sync._db.findMany('Nullifier', {
+            where: {
+                attesterId,
+                nullifier: allNullifiers,
+            },
+            orderBy: {
+                epoch: 'asc',
+            },
+        })
         for (let x = signup?.epoch ?? 0; x <= toEpoch; x++) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
@@ -249,13 +266,16 @@ export default class UserState {
             ].map((v) =>
                 genEpochKey(this.id.secret, attesterId, x, v).toString()
             )
-            const usted = await this.sync._db.findOne('Nullifier', {
-                where: {
-                    attesterId: attesterId,
-                    nullifier: nullifiers,
-                    epoch: x,
-                },
-            })
+            let usted = false
+            for (const { nullifier, epoch } of sortedNullifiers) {
+                if (epoch > x) {
+                    break
+                }
+                if (epoch === x) {
+                    usted = true
+                    break
+                }
+            }
             const signedup = await this.sync._db.findOne('UserSignUp', {
                 where: {
                     attesterId: attesterId,
