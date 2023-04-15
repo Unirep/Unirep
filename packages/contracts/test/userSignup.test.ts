@@ -96,7 +96,6 @@ describe('User Signup', function () {
         ).to.be.revertedWithCustomError(
             unirepContract,
             'AttesterNotSignUp',
-            attester.address
         )
     })
 
@@ -367,9 +366,6 @@ describe('User Signup', function () {
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(contractEpoch, attester.address, 0, leaf)
-        const { timestamp } = await tx
-            .wait()
-            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
         for (const [i, d] of Object.entries(data)) {
             await expect(tx)
                 .to.emit(unirepContract, 'Attestation')

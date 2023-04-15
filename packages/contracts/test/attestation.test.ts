@@ -146,12 +146,10 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
         const fieldIndex = SUM_FIELD_COUNT
         const val = 1
+        const attestationCounter = await unirepContract.attestationCounter();
         const tx = await unirepContract
             .connect(attester)
             .attest(epochKey, epoch, fieldIndex, val)
-        const { timestamp } = await tx
-            .wait()
-            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
         await expect(tx)
             .to.emit(unirepContract, 'Attestation')
@@ -161,7 +159,7 @@ describe('Attestations', function () {
                 attester.address,
                 fieldIndex,
                 BigInt(val) +
-                    (BigInt(timestamp) << BigInt(254 - REPL_NONCE_BITS))
+                    (BigInt(attestationCounter) << BigInt(254 - REPL_NONCE_BITS))
             )
     })
 
@@ -194,7 +192,7 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
 
         const fieldIndex = 1
-        const val = 5
+        const val = 0;
         const tx = await unirepContract
             .connect(attester)
             .attest(epochKey, epoch, fieldIndex, val)
@@ -203,5 +201,43 @@ describe('Attestations', function () {
         await expect(tx)
             .to.emit(unirepContract, 'Attestation')
             .withArgs(epoch, epochKey, attester.address, fieldIndex, val)
+    })
+
+    it('should get current attestation counter', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        
+        const epochKey = BigInt(24910)
+        let attestationCounter =  await unirepContract.attestationCounter()
+        expect(attestationCounter).to.equal(0)
+
+        const fieldIndex = SUM_FIELD_COUNT;
+        const val = 3;
+
+        for (let x = 1; x <= 3; x++){
+            const tx = await unirepContract
+                .connect(attester)
+                .attest(epochKey, epoch, fieldIndex, val)
+
+
+            
+            expect(attestationCounter).to.equal(await unirepContract.attestationCounter() - 1)
+
+            await expect(tx)
+                .to.emit(unirepContract, 'Attestation')
+                .withArgs(
+                    epoch,
+                    epochKey,
+                    attester.address,
+                    fieldIndex,
+                    BigInt(val) +
+                        (BigInt(attestationCounter) << BigInt(254 - REPL_NONCE_BITS))
+                )
+
+            attestationCounter++;
+        }
     })
 })

@@ -46,6 +46,8 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
 
+    uint48 public attestationCounter;
+
     constructor(
         Config memory _config,
         IVerifier _signupVerifier,
@@ -69,6 +71,8 @@ contract Unirep is IUnirep, VerifySignature {
         epochKeyVerifier = _epochKeyVerifier;
         epochKeyLiteVerifier = _epochKeyLiteVerifier;
 
+        attestationCounter = 0;    
+        
         emit AttesterSignedUp(0, type(uint48).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint48).max;
         attesters[uint160(0)].startTimestamp = uint48(block.timestamp);
@@ -112,6 +116,7 @@ contract Unirep is IUnirep, VerifySignature {
                 x,
                 initialData[x]
             );
+            attestationCounter++;
         }
     }
 
@@ -278,7 +283,7 @@ contract Unirep is IUnirep, VerifySignature {
             if (change >= 2 ** (254 - replNonceBits)) {
                 revert OutOfRange();
             }
-            change += block.timestamp << (254 - replNonceBits);
+            change += (uint(attestationCounter) << (254 - replNonceBits));
             epkData.data[fieldIndex] = change;
         }
         emit Attestation(
@@ -288,6 +293,7 @@ contract Unirep is IUnirep, VerifySignature {
             fieldIndex,
             change
         );
+        attestationCounter++;
 
         // now construct the leaf
         // TODO: only rebuild the hashchain as needed
