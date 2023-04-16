@@ -71,8 +71,6 @@ contract Unirep is IUnirep, VerifySignature {
         epochKeyVerifier = _epochKeyVerifier;
         epochKeyLiteVerifier = _epochKeyLiteVerifier;
 
-        attestationCounter = 0;
-
         emit AttesterSignedUp(0, type(uint48).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint48).max;
         attesters[uint160(0)].startTimestamp = uint48(block.timestamp);
@@ -116,7 +114,6 @@ contract Unirep is IUnirep, VerifySignature {
                 x,
                 initialData[x]
             );
-            attestationCounter++;
         }
     }
 

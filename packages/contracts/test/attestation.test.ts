@@ -242,4 +242,41 @@ describe('Attestations', function () {
             attestationCounter++
         }
     })
+
+    it('verify upper bits of replacement field', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        const epochKey = BigInt(24910)
+        let attestationCounter = await unirepContract.attestationCounter()
+
+        const fieldIndex = SUM_FIELD_COUNT
+
+        for (let x = 1; x <= 3; x++) {
+            const tx = await unirepContract
+                .connect(attester)
+                .attest(epochKey, epoch, fieldIndex, x)
+
+            expect(attestationCounter).to.equal(
+                (await unirepContract.attestationCounter()) - 1
+            )
+
+            await expect(tx)
+                .to.emit(unirepContract, 'Attestation')
+                .withArgs(
+                    epoch,
+                    epochKey,
+                    attester.address,
+                    fieldIndex,
+                    BigInt(x) +
+                        (BigInt(attestationCounter) <<
+                            BigInt(254 - REPL_NONCE_BITS))
+                )
+
+            attestationCounter++
+        }
+    })
 })
