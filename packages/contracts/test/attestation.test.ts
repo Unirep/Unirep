@@ -8,6 +8,8 @@ import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
+import randomf from 'randomf'
+
 const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
     defaultConfig
 
@@ -146,7 +148,7 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
         const fieldIndex = SUM_FIELD_COUNT
         const val = 1
-        const attestationCounter = await unirepContract.attestationCounter()
+        const attestationCount = await unirepContract.attestationCount()
         const tx = await unirepContract
             .connect(attester)
             .attest(epochKey, epoch, fieldIndex, val)
@@ -159,8 +161,7 @@ describe('Attestations', function () {
                 attester.address,
                 fieldIndex,
                 BigInt(val) +
-                    (BigInt(attestationCounter) <<
-                        BigInt(254 - REPL_NONCE_BITS))
+                    (BigInt(attestationCount) << BigInt(254 - REPL_NONCE_BITS))
             )
     })
 
@@ -212,8 +213,8 @@ describe('Attestations', function () {
         )
 
         const epochKey = BigInt(24910)
-        let attestationCounter = await unirepContract.attestationCounter()
-        expect(attestationCounter).to.equal(0)
+        let attestationCount = await unirepContract.attestationCount()
+        expect(attestationCount).to.equal(0)
 
         const fieldIndex = SUM_FIELD_COUNT
         const val = 3
@@ -223,8 +224,8 @@ describe('Attestations', function () {
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, val)
 
-            expect(attestationCounter).to.equal(
-                (await unirepContract.attestationCounter()) - 1
+            expect(attestationCount).to.equal(
+                (await unirepContract.attestationCount()) - 1
             )
 
             await expect(tx)
@@ -235,11 +236,11 @@ describe('Attestations', function () {
                     attester.address,
                     fieldIndex,
                     BigInt(val) +
-                        (BigInt(attestationCounter) <<
+                        (BigInt(attestationCount) <<
                             BigInt(254 - REPL_NONCE_BITS))
                 )
 
-            attestationCounter++
+            attestationCount++
         }
     })
 
@@ -251,17 +252,18 @@ describe('Attestations', function () {
         )
 
         const epochKey = BigInt(24910)
-        let attestationCounter = await unirepContract.attestationCounter()
+        let attestationCount = await unirepContract.attestationCount()
 
         const fieldIndex = SUM_FIELD_COUNT
 
         for (let x = 1; x <= 3; x++) {
+            const v = randomf(BigInt(2) ** BigInt(254 - REPL_NONCE_BITS))
             const tx = await unirepContract
                 .connect(attester)
-                .attest(epochKey, epoch, fieldIndex, x)
+                .attest(epochKey, epoch, fieldIndex, v)
 
-            expect(attestationCounter).to.equal(
-                (await unirepContract.attestationCounter()) - 1
+            expect(attestationCount).to.equal(
+                (await unirepContract.attestationCount()) - 1
             )
 
             await expect(tx)
@@ -271,12 +273,12 @@ describe('Attestations', function () {
                     epochKey,
                     attester.address,
                     fieldIndex,
-                    BigInt(x) +
-                        (BigInt(attestationCounter) <<
+                    v +
+                        (BigInt(attestationCount) <<
                             BigInt(254 - REPL_NONCE_BITS))
                 )
 
-            attestationCounter++
+            attestationCount++
         }
     })
 })
