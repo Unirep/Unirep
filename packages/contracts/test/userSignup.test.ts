@@ -93,10 +93,7 @@ describe('User Signup', function () {
         )
         await expect(
             unirepContract.connect(attester).userSignUp(publicSignals, proof)
-        ).to.be.revertedWithCustomError(
-            unirepContract,
-            'AttesterNotSignUp',
-        )
+        ).to.be.revertedWithCustomError(unirepContract, 'AttesterNotSignUp')
     })
 
     it('sign up many users should succeed', async () => {
