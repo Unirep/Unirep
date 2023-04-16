@@ -8,6 +8,8 @@ import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 import defaultConfig from '@unirep/circuits/config'
 
+import randomf from 'randomf'
+
 const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
     defaultConfig
 
@@ -146,12 +148,10 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
         const fieldIndex = SUM_FIELD_COUNT
         const val = 1
+        const attestationCount = await unirepContract.attestationCount()
         const tx = await unirepContract
             .connect(attester)
             .attest(epochKey, epoch, fieldIndex, val)
-        const { timestamp } = await tx
-            .wait()
-            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
 
         await expect(tx)
             .to.emit(unirepContract, 'Attestation')
@@ -161,7 +161,7 @@ describe('Attestations', function () {
                 attester.address,
                 fieldIndex,
                 BigInt(val) +
-                    (BigInt(timestamp) << BigInt(254 - REPL_NONCE_BITS))
+                    (BigInt(attestationCount) << BigInt(254 - REPL_NONCE_BITS))
             )
     })
 
@@ -194,7 +194,7 @@ describe('Attestations', function () {
         const epochKey = BigInt(24910)
 
         const fieldIndex = 1
-        const val = 5
+        const val = 0
         const tx = await unirepContract
             .connect(attester)
             .attest(epochKey, epoch, fieldIndex, val)
@@ -203,5 +203,82 @@ describe('Attestations', function () {
         await expect(tx)
             .to.emit(unirepContract, 'Attestation')
             .withArgs(epoch, epochKey, attester.address, fieldIndex, val)
+    })
+
+    it('should get current attestation counter', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        const epochKey = BigInt(24910)
+        let attestationCount = await unirepContract.attestationCount()
+        expect(attestationCount).to.equal(0)
+
+        const fieldIndex = SUM_FIELD_COUNT
+        const val = 3
+
+        for (let x = 1; x <= 3; x++) {
+            const tx = await unirepContract
+                .connect(attester)
+                .attest(epochKey, epoch, fieldIndex, val)
+
+            expect(attestationCount).to.equal(
+                (await unirepContract.attestationCount()) - 1
+            )
+
+            await expect(tx)
+                .to.emit(unirepContract, 'Attestation')
+                .withArgs(
+                    epoch,
+                    epochKey,
+                    attester.address,
+                    fieldIndex,
+                    BigInt(val) +
+                        (BigInt(attestationCount) <<
+                            BigInt(254 - REPL_NONCE_BITS))
+                )
+
+            attestationCount++
+        }
+    })
+
+    it('verify upper bits of replacement field', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+
+        const epochKey = BigInt(24910)
+        let attestationCount = await unirepContract.attestationCount()
+
+        const fieldIndex = SUM_FIELD_COUNT
+
+        for (let x = 1; x <= 3; x++) {
+            const v = randomf(BigInt(2) ** BigInt(254 - REPL_NONCE_BITS))
+            const tx = await unirepContract
+                .connect(attester)
+                .attest(epochKey, epoch, fieldIndex, v)
+
+            expect(attestationCount).to.equal(
+                (await unirepContract.attestationCount()) - 1
+            )
+
+            await expect(tx)
+                .to.emit(unirepContract, 'Attestation')
+                .withArgs(
+                    epoch,
+                    epochKey,
+                    attester.address,
+                    fieldIndex,
+                    v +
+                        (BigInt(attestationCount) <<
+                            BigInt(254 - REPL_NONCE_BITS))
+                )
+
+            attestationCount++
+        }
     })
 })
