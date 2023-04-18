@@ -54,7 +54,7 @@ template UserStateTransition(
     // to_epoch will be checked on chain
     // from_epoch is implicitly checked by the
     // state tree leaf membership proof
-    component epoch_check = GreaterThan(64);
+    component epoch_check = GreaterThan(48);
     epoch_check.in[0] <== to_epoch;
     epoch_check.in[1] <== from_epoch;
     epoch_check.out === 1;
@@ -95,11 +95,11 @@ template UserStateTransition(
     component epoch_key_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
     component leaf_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var i = 0; i < EPOCH_KEY_NONCE_PER_EPOCH; i++) {
-        epoch_key_hashers[i] = Poseidon(4);
-        epoch_key_hashers[i].inputs[0] <== identity_secret;
-        epoch_key_hashers[i].inputs[1] <== attester_id;
-        epoch_key_hashers[i].inputs[2] <== from_epoch;
-        epoch_key_hashers[i].inputs[3] <== i; // nonce
+        epoch_key_hashers[i] = EpochKeyHasher();
+        epoch_key_hashers[i].identity_secret <== identity_secret;
+        epoch_key_hashers[i].attester_id <== attester_id;
+        epoch_key_hashers[i].epoch <== from_epoch;
+        epoch_key_hashers[i].nonce <== i; // nonce
 
         leaf_hashers[i] = EpochTreeLeaf(FIELD_COUNT);
         leaf_hashers[i].epoch_key <== epoch_key_hashers[i].out;
@@ -126,11 +126,11 @@ template UserStateTransition(
 
     component epk_out_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var x = 0; x < EPOCH_KEY_NONCE_PER_EPOCH; x++) {
-        epk_out_hashers[x] = Poseidon(4);
-        epk_out_hashers[x].inputs[0] <== identity_secret;
-        epk_out_hashers[x].inputs[1] <== attester_id;
-        epk_out_hashers[x].inputs[2] <== from_epoch;
-        epk_out_hashers[x].inputs[3] <== epoch_tree_proof_valid[x].out * EPOCH_KEY_NONCE_PER_EPOCH + x; // nonce
+        epk_out_hashers[x] = EpochKeyHasher();
+        epk_out_hashers[x].identity_secret <== identity_secret;
+        epk_out_hashers[x].attester_id <== attester_id;
+        epk_out_hashers[x].epoch <== from_epoch;
+        epk_out_hashers[x].nonce <== epoch_tree_proof_valid[x].out * EPOCH_KEY_NONCE_PER_EPOCH + x; // nonce
         epks[x] <== epk_out_hashers[x].out;
     }
 

@@ -1,5 +1,5 @@
 import randomf from 'randomf'
-import { poseidon2, poseidon4 } from 'poseidon-lite'
+import { poseidon2, poseidon3 } from 'poseidon-lite'
 
 export const SNARK_SCALAR_FIELD =
     '21888242871839275222246405745257275088548364400416034343698204186575808495617'
@@ -33,12 +33,11 @@ export const genEpochKey = (
     epoch: bigint | number,
     nonce: bigint | number
 ): bigint => {
-    return poseidon4([
-        identitySecret,
-        BigInt(attesterId),
-        BigInt(epoch),
-        BigInt(nonce),
-    ])
+    const field =
+        BigInt(attesterId) +
+        BigInt(2) ** BigInt(160) * BigInt(epoch) +
+        BigInt(2) ** BigInt(208) * BigInt(nonce)
+    return poseidon2([identitySecret, field])
 }
 
 export const genStateTreeLeaf = (
@@ -47,11 +46,12 @@ export const genStateTreeLeaf = (
     epoch: bigint | number,
     data: (bigint | string | number)[]
 ): bigint => {
-    let hashchain = BigInt(0)
-    for (const d of data) {
-        hashchain = poseidon2([hashchain, BigInt(d)])
+    let hashchain = BigInt(data[0])
+    for (const d of data.slice(1)) {
+        hashchain = hash2([hashchain, d])
     }
-    return poseidon4([idSecret, BigInt(attesterId), BigInt(epoch), hashchain])
+    const field = BigInt(attesterId) + BigInt(2) ** BigInt(160) * BigInt(epoch)
+    return poseidon3([idSecret, field, hashchain])
 }
 
 export const genEpochTreeLeaf = (
