@@ -10,8 +10,8 @@ This document describes an example [`Prover`](prover) implementation that loads 
 import { Circuit } from '@unirep/circuits'
 import { SnarkPublicSignals, SnarkProof } from '@unirep/utils'
 
-// The keys built for unirep 2.0.0-alpha-2
-const KEY_SERVER = 'https://keys.unirep.io/2-alpha-2'
+// The keys built for unirep 2.0.0-beta-3
+const KEY_SERVER = 'https://keys.unirep.io/2-beta-3'
 
 export default {
     verifyProof: async (

@@ -5,7 +5,7 @@ title: BaseProof
 We build proofs using a `BaseProof` class that optionally supports verification. Proof data can be expressed in one of two formats:
 
 1. `SnarkProof` objects for verification by `snarkjs`
-2. `BigNumberish[]` for contract verification.
+2. `bigint[]` for contract verification.
 
 The `BaseProof` class can be used to convert between the two formats. This class should not be used directly, but should instead be inherited.
 
@@ -33,8 +33,8 @@ Create a new instance of the class.
 
 ```ts
 constructor(
-  publicSignals: BigNumberish[],
-  proof: SnarkProof | BigNumberish[],
+  publicSignals: bigint[],
+  proof: SnarkProof | bigint[],
   prover?: Prover
 )
 ```
@@ -65,7 +65,7 @@ proof.publicSignals
 
 ## proof
 
-The proof data formatted as `BigNumberish[]`. Use this property when interacting with smart contracts.
+The proof data formatted as `bigint[]`. Use this property when interacting with smart contracts.
 
 ```ts
 proof.proof
@@ -77,12 +77,4 @@ A function to verify the proof with the supplied `Prover`. The `prover` property
 
 ```ts
 proof.verify(): Promise<boolean>
-```
-
-## hash
-
-Calculate a Solidity Keccak256 hash for the proof. This is the equivalent of `keccak256(abi.encode(publicSignals, proof))` in Solidity.
-
-```ts
-proof.hash(): string
 ```
