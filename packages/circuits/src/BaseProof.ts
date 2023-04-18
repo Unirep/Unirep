@@ -5,8 +5,6 @@ import {
     Prover,
 } from './circuits'
 import { SnarkProof } from '@unirep/utils'
-import { BigNumberish } from '@ethersproject/bignumber'
-import { keccak256 } from '@ethersproject/solidity'
 
 /**
  * The basic proof structure that is used in unirep protocol
@@ -15,8 +13,8 @@ export class BaseProof {
     readonly _snarkProof: SnarkProof
     protected circuit?: Circuit
 
-    readonly publicSignals: BigNumberish[]
-    public proof: BigNumberish[]
+    readonly publicSignals: bigint[]
+    public proof: bigint[]
     public prover?: Prover
 
     /**
@@ -25,25 +23,25 @@ export class BaseProof {
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        publicSignals: BigNumberish[],
-        proof: SnarkProof | BigNumberish[],
+        publicSignals: (bigint | string)[],
+        proof: SnarkProof | (bigint | string)[],
         prover?: Prover
     ) {
         if (Array.isArray(proof)) {
             // assume it's formatted for verifier contract
-            this.proof = proof
+            this.proof = proof.map((v) => BigInt(v))
             this._snarkProof = formatProofForSnarkjsVerification(
                 proof.map((p) => p.toString())
             )
         } else if (typeof proof === 'object') {
             // assume it's a SnarkProof
             const formattedProof: any[] = formatProofForVerifierContract(proof)
-            this._snarkProof = proof
+            this._snarkProof = proof as SnarkProof
             this.proof = formattedProof
         } else {
             throw new Error('Invalid proof supplied')
         }
-        this.publicSignals = publicSignals
+        this.publicSignals = publicSignals.map((v) => BigInt(v))
         this.prover = prover
     }
 
@@ -62,18 +60,6 @@ export class BaseProof {
             this.circuit,
             this.publicSignals.map((n) => BigInt(n.toString())),
             this._snarkProof
-        )
-    }
-
-    /**
-     * Proof hash is used to find the proof index in the smart contract.
-     * A submitted proof can obtain a proof index and a unique hash value
-     * @returns A `keccak256` hash value of public signals and proof
-     */
-    public hash(): string {
-        return keccak256(
-            ['uint256[]', 'uint256[8]'],
-            [this.publicSignals, this.proof]
         )
     }
 }

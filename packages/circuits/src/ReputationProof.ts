@@ -1,6 +1,5 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
-import { BigNumberish } from '@ethersproject/bignumber'
 import { BaseProof } from './BaseProof'
 
 /**
@@ -15,22 +14,22 @@ export class ReputationProof extends BaseProof {
         graffitiPreImage: 4,
         data: 5,
     }
-    public epochKey: BigNumberish
-    public stateTreeRoot: BigNumberish
-    public control0: BigNumberish
-    public control1: BigNumberish
-    public epoch: BigNumberish
-    public revealNonce: BigNumberish
-    public nonce: BigNumberish
-    public attesterId: BigNumberish
-    public proveMinRep: BigNumberish
-    public proveMaxRep: BigNumberish
-    public proveZeroRep: BigNumberish
-    public minRep: BigNumberish
-    public maxRep: BigNumberish
-    public proveGraffiti: BigNumberish
-    public graffitiPreImage: BigNumberish
-    public data: BigNumberish
+    public epochKey: bigint
+    public stateTreeRoot: bigint
+    public control0: bigint
+    public control1: bigint
+    public epoch: bigint
+    public revealNonce: bigint
+    public nonce: bigint
+    public attesterId: bigint
+    public proveMinRep: bigint
+    public proveMaxRep: bigint
+    public proveZeroRep: bigint
+    public minRep: bigint
+    public maxRep: bigint
+    public proveGraffiti: bigint
+    public graffitiPreImage: bigint
+    public data: bigint
 
     /**
      * @param _publicSignals The public signals of the reputation proof that can be verified by the prover
@@ -38,15 +37,15 @@ export class ReputationProof extends BaseProof {
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        _publicSignals: BigNumberish[],
+        _publicSignals: (bigint | string)[],
         _proof: SnarkProof,
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
-        this.epochKey = _publicSignals[this.idx.epochKey]
-        this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot]
-        this.control0 = _publicSignals[this.idx.control0].toString()
-        this.control1 = _publicSignals[this.idx.control1].toString()
+        this.epochKey = this.publicSignals[this.idx.epochKey]
+        this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]
+        this.control0 = this.publicSignals[this.idx.control0]
+        this.control1 = this.publicSignals[this.idx.control1]
         this.revealNonce = (BigInt(this.control0) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control0) >> BigInt(72)) &
@@ -65,8 +64,8 @@ export class ReputationProof extends BaseProof {
         this.proveMaxRep = (BigInt(this.control1) >> BigInt(129)) & BigInt(1)
         this.proveZeroRep = (BigInt(this.control1) >> BigInt(130)) & BigInt(1)
         this.proveGraffiti = (BigInt(this.control1) >> BigInt(131)) & BigInt(1)
-        this.graffitiPreImage = _publicSignals[this.idx.graffitiPreImage]
-        this.data = _publicSignals[this.idx.data]
+        this.graffitiPreImage = this.publicSignals[this.idx.graffitiPreImage]
+        this.data = this.publicSignals[this.idx.data]
         this.circuit = Circuit.proveReputation
     }
 

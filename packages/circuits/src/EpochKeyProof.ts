@@ -1,6 +1,5 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
-import { BigNumberish } from '@ethersproject/bignumber'
 import { BaseProof } from './BaseProof'
 
 /**
@@ -13,14 +12,14 @@ export class EpochKeyProof extends BaseProof {
         control: 2,
         data: 3,
     }
-    public epochKey: BigNumberish
-    public stateTreeRoot: BigNumberish
-    public control: BigNumberish
-    public epoch: BigNumberish
-    public attesterId: BigNumberish
-    public nonce: BigNumberish
-    public revealNonce: BigNumberish
-    public data: BigNumberish
+    public epochKey: bigint
+    public stateTreeRoot: bigint
+    public control: bigint
+    public epoch: bigint
+    public attesterId: bigint
+    public nonce: bigint
+    public revealNonce: bigint
+    public data: bigint
 
     /**
      * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
@@ -28,14 +27,14 @@ export class EpochKeyProof extends BaseProof {
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        _publicSignals: BigNumberish[],
+        _publicSignals: (bigint | string)[],
         _proof: SnarkProof,
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
-        this.epochKey = _publicSignals[this.idx.epochKey].toString()
-        this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot].toString()
-        this.control = _publicSignals[this.idx.control].toString()
+        this.epochKey = this.publicSignals[this.idx.epochKey]
+        this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]
+        this.control = this.publicSignals[this.idx.control]
         this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control) >> BigInt(72)) &
@@ -45,7 +44,7 @@ export class EpochKeyProof extends BaseProof {
             ((BigInt(1) << BigInt(64)) - BigInt(1))
         this.nonce =
             BigInt(this.control) & ((BigInt(1) << BigInt(8)) - BigInt(1))
-        this.data = _publicSignals[this.idx.data].toString()
+        this.data = this.publicSignals[this.idx.data]
         this.circuit = Circuit.epochKey
     }
 

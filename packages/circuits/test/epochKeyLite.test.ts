@@ -33,7 +33,7 @@ describe('Epoch key lite circuits', function () {
             expect(data.epochKey.toString()).to.equal(
                 genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
-            expect(data.control).to.equal(
+            expect(data.control.toString()).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
                     epoch,
@@ -71,7 +71,7 @@ describe('Epoch key lite circuits', function () {
             expect(data.epochKey.toString()).to.equal(
                 genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
-            expect(data.control).to.equal(
+            expect(data.control.toString()).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
                     epoch,

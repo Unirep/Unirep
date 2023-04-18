@@ -78,8 +78,12 @@ describe('User state transition', function () {
             })
         const ustProof = new UserStateTransitionProof(publicSignals, proof)
         for (let x = 0; x < NUM_EPOCH_KEY_NONCE_PER_EPOCH; x++) {
-            expect(publicSignals[2 + x]).to.equal(expectedKeys[x].toString())
-            expect(ustProof.epochKeys[x]).to.equal(expectedKeys[x].toString())
+            expect(publicSignals[2 + x].toString()).to.equal(
+                expectedKeys[x].toString()
+            )
+            expect(ustProof.epochKeys[x].toString()).to.equal(
+                expectedKeys[x].toString()
+            )
         }
         expect(ustProof.historyTreeRoot.toString()).to.equal(
             historyTree.root.toString()

@@ -80,15 +80,17 @@ describe('Prevent double action circuit', function () {
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal('0')
-            expect(p.control).to.equal(
+            expect(p.control.toString()).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
                     epoch,
                     nonce,
                 }).toString()
             )
-            expect(p.nullifier).to.equal(nullifier.toString())
-            expect(p.identityCommitment).to.equal(identityCommitment.toString())
+            expect(p.nullifier.toString()).to.equal(nullifier.toString())
+            expect(p.identityCommitment.toString()).to.equal(
+                identityCommitment.toString()
+            )
         }
     })
 
@@ -148,8 +150,10 @@ describe('Prevent double action circuit', function () {
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal('0')
-            expect(p.nullifier).to.equal(nullifier.toString())
-            expect(p.identityCommitment).to.equal(identityCommitment.toString())
+            expect(p.nullifier.toString()).to.equal(nullifier.toString())
+            expect(p.identityCommitment.toString()).to.equal(
+                identityCommitment.toString()
+            )
         }
     })
 
@@ -209,15 +213,17 @@ describe('Prevent double action circuit', function () {
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal(sigData.toString())
-            expect(p.control).to.equal(
+            expect(p.control.toString()).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
                     epoch,
                     nonce,
                 }).toString()
             )
-            expect(p.nullifier).to.equal(nullifier.toString())
-            expect(p.identityCommitment).to.equal(identityCommitment.toString())
+            expect(p.nullifier.toString()).to.equal(nullifier.toString())
+            expect(p.identityCommitment.toString()).to.equal(
+                identityCommitment.toString()
+            )
         }
     })
 
@@ -270,15 +276,17 @@ describe('Prevent double action circuit', function () {
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal(sigData.toString())
-            expect(p.control).to.equal(
+            expect(p.control.toString()).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
                     epoch,
                     nonce,
                 }).toString()
             )
-            expect(p.nullifier).to.equal(nullifier.toString())
-            expect(p.identityCommitment).to.equal(identityCommitment.toString())
+            expect(p.nullifier.toString()).to.equal(nullifier.toString())
+            expect(p.identityCommitment.toString()).to.equal(
+                identityCommitment.toString()
+            )
 
             publicSignals[5] = '00000'
             const valid = await defaultProver.verifyProof(
