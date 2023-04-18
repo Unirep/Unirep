@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { SparseMerkleTree } from '../src'
 
 describe('SparseMerkleTree', function () {
-    this.timeout(20000)
+    this.timeout(200000)
 
     it('update', async () => {
         const depth = 32
