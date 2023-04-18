@@ -6,9 +6,9 @@ import {
     genEpochKey,
     genStateTreeLeaf,
     F,
-    hash2,
     MAX_EPOCH,
 } from '@unirep/utils'
+import { poseidon2 } from 'poseidon-lite'
 import {
     Circuit,
     Prover,
@@ -418,7 +418,7 @@ export default class UserState {
                 genEpochKey(this.id.secret, attesterId, fromEpoch, i)
             )
         const historyTree = await this.sync.genHistoryTree(attesterId)
-        const leafHash = hash2([stateTree.root, epochTree.root])
+        const leafHash = poseidon2([stateTree.root, epochTree.root])
         const leaf = await this.sync._db.findOne('HistoryTreeLeaf', {
             where: {
                 attesterId,

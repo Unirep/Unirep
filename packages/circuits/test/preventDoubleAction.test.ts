@@ -4,9 +4,8 @@ import {
     IncrementalMerkleTree,
     genEpochKey,
     genStateTreeLeaf,
-    hash1,
-    hash2,
 } from '@unirep/utils'
+import { poseidon1, poseidon2 } from 'poseidon-lite'
 import {
     Circuit,
     CircuitConfig,
@@ -63,10 +62,10 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = hash2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = hash1([
-                hash2([id.nullifier, id.trapdoor]),
+            const identityCommitment = poseidon1([
+                poseidon2([id.nullifier, id.trapdoor]),
             ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
 
@@ -123,7 +122,7 @@ describe('Prevent double action circuit', function () {
                 genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = hash2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([id.nullifier, externalNullifier])
             expect(publicSignals[2]).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
@@ -133,8 +132,8 @@ describe('Prevent double action circuit', function () {
                 }).toString()
             )
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = hash1([
-                hash2([id.nullifier, id.trapdoor]),
+            const identityCommitment = poseidon1([
+                poseidon2([id.nullifier, id.trapdoor]),
             ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
 
@@ -191,10 +190,10 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = hash2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = hash1([
-                hash2([id.nullifier, id.trapdoor]),
+            const identityCommitment = poseidon1([
+                poseidon2([id.nullifier, id.trapdoor]),
             ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
             expect(publicSignals[5].toString()).to.equal(sigData.toString())
@@ -252,10 +251,10 @@ describe('Prevent double action circuit', function () {
                 genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = hash2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = hash1([
-                hash2([id.nullifier, id.trapdoor]),
+            const identityCommitment = poseidon1([
+                poseidon2([id.nullifier, id.trapdoor]),
             ])
             expect(publicSignals[4]).to.equal(identityCommitment.toString())
             expect(publicSignals[5].toString()).to.equal(sigData.toString())

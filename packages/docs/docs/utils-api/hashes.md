@@ -2,19 +2,6 @@
 title: "Hash functions"
 ---
 
-## Hashes
-
-Poseidon hash of variable number of items.
-```ts
-import { hash1, hash2, hash3, /* etc */ } from '@unirep/utils'
-
-hash1(items: any[]): bigint
-hash2(items: any[]): bigint
-hash3(items: any[]): bigint
-...
-hash8(items: any[]): bigint
-```
-
 ## genEpochKey
 
 Calculate an epoch key.

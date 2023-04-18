@@ -1,8 +1,8 @@
 import { expect } from 'chai'
 import { genProofAndVerify } from './utils'
-import { hash1 } from '@unirep/utils'
+import { poseidon1 } from 'poseidon-lite'
 
-const random = () => hash1([smallRandom()])
+const random = () => poseidon1([smallRandom()])
 const smallRandom = () => Math.floor(Math.random() * 1000000000)
 
 describe('Compare large numbers', function () {

@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
-import { hash1, genEpochKey } from '@unirep/utils'
+import { genEpochKey } from '@unirep/utils'
+import { poseidon1 } from 'poseidon-lite'
 import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
@@ -446,7 +447,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = 10210
         const nonce = 0
         const graffitiPreImage = 124914219
-        const graffiti = hash1([graffitiPreImage])
+        const graffiti = poseidon1([graffitiPreImage])
         const proveGraffiti = true
         const circuitInputs = genReputationCircuitInput({
             id,
@@ -495,7 +496,7 @@ describe('Prove reputation from attester circuit', function () {
         const attesterId = 10210
         const nonce = 1
         const preImage = 124914219
-        const graffiti = hash1([preImage])
+        const graffiti = poseidon1([preImage])
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
@@ -539,7 +540,7 @@ describe('Prove reputation from attester circuit', function () {
         const nonce = 0
         const preImage = 124914219
         const revealNonce = 1
-        const graffiti = hash1([preImage])
+        const graffiti = poseidon1([preImage])
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
@@ -585,7 +586,7 @@ describe('Prove reputation from attester circuit', function () {
         const nonce = 0
         const preImage = 124914219
         const revealNonce = 1
-        const graffiti = hash1([preImage])
+        const graffiti = poseidon1([preImage])
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,

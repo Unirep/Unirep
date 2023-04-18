@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { poseidon } from './crypto'
+import * as poseidon from 'poseidon-lite'
 
 /**
  * The SparseMerkleTree class is a TypeScript implementation of sparse merkle tree with specified tree depth and it provides all the functions to create efficient trees and to generate and verify proofs of membership.
@@ -39,6 +39,10 @@ export class SparseMerkleTree {
         this.numLeaves = BigInt(BigInt(arity) ** BigInt(_height))
     }
 
+    hash(inputs: any[]) {
+        return poseidon[`poseidon${this.arity}`](inputs)
+    }
+
     /**
      * Compute the sparse merkle tree root of given `zeroHash`
      * @param zeroHash The default value of empty leaves
@@ -50,10 +54,10 @@ export class SparseMerkleTree {
             const inputs = Array(this.arity)
                 .fill(null)
                 .map(() => hashes[i - 1])
-            hashes[i] = poseidon(inputs)
+            hashes[i] = this.hash(inputs)
         }
         this.zeroHashes = hashes
-        this._root = poseidon(
+        this._root = this.hash(
             Array(this.arity)
                 .fill(null)
                 .map(() => hashes[this.height - 1])
@@ -115,7 +119,7 @@ export class SparseMerkleTree {
                     )
                 }
             }
-            hash = poseidon(inputs)
+            hash = this.hash(inputs)
             nodeIndex = nodeIndex / BigInt(this.arity)
         }
         this._root = hash
@@ -182,7 +186,7 @@ export class SparseMerkleTree {
             const inputs = sibNodeHashes.map((v, i) => {
                 return BigInt(i) === leafIndex ? nodeHash : v
             })
-            nodeHash = poseidon(inputs)
+            nodeHash = this.hash(inputs)
             nodeIndex = nodeIndex / BigInt(this.arity)
         }
         return nodeHash === this.root

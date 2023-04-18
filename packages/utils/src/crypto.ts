@@ -1,6 +1,5 @@
 import randomf from 'randomf'
-import poseidon from 'poseidon-lite'
-export { poseidon }
+import { poseidon2, poseidon4 } from 'poseidon-lite'
 
 export const SNARK_SCALAR_FIELD =
     '21888242871839275222246405745257275088548364400416034343698204186575808495617'
@@ -28,31 +27,18 @@ export const R_X = (R: bigint, n: number) => {
     return Rx
 }
 
-export const [, hash1, hash2, hash3, hash4, hash5, hash6, hash7, hash8] = Array(
-    9
-)
-    .fill(null)
-    .map((_, i) => (inputs) => {
-        if (!Array.isArray(inputs))
-            throw new Error(
-                `@unirep/utils invalid hash${i} input, expected array`
-            )
-        if (inputs.length !== i)
-            throw new Error(`@unirep/utils invalid hash${i} input length`)
-        return poseidon(inputs)
-    })
-
-export const hashLeftRight = (input1: any, input2: any) =>
-    hash2([input1, input2])
-export const hashOne = (input: any) => hash1([input])
-
 export const genEpochKey = (
     identitySecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     nonce: bigint | number
 ): bigint => {
-    return hash4([identitySecret, BigInt(attesterId), epoch, BigInt(nonce)])
+    return poseidon4([
+        identitySecret,
+        BigInt(attesterId),
+        BigInt(epoch),
+        BigInt(nonce),
+    ])
 }
 
 export const genStateTreeLeaf = (
@@ -63,18 +49,18 @@ export const genStateTreeLeaf = (
 ): bigint => {
     let hashchain = BigInt(0)
     for (const d of data) {
-        hashchain = hash2([hashchain, d])
+        hashchain = poseidon2([hashchain, BigInt(d)])
     }
-    return hash4([idSecret, BigInt(attesterId), BigInt(epoch), hashchain])
+    return poseidon4([idSecret, BigInt(attesterId), BigInt(epoch), hashchain])
 }
 
 export const genEpochTreeLeaf = (
     epochKey: bigint | string,
     data: (bigint | string | number)[]
 ) => {
-    let hashchain = epochKey
+    let hashchain = BigInt(epochKey)
     for (const d of data) {
-        hashchain = hash2([hashchain, d])
+        hashchain = poseidon2([hashchain, BigInt(d)])
     }
     return hashchain
 }

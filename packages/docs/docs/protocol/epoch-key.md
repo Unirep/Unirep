@@ -12,7 +12,7 @@ Epoch keys are public, temporary, identifiers for users.
 * An epoch key is computed by:
 
 ```typescript
-hash4([identitySecret, attesterId, epoch, nonce])
+poseidon4([identitySecret, attesterId, epoch, nonce])
 ```
 
 where `nonce` can be any value between `0` and `numEpochKeyNoncePerEpoch - 1`, so that a user can have `numEpochKeyNoncePerEpoch` epoch keys per epoch.
