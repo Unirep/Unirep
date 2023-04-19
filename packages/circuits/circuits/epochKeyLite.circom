@@ -3,6 +3,7 @@ pragma circom 2.0.0;
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/poseidon.circom";
+include "./leafHasher.circom";
 
 template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input identity_secret;
@@ -30,17 +31,11 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
 
     // then range check the others
 
-    component attester_id_bits = Num2Bits(254);
-    attester_id_bits.in <== attester_id;
-    for (var x = 160; x < 254; x++) {
-        attester_id_bits.out[x] === 0;
-    }
+    component attester_id_check = Num2Bits(160);
+    attester_id_check.in <== attester_id;
 
-    component epoch_bits = Num2Bits(254);
+    component epoch_bits = Num2Bits(48);
     epoch_bits.in <== epoch;
-    for (var x = 64; x < 254; x++) {
-        epoch_bits.out[x] === 0;
-    }
 
     component nonce_lt = LessThan(8);
     nonce_lt.in[0] <== nonce;
@@ -49,11 +44,11 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
 
     control <== reveal_nonce * 2**232 + attester_id * 2**72 + epoch * 2**8 + reveal_nonce * nonce;
 
-    component epoch_key_hasher = Poseidon(4);
-    epoch_key_hasher.inputs[0] <== identity_secret;
-    epoch_key_hasher.inputs[1] <== attester_id;
-    epoch_key_hasher.inputs[2] <== epoch;
-    epoch_key_hasher.inputs[3] <== nonce;
+    component epoch_key_hasher = EpochKeyHasher();
+    epoch_key_hasher.identity_secret <== identity_secret;
+    epoch_key_hasher.attester_id <== attester_id;
+    epoch_key_hasher.epoch <== epoch;
+    epoch_key_hasher.nonce <== nonce;
 
     epoch_key <== epoch_key_hasher.out;
 }

@@ -27,7 +27,7 @@ describe('User state transition', function () {
         const id = new Identity()
         const fromEpoch = 1
         const toEpoch = 5
-        const attesterId = BigInt(1249021895182290)
+        const attesterId = BigInt(2) ** BigInt(159)
         const data = randomData()
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
