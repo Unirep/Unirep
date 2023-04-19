@@ -560,7 +560,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async genStateTree(
-        _epoch: number | ethers.BigNumberish,
+        _epoch: number | bigint,
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)
@@ -605,7 +605,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     async genEpochTree(
-        _epoch: number | ethers.BigNumberish,
+        _epoch: number | bigint,
         attesterId: bigint | string = this.attesterId
     ): Promise<IncrementalMerkleTree> {
         this.checkAttesterId(attesterId)

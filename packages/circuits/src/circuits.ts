@@ -78,7 +78,7 @@ export const formatProofForVerifierContract = (proof: SnarkProof): string[] => {
  * @returns The `SnarkProof` type proof data
  */
 export const formatProofForSnarkjsVerification = (
-    proof: string[]
+    proof: (bigint | string)[]
 ): SnarkProof => {
     return {
         pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')],

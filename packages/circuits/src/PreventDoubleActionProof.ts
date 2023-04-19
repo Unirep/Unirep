@@ -1,6 +1,5 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
-import { BigNumberish } from '@ethersproject/bignumber'
 import { BaseProof } from './BaseProof'
 
 /**
@@ -15,16 +14,16 @@ export class PreventDoubleActionProof extends BaseProof {
         identityCommitment: 4,
         sigData: 5,
     }
-    public revealNonce: BigNumberish
-    public attesterId: BigNumberish
-    public epoch: BigNumberish
-    public nonce: BigNumberish
-    public epochKey: BigNumberish
-    public stateTreeRoot: BigNumberish
-    public control: BigNumberish
-    public sigData: BigNumberish
-    public nullifier: BigNumberish
-    public identityCommitment: BigNumberish
+    public revealNonce: bigint
+    public attesterId: bigint
+    public epoch: bigint
+    public nonce: bigint
+    public epochKey: bigint
+    public stateTreeRoot: bigint
+    public control: bigint
+    public sigData: bigint
+    public nullifier: bigint
+    public identityCommitment: bigint
 
     /**
      * @param _publicSignals The public signals of the prevent double action proof that can be verified by the prover
@@ -32,18 +31,18 @@ export class PreventDoubleActionProof extends BaseProof {
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        _publicSignals: BigNumberish[],
+        _publicSignals: (bigint | string)[],
         _proof: SnarkProof,
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
-        this.epochKey = _publicSignals[this.idx.epochKey].toString()
-        this.stateTreeRoot = _publicSignals[this.idx.stateTreeRoot].toString()
-        this.control = _publicSignals[this.idx.control].toString()
-        this.sigData = _publicSignals[this.idx.sigData].toString()
-        this.nullifier = _publicSignals[this.idx.nullifier].toString()
+        this.epochKey = this.publicSignals[this.idx.epochKey]
+        this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]
+        this.control = this.publicSignals[this.idx.control]
+        this.sigData = this.publicSignals[this.idx.sigData]
+        this.nullifier = this.publicSignals[this.idx.nullifier]
         this.identityCommitment =
-            _publicSignals[this.idx.identityCommitment].toString()
+            this.publicSignals[this.idx.identityCommitment]
         this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control) >> BigInt(72)) &

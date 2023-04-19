@@ -1,6 +1,5 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
-import { BigNumberish } from '@ethersproject/bignumber'
 import { BaseProof } from './BaseProof'
 
 export class EpochKeyLiteProof extends BaseProof {
@@ -9,23 +8,23 @@ export class EpochKeyLiteProof extends BaseProof {
         epochKey: 1,
         data: 2,
     }
-    public epochKey: BigNumberish
-    public control: BigNumberish
-    public epoch: BigNumberish
-    public attesterId: BigNumberish
-    public nonce: BigNumberish
-    public revealNonce: BigNumberish
-    public data: BigNumberish
+    public epochKey: bigint
+    public control: bigint
+    public epoch: bigint
+    public attesterId: bigint
+    public nonce: bigint
+    public revealNonce: bigint
+    public data: bigint
 
     constructor(
-        _publicSignals: BigNumberish[],
+        _publicSignals: (bigint | string)[],
         _proof: SnarkProof,
         prover?: Prover
     ) {
         super(_publicSignals, _proof, prover)
-        this.epochKey = _publicSignals[this.idx.epochKey].toString()
-        this.control = _publicSignals[this.idx.control].toString()
-        this.data = _publicSignals[this.idx.data].toString()
+        this.epochKey = this.publicSignals[this.idx.epochKey]
+        this.control = this.publicSignals[this.idx.control]
+        this.data = this.publicSignals[this.idx.data]
         this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control) >> BigInt(72)) &
