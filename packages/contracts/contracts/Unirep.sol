@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/utils/math/SafeMath.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-
 import {VerifySignature} from './libraries/VerifySignature.sol';
 
 import {IUnirep} from './interfaces/IUnirep.sol';
@@ -20,8 +17,6 @@ import 'poseidon-solidity/PoseidonT3.sol';
  * Attester can give attestations to users, and users can optionally prove that how much reputation they have.
  */
 contract Unirep is IUnirep, VerifySignature {
-    using SafeMath for uint256;
-
     // All verifier contracts
     IVerifier public immutable signupVerifier;
     IVerifier public immutable userStateTransitionVerifier;
