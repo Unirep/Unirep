@@ -4639,7 +4639,7 @@ __metadata:
   dependencies:
     "@zk-kit/incremental-merkle-tree": ^0.4.3
     mocha: ^10.0.0
-    poseidon-lite: ^0.1.1
+    poseidon-lite: ^0.2.0
     randomf: ^0.0.3
     typescript: ^4.7.3
   languageName: unknown
@@ -14279,10 +14279,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"poseidon-lite@npm:^0.1.1":
-  version: 0.1.1
-  resolution: "poseidon-lite@npm:0.1.1"
-  checksum: 34facfe8e253be831845ba905574b35db8faf6b1ef0a4dd01aa7214e9ed7c9f70c8d96b8ff69691b12b8d2ae61227a43e22df16070883c48f6452b2a5b3ac933
+"poseidon-lite@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "poseidon-lite@npm:0.2.0"
+  checksum: c47c6fd0a29a78ca1f7cf6ccb8b0c4f4e72930d944e63425e36f60c15d37fb0aeca30b8a22a30640ed68d631142282c0b8308da83b1a2b2bb92b87f5a2432c93
   languageName: node
   linkType: hard
 
