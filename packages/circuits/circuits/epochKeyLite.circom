@@ -26,25 +26,16 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
      * 1 bit reveal nonce
      **/
 
-    component attester_id_check = Num2Bits(160);
-    attester_id_check.in <== attester_id;
-
     // check that reveal_nonce is 0 or 1
     reveal_nonce * (reveal_nonce - 1) === 0;
 
     // then range check the others
 
-    component attester_id_bits = Num2Bits(254);
-    attester_id_bits.in <== attester_id;
-    for (var x = 160; x < 254; x++) {
-        attester_id_bits.out[x] === 0;
-    }
+    component attester_id_check = Num2Bits(160);
+    attester_id_check.in <== attester_id;
 
-    component epoch_bits = Num2Bits(254);
+    component epoch_bits = Num2Bits(48);
     epoch_bits.in <== epoch;
-    for (var x = 64; x < 254; x++) {
-        epoch_bits.out[x] === 0;
-    }
 
     component nonce_lt = LessThan(8);
     nonce_lt.in[0] <== nonce;
