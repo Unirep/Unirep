@@ -1,4 +1,4 @@
-import config from '../dist/config/index.js'
+import config from '../dist/src/CircuitConfig.js'
 // TODO: better command line build options
 const {
     EPOCH_TREE_DEPTH,
@@ -8,7 +8,7 @@ const {
     FIELD_COUNT,
     SUM_FIELD_COUNT,
     REPL_NONCE_BITS,
-} = config.default
+} = config
 
 export const ptauName = 'powersOfTau28_hez_final_18.ptau'
 

@@ -15,12 +15,12 @@ import {
     UserStateTransitionProof,
     SNARK_SCALAR_FIELD,
     SignupProof,
+    CircuitConfig,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-import defaultConfig from '@unirep/circuits/config'
 const {
     EPOCH_TREE_DEPTH,
     STATE_TREE_DEPTH,
@@ -28,7 +28,7 @@ const {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     FIELD_COUNT,
     SUM_FIELD_COUNT,
-} = defaultConfig
+} = CircuitConfig.default
 
 const signupUser = async (id, unirepContract, attesterId, account) => {
     const epoch = await unirepContract.attesterCurrentEpoch(attesterId)

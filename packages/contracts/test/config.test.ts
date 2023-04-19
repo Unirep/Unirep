@@ -1,10 +1,10 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import defaultConfig from '@unirep/circuits/config'
+import { CircuitConfig } from '@unirep/circuits'
 
 const { EPOCH_TREE_DEPTH, STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } =
-    defaultConfig
+    CircuitConfig.default
 
 import { deployUnirep } from '../deploy'
 

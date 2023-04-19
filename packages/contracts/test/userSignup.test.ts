@@ -9,14 +9,13 @@ import {
     F,
     MAX_EPOCH,
 } from '@unirep/utils'
-import { Circuit, SignupProof } from '@unirep/circuits'
+import { Circuit, SignupProof, CircuitConfig } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-import defaultConfig from '@unirep/circuits/config'
 
-const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_NONCE_BITS } = defaultConfig
+const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_NONCE_BITS } = CircuitConfig.default
 
 describe('User Signup', function () {
     this.timeout(300000)
