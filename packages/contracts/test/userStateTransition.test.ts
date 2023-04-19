@@ -8,8 +8,8 @@ import {
     genEpochKey,
     genRandomSalt,
     genEpochTreeLeaf,
-    hash2,
 } from '@unirep/utils'
+import { poseidon2 } from 'poseidon-lite'
 import {
     Circuit,
     UserStateTransitionProof,
@@ -96,7 +96,7 @@ describe('User State Transition', function () {
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
         epochTree.insert(0)
         stateTree.insert(leaf)
-        historyTree.insert(hash2([historyTree.root, epochTree.root]))
+        historyTree.insert(poseidon2([historyTree.root, epochTree.root]))
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
             .map((_, i) =>
@@ -174,7 +174,7 @@ describe('User State Transition', function () {
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
         stateTree.insert(genRandomSalt())
         epochTree.insert(0)
-        historyTree.insert(hash2([stateTree.root, epochTree.root]))
+        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
         const stateTreeProof = stateTree.createProof(index)
         const historyTreeProof = historyTree.createProof(0)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -227,7 +227,9 @@ describe('User State Transition', function () {
         const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
         epochTree.insert(0)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([stateTree.root, epochTree.root + BigInt(1)]))
+        historyTree.insert(
+            poseidon2([stateTree.root, epochTree.root + BigInt(1)])
+        )
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
             .map((_, i) =>
@@ -305,7 +307,7 @@ describe('User State Transition', function () {
         const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
         epochTree.insert(0)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([stateTree.root, epochTree.root]))
+        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
         const stateTreeProof = stateTree.createProof(index)
         const historyTreeProof = historyTree.createProof(0)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -463,7 +465,9 @@ describe('User State Transition', function () {
             const toEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
             epochTree.insert(0)
-            historyTree.insert(hash2([fromEpochStateTree.root, epochTree.root]))
+            historyTree.insert(
+                poseidon2([fromEpochStateTree.root, epochTree.root])
+            )
             const historyTreeProof = historyTree.createProof(epoch - startEpoch)
             for (let i = 0; i < users; i++) {
                 const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
@@ -566,7 +570,7 @@ describe('User State Transition', function () {
         const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
         epochTree.insert(epochTreeLeaf)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([stateTree.root, epochTree.root]))
+        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
         const stateTreeProof = stateTree.createProof(index)
         const historyTreeProof = historyTree.createProof(0)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -647,7 +651,7 @@ describe('User State Transition', function () {
         const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
         epochTree.insert(epochTreeLeaf)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([stateTree.root, epochTree.root]))
+        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
         const stateTreeProof = stateTree.createProof(index)
         const historyTreeProof = historyTree.createProof(0)
         const r = await defaultProver.genProofAndPublicSignals(

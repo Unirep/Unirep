@@ -1,5 +1,6 @@
 import { Identity } from '@semaphore-protocol/identity'
 import * as utils from '@unirep/utils'
+import { poseidon1 } from 'poseidon-lite'
 
 import { Circuit, SNARK_SCALAR_FIELD, CircuitConfig } from '../src'
 import { defaultProver } from '../provers/defaultProver'
@@ -14,7 +15,7 @@ const {
 export const randomData = () =>
     Array(FIELD_COUNT)
         .fill(0)
-        .map(() => utils.hash1([Math.floor(Math.random() * 199191919)]))
+        .map(() => poseidon1([Math.floor(Math.random() * 199191919)]))
 
 export const combineData = (data0, data1) => {
     const out = [] as bigint[]

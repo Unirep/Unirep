@@ -2,7 +2,8 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import { F, hash1, genEpochTreeLeaf } from '@unirep/utils'
+import { F, genEpochTreeLeaf } from '@unirep/utils'
+import { poseidon1 } from 'poseidon-lite'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
@@ -61,7 +62,7 @@ describe('Attestations', function () {
             attester.address
         )
         const fieldIndex = 0
-        const a1 = hash1([1])
+        const a1 = poseidon1([1])
         const a2 = F - BigInt(1)
         const result = (a1 + a2) % F
         const data = [result, ...Array(FIELD_COUNT - 1).fill(BigInt(0))]

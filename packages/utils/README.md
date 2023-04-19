@@ -95,7 +95,7 @@ const depth = 4
 const zeroHash = 0
 // initialize sparse merkle tree with depth 4 and zeroHash 0
 const tree = new SparseMerkleTree(
-    depth, 
+    depth,
     zeroHash
 )
 ```
@@ -133,38 +133,6 @@ import { genRandomSalt } from '@unirep/utils'
 const salt = genRandomSalt()
 ```
 
-**hash5**
-
-```typescript
-import { hash5 } from '@unirep/utils'
-
-// poseidon hash 5 bigint elements
-const values = [
-    genRandomSalt(),
-    genRandomSalt(),
-    genRandomSalt(),
-    genRandomSalt(),
-    genRandomSalt(),
-]
-const hash5Value = hash5(values)
-```
-**hashOne**
-```typescript
-import { hashOne } from '@unirep/utils'
-
-// poseidon hash 1 bigint elements
-const value = genRandomSalt()
-const hashOneValue = hashOne(value)
-```
-**hashLeftRight**
-```typescript
-import { hashLeftRight } from '@unirep/utils'
-
-// poseidon hash 2 bigint elements
-const leftValue = genRandomSalt()
-const rightValue = genRandomSalt()
-const hash = hashLeftRight(leftValue, rightValue)
-```
 **stringifyBigInts/unstringifyBigInts**
 ```typescript
 const values = {

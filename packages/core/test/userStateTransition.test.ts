@@ -7,8 +7,8 @@ import {
     IncrementalMerkleTree,
     genEpochKey,
     stringifyBigInts,
-    hash1,
 } from '@unirep/utils'
+import { poseidon1 } from 'poseidon-lite'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState, genUnirepState } from './utils'
@@ -52,7 +52,7 @@ describe('User state transition', function () {
             Array(config.fieldCount)
                 .fill(0)
                 .map((_, i) => {
-                    const v = hash1([Math.floor(Math.random() * 199191919)])
+                    const v = poseidon1([Math.floor(Math.random() * 199191919)])
                     if (i < config.sumFieldCount) {
                         return v
                     }

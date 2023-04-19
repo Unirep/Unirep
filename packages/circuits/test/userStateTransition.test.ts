@@ -6,8 +6,8 @@ import {
     stringifyBigInts,
     genStateTreeLeaf,
     genEpochTreeLeaf,
-    hash2,
 } from '@unirep/utils'
+import { poseidon2 } from 'poseidon-lite'
 import { Circuit, CircuitConfig } from '../src'
 import { randomData, combineData, genProofAndVerify } from './utils'
 import { UserStateTransitionProof } from '../src/UserStateTransitionProof'
@@ -43,7 +43,7 @@ describe('User state transition', function () {
                 genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
             )
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([stateTree.root, epochTree.root]))
+        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
         const historyTreeProof = historyTree.createProof(0)
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.userStateTransition,
@@ -115,7 +115,7 @@ describe('User state transition', function () {
                     return epochTree.createProof(0)
                 })
             const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-            historyTree.insert(hash2([stateTree.root, epochTree.root]))
+            historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
             const historyTreeProof = historyTree.createProof(0)
             const { isValid, publicSignals } = await genProofAndVerify(
                 Circuit.userStateTransition,
@@ -192,7 +192,7 @@ describe('User state transition', function () {
                 genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
             )
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(hash2([stateTree.root, epochTree.root]))
+        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
         const historyTreeProof = historyTree.createProof(0)
         const circuitInputs = {
             from_epoch: fromEpoch,

@@ -2,7 +2,8 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
-import { F, hash1, genEpochTreeLeaf } from '@unirep/utils'
+import { F, genEpochTreeLeaf } from '@unirep/utils'
+import { poseidon1 } from 'poseidon-lite'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
@@ -50,7 +51,7 @@ describe('Attestations max', function () {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
             const val =
-                hash1([Math.floor(Math.random() * 10000000000)]) >>
+                poseidon1([Math.floor(Math.random() * 10000000000)]) >>
                 BigInt(REPL_NONCE_BITS)
             await unirepContract
                 .connect(attester)
@@ -73,7 +74,7 @@ describe('Attestations max', function () {
         for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
-            const val = hash1([Math.floor(Math.random() * 10000000000)])
+            const val = poseidon1([Math.floor(Math.random() * 10000000000)])
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, val)
@@ -82,7 +83,7 @@ describe('Attestations max', function () {
         for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
-            const val = hash1([Math.floor(Math.random() * 10000000000)])
+            const val = poseidon1([Math.floor(Math.random() * 10000000000)])
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, val)

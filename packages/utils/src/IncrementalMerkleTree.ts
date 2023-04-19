@@ -1,4 +1,4 @@
-import poseidon from 'poseidon-lite'
+import { poseidon2 } from 'poseidon-lite'
 import {
     IncrementalMerkleTree as zkIncrementalMerkleTree,
     Node,
@@ -17,7 +17,7 @@ export class IncrementalMerkleTree extends zkIncrementalMerkleTree {
      * @param arity The number of children for each node.
      */
     constructor(depth: number, zeroValue: Node = 0, arity: number = 2) {
-        super(poseidon, depth, zeroValue, arity)
+        super(poseidon2, depth, zeroValue, arity)
     }
 
     //~~ WIP function that returns all leaves for level
