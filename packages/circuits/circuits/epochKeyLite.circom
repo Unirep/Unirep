@@ -26,6 +26,9 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
      * 1 bit reveal nonce
      **/
 
+    component attester_id_check = Num2Bits(160);
+    attester_id_check.in <== attester_id;
+
     // check that reveal_nonce is 0 or 1
     reveal_nonce * (reveal_nonce - 1) === 0;
 

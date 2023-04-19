@@ -59,6 +59,10 @@ template UserStateTransition(
     epoch_check.in[1] <== from_epoch;
     epoch_check.out === 1;
 
+    // range check
+    component attester_id_check = Num2Bits(160);
+    attester_id_check.in <== attester_id;
+
     /* 1. Check if user exists in the Global State Tree */
 
     component leaf_hasher = StateTreeLeaf(FIELD_COUNT);
