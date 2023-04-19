@@ -8,7 +8,7 @@ const {
     FIELD_COUNT,
     SUM_FIELD_COUNT,
     REPL_NONCE_BITS,
-} = config
+} = config.default
 
 export const ptauName = 'powersOfTau28_hez_final_18.ptau'
 
