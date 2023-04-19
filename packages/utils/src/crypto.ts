@@ -48,7 +48,7 @@ export const genStateTreeLeaf = (
 ): bigint => {
     let hashchain = BigInt(data[0])
     for (const d of data.slice(1)) {
-        hashchain = hash2([hashchain, d])
+        hashchain = poseidon2([hashchain, d])
     }
     const field = BigInt(attesterId) + BigInt(2) ** BigInt(160) * BigInt(epoch)
     return poseidon3([idSecret, field, hashchain])
