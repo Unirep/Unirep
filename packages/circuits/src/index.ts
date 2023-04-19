@@ -1,5 +1,3 @@
-export * from '../config'
-
 export * from './circuits'
 
 export * from './BaseProof'

@@ -1,4 +1,4 @@
-import config from '../dist/config/index.js'
+import config from '../dist/src/CircuitConfig.js'
 // TODO: better command line build options
 const {
     EPOCH_TREE_DEPTH,

@@ -5,11 +5,10 @@ import { Identity } from '@semaphore-protocol/identity'
 import { genRandomSalt } from '@unirep/utils'
 import { Synchronizer, UserState } from '@unirep/core'
 import { deployUnirep } from '@unirep/contracts/deploy'
-import defaultConfig from '@unirep/circuits/config'
 
 export async function bootstrapUnirep(
     provider: any, // ethers provider, only required arg
-    config: CircuitConfig = defaultConfig,
+    config: CircuitConfig = CircuitConfig.default,
     prover: Prover = defaultProver
 ) {
     const unirepContract = await deployUnirep(provider, config, prover)

@@ -5,9 +5,9 @@ import { IncrementalMerkleTree, genRandomSalt } from '@unirep/utils'
 
 import { EPOCH_LENGTH, genSignature } from '../src'
 import { deployUnirep } from '../deploy'
-import defaultConfig from '@unirep/circuits/config'
+import { CircuitConfig } from '@unirep/circuits'
 
-const { STATE_TREE_DEPTH } = defaultConfig
+const { STATE_TREE_DEPTH } = CircuitConfig.default
 
 describe('Attester Signup', function () {
     this.timeout(120000)

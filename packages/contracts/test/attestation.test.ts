@@ -1,18 +1,17 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { SNARK_SCALAR_FIELD } from '@unirep/circuits'
+import { SNARK_SCALAR_FIELD, CircuitConfig } from '@unirep/circuits'
 import { F, genEpochTreeLeaf } from '@unirep/utils'
 import { poseidon1 } from 'poseidon-lite'
 
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
-import defaultConfig from '@unirep/circuits/config'
 
 import randomf from 'randomf'
 
 const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
-    defaultConfig
+    CircuitConfig.default
 
 describe('Attestations', function () {
     this.timeout(120000)
