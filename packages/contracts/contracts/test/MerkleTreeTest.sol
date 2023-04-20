@@ -17,27 +17,27 @@ contract MerkleTreeTest {
         ReusableMerkleTree.init(data0, _depth);
     }
 
-    function insert(uint256 leaf) public {
+    function insertLazy(uint256 leaf) public {
         LazyMerkleTree.insert(data, leaf);
     }
 
-    function root() public view returns (uint256) {
+    function rootLazy() public view returns (uint256) {
         return LazyMerkleTree.root(data, depth);
     }
 
-    function update(uint256 leaf, uint40 index) public {
+    function updateLazy(uint256 leaf, uint40 index) public {
         LazyMerkleTree.update(data, leaf, index);
     }
 
-    function insert0(uint256 leaf) public {
+    function insertReusable(uint256 leaf) public {
         ReusableMerkleTree.insert(data0, leaf);
     }
 
-    function root0() public view returns (uint256) {
+    function rootReusable() public view returns (uint256) {
         return data0.root;
     }
 
-    function update0(uint256 leaf, uint256 index) public {
+    function updateReusable(uint256 leaf, uint256 index) public {
         ReusableMerkleTree.update(data0, index, leaf);
     }
 }

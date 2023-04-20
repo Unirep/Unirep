@@ -55,23 +55,23 @@ describe('Lazy merkle tree', function () {
             const element = randomf(F)
             tree.insert(element)
             {
-                const t = await merkleTreeTest.insert(element)
+                const t = await merkleTreeTest.insertLazy(element)
                 const receipt = await t.wait()
                 lazyGasUsed.push(Number(receipt.gasUsed.toString()) - baseCost)
             }
             {
-                const t = await merkleTreeTest.insert0(element)
+                const t = await merkleTreeTest.insertReusable(element)
                 const receipt = await t.wait()
                 normalGasUsed.push(
                     Number(receipt.gasUsed.toString()) - baseCost
                 )
             }
             {
-                const onchainRoot = await merkleTreeTest.root()
+                const onchainRoot = await merkleTreeTest.rootLazy()
                 expect(tree.root.toString()).to.equal(onchainRoot.toString())
             }
             {
-                const onchainRoot = await merkleTreeTest.root0()
+                const onchainRoot = await merkleTreeTest.rootReusable()
                 expect(tree.root.toString()).to.equal(onchainRoot.toString())
             }
         }
@@ -101,14 +101,14 @@ describe('Lazy merkle tree', function () {
             if (x % 100 === 0) console.log(x)
             const element = randomf(F)
             tree.insert(element)
-            await merkleTreeTest.insert(element).then((t) => t.wait())
-            await merkleTreeTest.insert0(element).then((t) => t.wait())
+            await merkleTreeTest.insertLazy(element).then((t) => t.wait())
+            await merkleTreeTest.insertReusable(element).then((t) => t.wait())
             {
-                const onchainRoot = await merkleTreeTest.root()
+                const onchainRoot = await merkleTreeTest.rootLazy()
                 expect(tree.root.toString()).to.equal(onchainRoot.toString())
             }
             {
-                const onchainRoot = await merkleTreeTest.root0()
+                const onchainRoot = await merkleTreeTest.rootReusable()
                 expect(tree.root.toString()).to.equal(onchainRoot.toString())
             }
             for (let y = 0; y < x; y += Math.ceil(x / 11)) {
@@ -116,27 +116,27 @@ describe('Lazy merkle tree', function () {
                 const newElement = randomf(F)
                 tree.update(y, newElement)
                 {
-                    const t = await merkleTreeTest.update(newElement, y)
+                    const t = await merkleTreeTest.updateLazy(newElement, y)
                     const receipt = await t.wait()
                     lazyGasUsed.push(
                         Number(receipt.gasUsed.toString()) - baseCost
                     )
                 }
                 {
-                    const t = await merkleTreeTest.update0(newElement, y)
+                    const t = await merkleTreeTest.updateReusable(newElement, y)
                     const receipt = await t.wait()
                     normalGasUsed.push(
                         Number(receipt.gasUsed.toString()) - baseCost
                     )
                 }
                 {
-                    const onchainRoot = await merkleTreeTest.root()
+                    const onchainRoot = await merkleTreeTest.rootLazy()
                     expect(tree.root.toString(), 'lazy').to.equal(
                         onchainRoot.toString()
                     )
                 }
                 {
-                    const onchainRoot = await merkleTreeTest.root0()
+                    const onchainRoot = await merkleTreeTest.rootReusable()
                     expect(tree.root.toString(), 'reusable').to.equal(
                         onchainRoot.toString()
                     )
@@ -166,23 +166,23 @@ describe('Lazy merkle tree', function () {
         for (let x = 0; x < 2 ** depth - 1; x++) {
             const element = randomf(F)
             tree.insert(element)
-            await merkleTreeTest.insert(element).then((t) => t.wait())
-            await merkleTreeTest.insert0(element).then((t) => t.wait())
+            await merkleTreeTest.insertLazy(element).then((t) => t.wait())
+            await merkleTreeTest.insertReusable(element).then((t) => t.wait())
             {
-                const onchainRoot = await merkleTreeTest.root()
+                const onchainRoot = await merkleTreeTest.rootLazy()
                 expect(tree.root.toString()).to.equal(onchainRoot.toString())
             }
             {
-                const onchainRoot = await merkleTreeTest.root0()
+                const onchainRoot = await merkleTreeTest.rootReusable()
                 expect(tree.root.toString()).to.equal(onchainRoot.toString())
             }
         }
         {
-            const tx = merkleTreeTest.insert(1)
+            const tx = merkleTreeTest.insertLazy(1)
             await expect(tx).to.be.revertedWith('LazyMerkleTree: tree is full')
         }
         {
-            const tx = merkleTreeTest.insert0(1)
+            const tx = merkleTreeTest.insertReusable(1)
             await expect(tx).to.be.revertedWith(
                 'ReusableMerkleTree: tree is full'
             )
@@ -196,13 +196,13 @@ describe('Lazy merkle tree', function () {
         const element = F + BigInt(1)
 
         {
-            const tx = merkleTreeTest.insert(element)
+            const tx = merkleTreeTest.insertLazy(element)
             await expect(tx).to.be.revertedWith(
                 'LazyMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
             )
         }
         {
-            const tx = merkleTreeTest.insert0(element)
+            const tx = merkleTreeTest.insertReusable(element)
             await expect(tx).to.be.revertedWith(
                 'ReusableMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
             )
@@ -216,15 +216,15 @@ describe('Lazy merkle tree', function () {
         const element = F + BigInt(1)
 
         {
-            await merkleTreeTest.insert(1).then((t) => t.wait())
-            const tx = merkleTreeTest.update(element, 0)
+            await merkleTreeTest.insertLazy(1).then((t) => t.wait())
+            const tx = merkleTreeTest.updateLazy(element, 0)
             await expect(tx).to.be.revertedWith(
                 'LazyMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
             )
         }
         {
-            await merkleTreeTest.insert0(1).then((t) => t.wait())
-            const tx = merkleTreeTest.update0(element, 0)
+            await merkleTreeTest.insertReusable(1).then((t) => t.wait())
+            const tx = merkleTreeTest.updateReusable(element, 0)
             await expect(tx).to.be.revertedWith(
                 'ReusableMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
             )
