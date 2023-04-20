@@ -67,7 +67,7 @@ library LazyMerkleTree {
             'LazyMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
         );
         uint40 numberOfLeaves = self.numberOfLeaves;
-        require(index < numberOfLeaves);
+        require(index < numberOfLeaves, 'LazyMerkleTree: leaf must exist');
 
         uint256 hash = leaf;
 

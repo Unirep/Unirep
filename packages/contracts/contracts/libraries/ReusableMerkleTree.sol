@@ -162,7 +162,7 @@ library ReusableMerkleTree {
             'ReusableMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
         );
         require(
-            self.numberOfLeaves < 2 ** depth,
+            self.numberOfLeaves < 2 ** depth - 1,
             'ReusableMerkleTree: tree is full'
         );
 

@@ -8,6 +8,7 @@ import {IVerifier} from './interfaces/IVerifier.sol';
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
 import {ReusableMerkleTree, ReusableTreeData} from './libraries/ReusableMerkleTree.sol';
+import {LazyMerkleTree, LazyTreeData} from './libraries/LazyMerkleTree.sol';
 
 import 'poseidon-solidity/PoseidonT3.sol';
 
@@ -188,7 +189,7 @@ contract Unirep is IUnirep, VerifySignature {
         ReusableMerkleTree.init(attester.stateTree, stateTreeDepth);
 
         // initialize the epoch tree
-        ReusableMerkleTree.init(attester.epochTree, epochTreeDepth);
+        LazyMerkleTree.init(attester.epochTree, epochTreeDepth);
 
         // initialize the semaphore group tree
         IncrementalBinaryTree.initWithDefaultZeroes(
@@ -298,13 +299,13 @@ contract Unirep is IUnirep, VerifySignature {
         bool newLeaf = epkData.leaf == 0;
         epkData.leaf = leaf;
 
-        ReusableTreeData storage epochTree = attesters[uint160(msg.sender)]
+        LazyTreeData storage epochTree = attesters[uint160(msg.sender)]
             .epochTree;
         if (newLeaf) {
-            epkData.leafIndex = uint48(epochTree.numberOfLeaves);
-            ReusableMerkleTree.insert(epochTree, leaf);
+            epkData.leafIndex = epochTree.numberOfLeaves;
+            LazyMerkleTree.insert(epochTree, leaf);
         } else {
-            ReusableMerkleTree.update(epochTree, epkData.leafIndex, leaf);
+            LazyMerkleTree.update(epochTree, leaf, epkData.leafIndex);
         }
 
         emit EpochTreeLeaf(epoch, uint160(msg.sender), epkData.leafIndex, leaf);
@@ -394,8 +395,12 @@ contract Unirep is IUnirep, VerifySignature {
         // otherwise reset the trees for the new epoch
 
         if (attester.stateTree.numberOfLeaves > 0) {
+            uint256 epochTreeRoot = LazyMerkleTree.root(
+                attester.epochTree,
+                epochTreeDepth
+            );
             uint256 historyTreeLeaf = PoseidonT3.hash(
-                [attester.stateTree.root, attester.epochTree.root]
+                [attester.stateTree.root, epochTreeRoot]
             );
             uint256 root = IncrementalBinaryTree.insert(
                 attester.historyTree,
@@ -405,12 +410,12 @@ contract Unirep is IUnirep, VerifySignature {
 
             ReusableMerkleTree.reset(attester.stateTree);
 
-            attester.epochTreeRoots[fromEpoch] = attester.epochTree.root;
+            attester.epochTreeRoots[fromEpoch] = epochTreeRoot;
 
             emit HistoryTreeLeaf(attesterId, historyTreeLeaf);
         }
 
-        ReusableMerkleTree.reset(attester.epochTree);
+        LazyMerkleTree.reset(attester.epochTree);
 
         emit EpochEnded(epoch - 1, attesterId);
 
@@ -661,7 +666,7 @@ contract Unirep is IUnirep, VerifySignature {
     ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         if (epoch == attesterCurrentEpoch(attesterId)) {
-            return attester.epochTree.root;
+            return LazyMerkleTree.root(attester.epochTree, epochTreeDepth);
         }
         return attester.epochTreeRoots[epoch];
     }
