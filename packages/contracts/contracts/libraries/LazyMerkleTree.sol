@@ -2,11 +2,13 @@
 pragma solidity ^0.8.0;
 
 import 'poseidon-solidity/PoseidonT3.sol';
+import 'hardhat/console.sol';
 
 struct LazyTreeData {
     uint32 maxIndex;
     uint40 numberOfLeaves;
     mapping(uint256 => uint256) elements;
+    uint32[32] levelCounts;
 }
 
 library LazyMerkleTree {
@@ -23,6 +25,9 @@ library LazyMerkleTree {
 
     function reset(LazyTreeData storage self) public {
         self.numberOfLeaves = 0;
+        for (uint8 x = 0; x < MAX_DEPTH; x++) {
+            self.levelCounts[x] = 0;
+        }
     }
 
     function indexForElement(
@@ -46,6 +51,9 @@ library LazyMerkleTree {
 
         for (uint8 i = 0; true; ) {
             self.elements[indexForElement(i, index)] = hash;
+            if (i > 0) {
+                self.levelCounts[i] = uint32(index) + 1;
+            }
             // it's a left element so we don't hash until there's a right element
             if (index & 1 == 0) break;
             uint40 elementIndex = indexForElement(i, index - 1);
@@ -77,10 +85,11 @@ library LazyMerkleTree {
                 levels[i + 1] = PoseidonT3.hash([levels[i], defaultZero(i)]);
             } else {
                 // if the element is a right sibling the parent is guaranteed to be calculated
-                uint256 parent = self.elements[
-                    indexForElement(i + 1, index >> 1)
-                ];
-                if (parent != 0) {
+                uint256 levelCount = self.levelCounts[i + 1];
+                if (levelCount > index >> 1) {
+                    uint256 parent = self.elements[
+                        indexForElement(i + 1, index >> 1)
+                    ];
                     levels[i + 1] = parent;
                 } else {
                     uint256 sibling = self.elements[
