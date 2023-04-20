@@ -25,11 +25,19 @@ contract MerkleTreeTest {
         return LazyMerkleTree.root(data, depth);
     }
 
+    function update(uint256 leaf, uint40 index) public {
+        LazyMerkleTree.update(data, leaf, index);
+    }
+
     function insert0(uint256 leaf) public {
         ReusableMerkleTree.insert(data0, leaf);
     }
 
     function root0() public view returns (uint256) {
         return data0.root;
+    }
+
+    function update0(uint256 leaf, uint256 index) public {
+        ReusableMerkleTree.update(data0, index, leaf);
     }
 }

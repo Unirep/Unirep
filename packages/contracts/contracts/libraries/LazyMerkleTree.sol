@@ -57,6 +57,38 @@ library LazyMerkleTree {
         }
     }
 
+    function update(
+        LazyTreeData storage self,
+        uint256 leaf,
+        uint40 index
+    ) public {
+        require(
+            leaf < SNARK_SCALAR_FIELD,
+            'LazyMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
+        );
+        uint40 numberOfLeaves = self.numberOfLeaves;
+        require(index < numberOfLeaves);
+
+        uint256 hash = leaf;
+
+        for (uint8 i = 0; true; ) {
+            self.elements[indexForElement(i, index)] = hash;
+            uint256 levelCount = numberOfLeaves >> (i + 1);
+            if (levelCount <= index >> 1) break;
+            if (index & 1 == 0) {
+                uint40 elementIndex = indexForElement(i, index + 1);
+                hash = PoseidonT3.hash([hash, self.elements[elementIndex]]);
+            } else {
+                uint40 elementIndex = indexForElement(i, index - 1);
+                hash = PoseidonT3.hash([self.elements[elementIndex], hash]);
+            }
+            unchecked {
+                index >>= 1;
+                i++;
+            }
+        }
+    }
+
     function root(
         LazyTreeData storage self,
         uint8 depth

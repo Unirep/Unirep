@@ -212,13 +212,13 @@ library ReusableMerkleTree {
         require(leafIndex < leafCount, 'ReusableMerkleTree: invalid index');
 
         uint256 hash = newLeaf;
-        bool isLatest = leafIndex == leafCount - 1;
 
         for (uint8 i = 0; i < depth; ) {
             self.elements[indexForElement(i, leafIndex, depth)] = hash;
             uint256[2] memory siblings;
             if (leafIndex & 1 == 0) {
                 // it's a left sibling
+                bool isLatest = leafIndex >= ((leafCount - 1) >> i);
                 siblings = [
                     hash,
                     isLatest
