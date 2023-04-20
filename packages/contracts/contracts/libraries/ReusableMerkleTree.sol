@@ -199,8 +199,8 @@ library ReusableMerkleTree {
 
     function update(
         ReusableTreeData storage self,
-        uint256 leafIndex,
-        uint256 newLeaf
+        uint256 newLeaf,
+        uint256 leafIndex
     ) public returns (uint256) {
         uint256 depth = self.depth;
         uint256 leafCount = self.numberOfLeaves;

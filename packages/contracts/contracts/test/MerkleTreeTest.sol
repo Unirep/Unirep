@@ -38,6 +38,6 @@ contract MerkleTreeTest {
     }
 
     function updateReusable(uint256 leaf, uint256 index) public {
-        ReusableMerkleTree.update(data0, index, leaf);
+        ReusableMerkleTree.update(data0, leaf, index);
     }
 }
