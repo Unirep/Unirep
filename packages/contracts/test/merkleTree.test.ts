@@ -4,48 +4,46 @@ import { expect } from 'chai'
 import { IncrementalMerkleTree, F } from '@unirep/utils'
 import randomf from 'randomf'
 
+const deployTrees = async (depth) => {
+    const [attester] = await ethers.getSigners()
+    const Poseidon = await ethers.getContractFactory('PoseidonT3')
+    const poseidon = await Poseidon.deploy()
+    await poseidon.deployed()
+    const LazyMerkleTree = await ethers.getContractFactory('LazyMerkleTree', {
+        libraries: {
+            PoseidonT3: poseidon.address,
+        },
+    })
+    const lazyMerkleTree = await LazyMerkleTree.deploy()
+    await lazyMerkleTree.deployed()
+    const ReusableMerkleTree = await ethers.getContractFactory(
+        'ReusableMerkleTree',
+        {
+            libraries: {
+                PoseidonT3: poseidon.address,
+            },
+        }
+    )
+    const reusableMerkleTree = await ReusableMerkleTree.deploy()
+    await reusableMerkleTree.deployed()
+
+    const MerkleTreeTest = await ethers.getContractFactory('MerkleTreeTest', {
+        libraries: {
+            LazyMerkleTree: lazyMerkleTree.address,
+            ReusableMerkleTree: reusableMerkleTree.address,
+        },
+    })
+    const merkleTreeTest = await MerkleTreeTest.deploy(depth)
+    await merkleTreeTest.deployed()
+    return merkleTreeTest
+}
+
 describe('Lazy merkle tree', function () {
     this.timeout(0)
 
     it('should test tree insertion', async () => {
-        const [attester] = await ethers.getSigners()
-        const Poseidon = await ethers.getContractFactory('PoseidonT3')
-        const poseidon = await Poseidon.deploy()
-        await poseidon.deployed()
-        const LazyMerkleTree = await ethers.getContractFactory(
-            'LazyMerkleTree',
-            {
-                libraries: {
-                    PoseidonT3: poseidon.address,
-                },
-            }
-        )
-        const lazyMerkleTree = await LazyMerkleTree.deploy()
-        await lazyMerkleTree.deployed()
-        const ReusableMerkleTree = await ethers.getContractFactory(
-            'ReusableMerkleTree',
-            {
-                libraries: {
-                    PoseidonT3: poseidon.address,
-                },
-            }
-        )
-        const reusableMerkleTree = await ReusableMerkleTree.deploy()
-        await reusableMerkleTree.deployed()
-
-        const MerkleTreeTest = await ethers.getContractFactory(
-            'MerkleTreeTest',
-            {
-                libraries: {
-                    LazyMerkleTree: lazyMerkleTree.address,
-                    ReusableMerkleTree: reusableMerkleTree.address,
-                },
-            }
-        )
-        const depth = 15
-        const merkleTreeTest = await MerkleTreeTest.deploy(depth)
-        await merkleTreeTest.deployed()
-
+        const depth = 6
+        const merkleTreeTest = await deployTrees(depth)
         const baseCost = 21000
 
         const tree = new IncrementalMerkleTree(depth)
@@ -92,44 +90,8 @@ describe('Lazy merkle tree', function () {
     })
 
     it('should test tree update', async () => {
-        const [attester] = await ethers.getSigners()
-        const Poseidon = await ethers.getContractFactory('PoseidonT3')
-        const poseidon = await Poseidon.deploy()
-        await poseidon.deployed()
-        const LazyMerkleTree = await ethers.getContractFactory(
-            'LazyMerkleTree',
-            {
-                libraries: {
-                    PoseidonT3: poseidon.address,
-                },
-            }
-        )
-        const lazyMerkleTree = await LazyMerkleTree.deploy()
-        await lazyMerkleTree.deployed()
-        const ReusableMerkleTree = await ethers.getContractFactory(
-            'ReusableMerkleTree',
-            {
-                libraries: {
-                    PoseidonT3: poseidon.address,
-                },
-            }
-        )
-        const reusableMerkleTree = await ReusableMerkleTree.deploy()
-        await reusableMerkleTree.deployed()
-
-        const MerkleTreeTest = await ethers.getContractFactory(
-            'MerkleTreeTest',
-            {
-                libraries: {
-                    LazyMerkleTree: lazyMerkleTree.address,
-                    ReusableMerkleTree: reusableMerkleTree.address,
-                },
-            }
-        )
         const depth = 6
-        const merkleTreeTest = await MerkleTreeTest.deploy(depth)
-        await merkleTreeTest.deployed()
-
+        const merkleTreeTest = await deployTrees(depth)
         const baseCost = 21000
 
         const tree = new IncrementalMerkleTree(depth)
@@ -195,44 +157,9 @@ describe('Lazy merkle tree', function () {
         }
     })
 
-    it('should test max leaf insertion', async () => {
-        const [attester] = await ethers.getSigners()
-        const Poseidon = await ethers.getContractFactory('PoseidonT3')
-        const poseidon = await Poseidon.deploy()
-        await poseidon.deployed()
-        const LazyMerkleTree = await ethers.getContractFactory(
-            'LazyMerkleTree',
-            {
-                libraries: {
-                    PoseidonT3: poseidon.address,
-                },
-            }
-        )
-        const lazyMerkleTree = await LazyMerkleTree.deploy()
-        await lazyMerkleTree.deployed()
-        const ReusableMerkleTree = await ethers.getContractFactory(
-            'ReusableMerkleTree',
-            {
-                libraries: {
-                    PoseidonT3: poseidon.address,
-                },
-            }
-        )
-        const reusableMerkleTree = await ReusableMerkleTree.deploy()
-        await reusableMerkleTree.deployed()
-
-        const MerkleTreeTest = await ethers.getContractFactory(
-            'MerkleTreeTest',
-            {
-                libraries: {
-                    LazyMerkleTree: lazyMerkleTree.address,
-                    ReusableMerkleTree: reusableMerkleTree.address,
-                },
-            }
-        )
+    it('should fail to insert too many leaves', async () => {
         const depth = 5
-        const merkleTreeTest = await MerkleTreeTest.deploy(depth)
-        await merkleTreeTest.deployed()
+        const merkleTreeTest = await deployTrees(depth)
 
         const tree = new IncrementalMerkleTree(depth)
 
@@ -258,6 +185,48 @@ describe('Lazy merkle tree', function () {
             const tx = merkleTreeTest.insert0(1)
             await expect(tx).to.be.revertedWith(
                 'ReusableMerkleTree: tree is full'
+            )
+        }
+    })
+
+    it('should fail to insert leaf larger than field', async () => {
+        const depth = 5
+        const merkleTreeTest = await deployTrees(depth)
+
+        const element = F + BigInt(1)
+
+        {
+            const tx = merkleTreeTest.insert(element)
+            await expect(tx).to.be.revertedWith(
+                'LazyMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
+            )
+        }
+        {
+            const tx = merkleTreeTest.insert0(element)
+            await expect(tx).to.be.revertedWith(
+                'ReusableMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
+            )
+        }
+    })
+
+    it('should fail to update leaf larger than field', async () => {
+        const depth = 5
+        const merkleTreeTest = await deployTrees(depth)
+
+        const element = F + BigInt(1)
+
+        {
+            await merkleTreeTest.insert(1).then((t) => t.wait())
+            const tx = merkleTreeTest.update(element, 0)
+            await expect(tx).to.be.revertedWith(
+                'LazyMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
+            )
+        }
+        {
+            await merkleTreeTest.insert0(1).then((t) => t.wait())
+            const tx = merkleTreeTest.update0(element, 0)
+            await expect(tx).to.be.revertedWith(
+                'ReusableMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
             )
         }
     })
