@@ -95,6 +95,7 @@ library LazyMerkleTree {
     ) public view returns (uint256) {
         // this will always short circuit if self.numberOfLeaves == 0
         uint40 numberOfLeaves = self.numberOfLeaves;
+        if (numberOfLeaves == 0) return defaultZero(depth);
         uint40 index = numberOfLeaves - 1;
 
         uint256[MAX_DEPTH + 1] memory levels;

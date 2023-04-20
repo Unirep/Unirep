@@ -59,7 +59,7 @@ describe('Attestations max', function () {
         }
         await expect(
             unirepContract.connect(attester).attest(2, epoch, 0, 1)
-        ).to.be.revertedWith('ReusableMerkleTree: tree is full')
+        ).to.be.revertedWith('LazyMerkleTree: tree is full')
     })
 
     it('should submit attestations after max attestations', async () => {
