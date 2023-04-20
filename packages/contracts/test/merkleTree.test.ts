@@ -194,4 +194,71 @@ describe('Lazy merkle tree', function () {
             console.log(`Average update cost (normal): ${avg}`)
         }
     })
+
+    it('should test max leaf insertion', async () => {
+        const [attester] = await ethers.getSigners()
+        const Poseidon = await ethers.getContractFactory('PoseidonT3')
+        const poseidon = await Poseidon.deploy()
+        await poseidon.deployed()
+        const LazyMerkleTree = await ethers.getContractFactory(
+            'LazyMerkleTree',
+            {
+                libraries: {
+                    PoseidonT3: poseidon.address,
+                },
+            }
+        )
+        const lazyMerkleTree = await LazyMerkleTree.deploy()
+        await lazyMerkleTree.deployed()
+        const ReusableMerkleTree = await ethers.getContractFactory(
+            'ReusableMerkleTree',
+            {
+                libraries: {
+                    PoseidonT3: poseidon.address,
+                },
+            }
+        )
+        const reusableMerkleTree = await ReusableMerkleTree.deploy()
+        await reusableMerkleTree.deployed()
+
+        const MerkleTreeTest = await ethers.getContractFactory(
+            'MerkleTreeTest',
+            {
+                libraries: {
+                    LazyMerkleTree: lazyMerkleTree.address,
+                    ReusableMerkleTree: reusableMerkleTree.address,
+                },
+            }
+        )
+        const depth = 5
+        const merkleTreeTest = await MerkleTreeTest.deploy(depth)
+        await merkleTreeTest.deployed()
+
+        const tree = new IncrementalMerkleTree(depth)
+
+        for (let x = 0; x < 2 ** depth - 1; x++) {
+            const element = randomf(F)
+            tree.insert(element)
+            await merkleTreeTest.insert(element).then((t) => t.wait())
+            await merkleTreeTest.insert0(element).then((t) => t.wait())
+            {
+                const onchainRoot = await merkleTreeTest.root()
+                expect(tree.root.toString()).to.equal(onchainRoot.toString())
+            }
+            {
+                const onchainRoot = await merkleTreeTest.root0()
+                expect(tree.root.toString()).to.equal(onchainRoot.toString())
+            }
+        }
+        {
+            const tx = merkleTreeTest.insert(1)
+            await expect(tx).to.be.revertedWith('LazyMerkleTree: tree is full')
+        }
+        {
+            const tx = merkleTreeTest.insert0(1)
+            await expect(tx).to.be.revertedWith(
+                'ReusableMerkleTree: tree is full'
+            )
+        }
+    })
 })

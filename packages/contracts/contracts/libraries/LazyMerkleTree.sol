@@ -110,7 +110,6 @@ library LazyMerkleTree {
             if (index & 1 == 0) {
                 levels[i + 1] = PoseidonT3.hash([levels[i], defaultZero(i)]);
             } else {
-                // if the element is a right sibling the parent is guaranteed to be calculated
                 uint256 levelCount = (numberOfLeaves) >> (i + 1);
                 if (levelCount > index >> 1) {
                     uint256 parent = self.elements[
