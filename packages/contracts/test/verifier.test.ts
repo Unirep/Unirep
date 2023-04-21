@@ -546,7 +546,7 @@ describe('Reputation proof verifier', function () {
         state_tree_elements: 0,
         data: Array(FIELD_COUNT).fill(0),
         prove_graffiti: 0,
-        graffiti_pre_image: 0,
+        graffiti: 0,
         reveal_nonce: 0,
         attester_id: 0,
         epoch: 0,

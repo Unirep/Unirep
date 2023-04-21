@@ -495,21 +495,20 @@ export default class UserState {
      * @param epkNonce The nonce determines the output of the epoch key
      * @param minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`
      * @param maxRep The amount of reputation that user wants to prove. It should satisfy: `negRep - posRep >= maxRep`
-     * @param graffitiPreImage The graffiti pre-image that user wants to prove. It should satisfy: `hash(graffitiPreImage) == graffiti`
+     * @param graffiti The graffiti that user wants to prove. It should satisfy: `graffiti == data[SUM_FIELD_COUNT]`
      * @returns The reputation proof of type `ReputationProof`.
      */
     public genProveReputationProof = async (options: {
         epkNonce?: number
         minRep?: number
         maxRep?: number
-        graffitiPreImage?: bigint | string
+        graffiti?: bigint | string
         proveZeroRep?: boolean
         revealNonce?: boolean
         data?: bigint | string
         attesterId?: bigint | string
     }): Promise<ReputationProof> => {
-        const { minRep, maxRep, graffitiPreImage, proveZeroRep, revealNonce } =
-            options
+        const { minRep, maxRep, graffiti, proveZeroRep, revealNonce } = options
         const nonce = options.epkNonce ?? 0
         const attesterId = toDecString(
             options.attesterId ?? this.sync.attesterId
@@ -526,8 +525,8 @@ export default class UserState {
             state_tree_indexes: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             data,
-            prove_graffiti: graffitiPreImage ? 1 : 0,
-            graffiti_pre_image: graffitiPreImage ?? 0,
+            prove_graffiti: graffiti ? 1 : 0,
+            graffiti: graffiti ?? 0,
             reveal_nonce: revealNonce ?? 0,
             attester_id: attesterId.toString(),
             epoch,

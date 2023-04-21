@@ -11,7 +11,7 @@ export class ReputationProof extends BaseProof {
         stateTreeRoot: 1,
         control0: 2,
         control1: 3,
-        graffitiPreImage: 4,
+        graffiti: 4,
         data: 5,
     }
     public epochKey: bigint
@@ -28,7 +28,7 @@ export class ReputationProof extends BaseProof {
     public minRep: bigint
     public maxRep: bigint
     public proveGraffiti: bigint
-    public graffitiPreImage: bigint
+    public graffiti: bigint
     public data: bigint
 
     /**
@@ -64,7 +64,7 @@ export class ReputationProof extends BaseProof {
         this.proveMaxRep = (BigInt(this.control1) >> BigInt(129)) & BigInt(1)
         this.proveZeroRep = (BigInt(this.control1) >> BigInt(130)) & BigInt(1)
         this.proveGraffiti = (BigInt(this.control1) >> BigInt(131)) & BigInt(1)
-        this.graffitiPreImage = this.publicSignals[this.idx.graffitiPreImage]
+        this.graffiti = this.publicSignals[this.idx.graffiti]
         this.data = this.publicSignals[this.idx.data]
         this.circuit = Circuit.proveReputation
     }

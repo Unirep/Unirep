@@ -42,7 +42,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
 
-    uint48 public attestationCount;
+    uint48 public attestationCount = 1;
 
     constructor(
         Config memory _config,
@@ -547,7 +547,7 @@ contract Unirep is IUnirep, VerifySignature {
         ReputationSignals memory signals;
         signals.epochKey = publicSignals[0];
         signals.stateTreeRoot = publicSignals[1];
-        signals.graffitiPreImage = publicSignals[4];
+        signals.graffiti = publicSignals[4];
         // now decode the control values
         (
             signals.revealNonce,

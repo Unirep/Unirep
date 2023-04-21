@@ -10,10 +10,11 @@ pragma circom 2.0.0;
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/gates.circom";
 include "./circomlib/circuits/poseidon.circom";
+include "./bigComparators.circom";
 include "./incrementalMerkleTree.circom";
 include "./epochKey.circom";
 
-template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT) {
+template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS) {
     signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
@@ -26,7 +27,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     signal input data[FIELD_COUNT];
     // Graffiti
     signal input prove_graffiti;
-    signal input graffiti_pre_image;
+    signal input graffiti;
     // Epoch key
     signal input reveal_nonce;
     signal input attester_id;
@@ -159,21 +160,18 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
 
     /* End of check 4 */
 
-    /* 3. Prove the graffiti pre-image if needed */
+    /* 3. Prove the graffiti if needed */
 
     component if_not_check_graffiti = IsZero();
     if_not_check_graffiti.in <== prove_graffiti;
 
-    component graffiti_hasher = Poseidon(1);
-    graffiti_hasher.inputs[0] <== graffiti_pre_image;
-
-    component graffiti_eq = IsEqual();
-    graffiti_eq.in[0] <== graffiti_hasher.out;
-    graffiti_eq.in[1] <== data[SUM_FIELD_COUNT];
+    component repl_field_equal = replFieldEqual(REPL_NONCE_BITS);
+    repl_field_equal.in[0] <== graffiti;
+    repl_field_equal.in[1] <== data[SUM_FIELD_COUNT];
 
     component check_graffiti = OR();
     check_graffiti.a <== if_not_check_graffiti.out;
-    check_graffiti.b <== graffiti_eq.out;
+    check_graffiti.b <== repl_field_equal.out;
 
     check_graffiti.out === 1;
 

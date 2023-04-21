@@ -31,6 +31,34 @@ template UpperLessThan(n) {
     out <== lt.out;
 }
 
+template replFieldEqual(REPL_NONCE_BITS) {
+    assert(REPL_NONCE_BITS <= 254);
+    signal input in[2];
+    signal output out;
+
+    component bits[2];
+    var n = 254 - REPL_NONCE_BITS;
+    for (var x = 0; x < 2; x++) {
+        bits[x] = Num2Bits_strict();
+        bits[x].in <== in[x];
+    }
+
+    component repl_bits[2];
+    repl_bits[0] = Bits2Num(n);
+    repl_bits[1] = Bits2Num(n);
+
+    for (var x = 0; x < n; x++) {
+        repl_bits[0].in[x] <== bits[0].out[x];
+        repl_bits[1].in[x] <== bits[1].out[x];
+    }
+
+    component eq = IsEqual();
+    eq.in[0] <== repl_bits[0].out;
+    eq.in[1] <== repl_bits[1].out;
+
+    out <== eq.out;
+}
+
 template BigLessThan() {
     signal input in[2];
     signal output out;
