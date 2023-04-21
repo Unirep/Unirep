@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
-import { genEpochKey } from '@unirep/utils'
+import { genEpochKey, F } from '@unirep/utils'
 import { Circuit, CircuitConfig, EpochKeyLiteProof } from '../src'
 import { defaultProver } from '../provers/defaultProver'
 
@@ -201,6 +201,28 @@ describe('Epoch key lite circuits', function () {
             attester_id: attesterId,
             nonce,
             reveal_nonce: 2,
+            sig_data: _data,
+        }
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.epochKeyLite, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of range nonce', async () => {
+        const attesterId = 479187498124
+        const epoch = 18241924
+        // assuming nonce_bits = 8 this should be 1
+        const nonce = F + BigInt(1)
+        const id = new Identity()
+        const _data = BigInt(210128912581953498913)
+        const circuitInputs = {
+            identity_secret: id.secret,
+            epoch,
+            attester_id: attesterId,
+            nonce,
+            reveal_nonce: 1,
             sig_data: _data,
         }
         await new Promise<void>((rs, rj) => {
