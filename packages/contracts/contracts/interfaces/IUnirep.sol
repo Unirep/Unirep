@@ -86,7 +86,7 @@ interface IUnirep {
     struct ReputationSignals {
         uint256 stateTreeRoot;
         uint256 epochKey;
-        uint256 graffitiPreImage;
+        uint256 graffiti;
         uint256 proveGraffiti;
         uint256 nonce;
         uint256 epoch;

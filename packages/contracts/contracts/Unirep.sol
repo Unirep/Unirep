@@ -542,7 +542,7 @@ contract Unirep is IUnirep, VerifySignature {
         ReputationSignals memory signals;
         signals.epochKey = publicSignals[0];
         signals.stateTreeRoot = publicSignals[1];
-        signals.graffitiPreImage = publicSignals[4];
+        signals.graffiti = publicSignals[4];
         // now decode the control values
         (
             signals.revealNonce,

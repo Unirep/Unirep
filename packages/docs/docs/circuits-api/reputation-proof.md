@@ -108,18 +108,18 @@ this.proveZeroRep
 
 ## proveGraffiti
 
-Whether the user has chosen to prove a graffiti pre-image. If this value is non-zero the user graffiti pre-image will be proven.
+Whether the user has chosen to prove a graffiti. If this value is non-zero the user graffiti will be proven.
 
 ```ts
 this.proveGraffiti
 ```
 
-## graffitiPreImage
+## graffiti
 
-The graffiti pre-image controlled by the user. This value is only checked if `proveGraffiti` is non-zero.
+The graffiti controlled by the user, which is defined by `data[SUM_FIELD_COUNT]` in the circuits. This value is only checked if `proveGraffiti` is non-zero.
 
 ```ts
-this.graffitiPreImage
+this.graffiti
 ```
 
 ## control

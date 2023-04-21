@@ -102,7 +102,7 @@ Control fields are use to encode many small values into a single field element. 
 
 ## Prove Reputation Proof
 
-The prove reputation proof allows a user to prove a reputation balance in the [state tree](../protocol/trees#state-tree). The user is not able to prove reputation received in the current epoch. The user can optionally prove some minimum amount of reputation, maximum amount of reputation, net zero reputation (e.g. `posRep == negRep`), and their graffiti pre-image.
+The prove reputation proof allows a user to prove a reputation balance in the [state tree](../protocol/trees#state-tree). The user is not able to prove reputation received in the current epoch. The user can optionally prove some minimum amount of reputation, maximum amount of reputation, net zero reputation (e.g. `posRep == negRep`), and their graffiti.
 
 In this proof, we assign `data[0] = posRep`, `data[1] = negRep`, `data[SUM_FIELD_COUNT] = graffiti`.
 
@@ -128,7 +128,7 @@ Control field 1:
 
 Inputs:
 - `identity_secret`
-- `graffiti_pre_image` (public)
+- `graffiti` (public)
 - `state_tree_indexes[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `data[FIELD_COUNT]`

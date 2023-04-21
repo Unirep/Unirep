@@ -85,7 +85,7 @@ const genReputationCircuitInput = (config: {
     proveMaxRep?: number
     proveZeroRep?: number
     proveGraffiti?: boolean | number
-    graffitiPreImage?: any
+    graffiti?: any
     revealNonce?: number
 }) => {
     const {
@@ -96,7 +96,7 @@ const genReputationCircuitInput = (config: {
         startBalance: _startBalance,
         minRep,
         proveGraffiti,
-        graffitiPreImage,
+        graffiti,
         maxRep,
         proveMinRep,
         proveMaxRep,
@@ -106,7 +106,7 @@ const genReputationCircuitInput = (config: {
         {
             minRep: 0,
             maxRep: 0,
-            graffitiPreImage: 0,
+            graffiti: 0,
             startBalance: [],
         },
         config
@@ -132,11 +132,11 @@ const genReputationCircuitInput = (config: {
         state_tree_indexes: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
         data: startBalance,
-        graffiti_pre_image: graffitiPreImage,
+        graffiti: graffiti,
         epoch,
         nonce,
         attester_id: attesterId,
-        prove_graffiti: proveGraffiti ? 1 : 0,
+        prove_graffiti: proveGraffiti ? proveGraffiti : 0,
         min_rep: minRep,
         max_rep: maxRep,
         prove_max_rep: proveMaxRep ?? 0,

@@ -159,7 +159,7 @@ state.genProveReputationProof(options: {
   epkNonce?: number
   minRep?: number
   maxRep?: number
-  graffitiPreImage?: bigint | string
+  graffiti?: bigint | string
   proveZeroRep?: boolean
   revealNonce?: boolean
   data?: bigint | string
