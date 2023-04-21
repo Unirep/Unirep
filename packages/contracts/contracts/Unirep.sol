@@ -41,7 +41,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
 
-    uint48 public attestationCount;
+    uint48 public attestationCount = 1;
 
     constructor(
         Config memory _config,
