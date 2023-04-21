@@ -35,7 +35,7 @@
         "@zk-kit/incremental-merkle-tree.sol": "^1.4.0",
         "ethers": "^5.6.8",
         "global-factory": "^0.0.0",
-        "poseidon-solidity": "^0.0.3",
+        "poseidon-solidity": "^0.0.4",
         "solc": "^0.8.16"
     },
     "devDependencies": {
