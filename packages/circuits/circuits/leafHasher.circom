@@ -1,5 +1,7 @@
 include "./circomlib/circuits/poseidon.circom";
 
+// attester_id, epoch, and nonce must be range checked
+// outside of this component
 template EpochKeyHasher() {
   signal input identity_secret;
   signal input attester_id;
@@ -37,6 +39,8 @@ template EpochTreeLeaf(FIELD_COUNT) {
   out <== hasher[FIELD_COUNT-1].out;
 }
 
+// attester_id and epoch must be range checked
+// outside of this component
 template StateTreeLeaf(FIELD_COUNT) {
   signal input data[FIELD_COUNT];
   signal input identity_secret;

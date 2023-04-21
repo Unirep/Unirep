@@ -3,6 +3,7 @@ pragma circom 2.0.0;
 // Output identity commitment and starting state tree leaf
 
 include "./circomlib/circuits/poseidon.circom";
+include "./circomlib/circuits/bitify.circom";
 include "./identity.circom";
 include "./leafHasher.circom";
 
@@ -21,6 +22,12 @@ template Signup(FIELD_COUNT) {
     commitment_calc.nullifier <== identity_nullifier;
     commitment_calc.trapdoor <== identity_trapdoor;
     identity_commitment <== commitment_calc.out;
+
+    component epoch_range_check = Num2Bits(48);
+    epoch_range_check.in <== epoch;
+
+    component attester_id_check = Num2Bits(160);
+    attester_id_check.in <== attester_id;
 
     component leaf_hasher = StateTreeLeaf(FIELD_COUNT);
     leaf_hasher.identity_secret <== commitment_calc.secret;

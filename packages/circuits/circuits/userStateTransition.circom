@@ -54,6 +54,13 @@ template UserStateTransition(
     // to_epoch will be checked on chain
     // from_epoch is implicitly checked by the
     // state tree leaf membership proof
+
+    component from_epoch_check = Num2Bits(48);
+    from_epoch_check.in <== from_epoch;
+
+    // component to_epoch_check = Num2Bits(48);
+    // to_epoch_check.in <== to_epoch;
+
     component epoch_check = GreaterThan(48);
     epoch_check.in[0] <== to_epoch;
     epoch_check.in[1] <== from_epoch;
