@@ -3,23 +3,133 @@ pragma solidity ^0.8.0;
 
 import 'poseidon-solidity/PoseidonT3.sol';
 
-// only allow arity 2, variable height
-
-struct ReusableTreeData {
-    uint256 depth;
-    uint256 root;
-    uint256 numberOfLeaves;
-    // store as 0-2**depth first level
-    // 2**depth - 2**(depth-1) as second level
-    // 2**(depth-1) - 2**(depth - 2) as third level
-    // etc
+struct LazyTreeData {
+    uint32 maxIndex;
+    uint40 numberOfLeaves;
     mapping(uint256 => uint256) elements;
 }
 
-library ReusableMerkleTree {
-    uint8 internal constant MAX_DEPTH = 32;
+library LazyMerkleTree {
     uint256 internal constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    uint8 internal constant MAX_DEPTH = 32;
+    uint40 internal constant MAX_INDEX = (1 << 32) - 1;
+
+    function init(LazyTreeData storage self, uint8 depth) public {
+        require(depth <= MAX_DEPTH, 'LazyMerkleTree: Tree too large');
+        self.maxIndex = uint32((1 << depth) - 1);
+        self.numberOfLeaves = 0;
+    }
+
+    function reset(LazyTreeData storage self) public {
+        self.numberOfLeaves = 0;
+    }
+
+    function indexForElement(
+        uint8 level,
+        uint40 index
+    ) public pure returns (uint40) {
+        // store the elements sparsely
+        return MAX_INDEX * level + index;
+    }
+
+    function insert(LazyTreeData storage self, uint256 leaf) public {
+        uint40 index = self.numberOfLeaves;
+        self.numberOfLeaves = index + 1;
+        require(
+            leaf < SNARK_SCALAR_FIELD,
+            'LazyMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
+        );
+        require(index < self.maxIndex, 'LazyMerkleTree: tree is full');
+
+        uint256 hash = leaf;
+
+        for (uint8 i = 0; true; ) {
+            self.elements[indexForElement(i, index)] = hash;
+            // it's a left element so we don't hash until there's a right element
+            if (index & 1 == 0) break;
+            uint40 elementIndex = indexForElement(i, index - 1);
+            hash = PoseidonT3.hash([self.elements[elementIndex], hash]);
+            unchecked {
+                index >>= 1;
+                i++;
+            }
+        }
+    }
+
+    function update(
+        LazyTreeData storage self,
+        uint256 leaf,
+        uint40 index
+    ) public {
+        require(
+            leaf < SNARK_SCALAR_FIELD,
+            'LazyMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
+        );
+        uint40 numberOfLeaves = self.numberOfLeaves;
+        require(index < numberOfLeaves, 'LazyMerkleTree: leaf must exist');
+
+        uint256 hash = leaf;
+
+        for (uint8 i = 0; true; ) {
+            self.elements[indexForElement(i, index)] = hash;
+            uint256 levelCount = numberOfLeaves >> (i + 1);
+            if (levelCount <= index >> 1) break;
+            if (index & 1 == 0) {
+                uint40 elementIndex = indexForElement(i, index + 1);
+                hash = PoseidonT3.hash([hash, self.elements[elementIndex]]);
+            } else {
+                uint40 elementIndex = indexForElement(i, index - 1);
+                hash = PoseidonT3.hash([self.elements[elementIndex], hash]);
+            }
+            unchecked {
+                index >>= 1;
+                i++;
+            }
+        }
+    }
+
+    function root(
+        LazyTreeData storage self,
+        uint8 depth
+    ) public view returns (uint256) {
+        // this will always short circuit if self.numberOfLeaves == 0
+        uint40 numberOfLeaves = self.numberOfLeaves;
+        if (numberOfLeaves == 0) return defaultZero(depth);
+        uint40 index = numberOfLeaves - 1;
+
+        uint256[MAX_DEPTH + 1] memory levels;
+
+        if (index & 1 == 0) {
+            levels[0] = self.elements[indexForElement(0, index)];
+        } else {
+            levels[0] = defaultZero(0);
+        }
+
+        for (uint8 i = 0; i < depth; ) {
+            if (index & 1 == 0) {
+                levels[i + 1] = PoseidonT3.hash([levels[i], defaultZero(i)]);
+            } else {
+                uint256 levelCount = (numberOfLeaves) >> (i + 1);
+                if (levelCount > index >> 1) {
+                    uint256 parent = self.elements[
+                        indexForElement(i + 1, index >> 1)
+                    ];
+                    levels[i + 1] = parent;
+                } else {
+                    uint256 sibling = self.elements[
+                        indexForElement(i, index - 1)
+                    ];
+                    levels[i + 1] = PoseidonT3.hash([sibling, levels[i]]);
+                }
+            }
+            unchecked {
+                index >>= 1;
+                i++;
+            }
+        }
+        return levels[depth];
+    }
 
     uint256 public constant Z_0 = 0;
     uint256 public constant Z_1 =
@@ -87,7 +197,7 @@ library ReusableMerkleTree {
     uint256 public constant Z_32 =
         21443572485391568159800782191812935835534334817699172242223315142338162256601;
 
-    function defaultZero(uint256 index) public pure returns (uint256) {
+    function defaultZero(uint8 index) public pure returns (uint256) {
         if (index == 0) return Z_0;
         if (index == 1) return Z_1;
         if (index == 2) return Z_2;
@@ -121,127 +231,6 @@ library ReusableMerkleTree {
         if (index == 30) return Z_30;
         if (index == 31) return Z_31;
         if (index == 32) return Z_32;
-        revert('ReusableMerkleTree: defaultZero bad index');
-    }
-
-    function init(ReusableTreeData storage self, uint256 depth) public {
-        require(
-            depth > 0 && depth <= MAX_DEPTH,
-            'ReusableMerkleTree: tree depth must be between 1 and 32'
-        );
-
-        self.depth = depth;
-        self.root = defaultZero(depth);
-    }
-
-    function reset(ReusableTreeData storage self) public {
-        self.numberOfLeaves = 0;
-        self.root = defaultZero(self.depth);
-    }
-
-    function indexForElement(
-        uint256 level,
-        uint256 index,
-        uint256 depth
-    ) public pure returns (uint256) {
-        uint256 _index = index;
-        for (uint8 x = 0; x < level; x++) {
-            _index += 2 ** (depth - x);
-        }
-        return _index;
-    }
-
-    function insert(
-        ReusableTreeData storage self,
-        uint256 leaf
-    ) public returns (uint256) {
-        uint256 depth = self.depth;
-
-        require(
-            leaf < SNARK_SCALAR_FIELD,
-            'ReusableMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
-        );
-        require(
-            self.numberOfLeaves < 2 ** depth - 1,
-            'ReusableMerkleTree: tree is full'
-        );
-
-        uint256 index = self.numberOfLeaves;
-
-        uint256 hash = leaf;
-
-        for (uint8 i = 0; i < depth; ) {
-            self.elements[indexForElement(i, index, depth)] = hash;
-
-            uint256[2] memory siblings;
-            if (index & 1 == 0) {
-                // it's a left sibling
-                siblings = [hash, defaultZero(i)];
-            } else {
-                // it's a right sibling
-                uint256 elementIndex = indexForElement(i, index - 1, depth);
-                siblings = [self.elements[elementIndex], hash];
-            }
-
-            hash = PoseidonT3.hash(siblings);
-
-            index >>= 1;
-
-            unchecked {
-                ++i;
-            }
-        }
-
-        self.root = hash;
-        self.numberOfLeaves += 1;
-        return hash;
-    }
-
-    function update(
-        ReusableTreeData storage self,
-        uint256 newLeaf,
-        uint256 leafIndex
-    ) public returns (uint256) {
-        uint256 depth = self.depth;
-        uint256 leafCount = self.numberOfLeaves;
-
-        require(
-            newLeaf < SNARK_SCALAR_FIELD,
-            'ReusableMerkleTree: leaf must be < SNARK_SCALAR_FIELD'
-        );
-        require(leafIndex < leafCount, 'ReusableMerkleTree: invalid index');
-
-        uint256 hash = newLeaf;
-
-        for (uint8 i = 0; i < depth; ) {
-            self.elements[indexForElement(i, leafIndex, depth)] = hash;
-            uint256[2] memory siblings;
-            if (leafIndex & 1 == 0) {
-                // it's a left sibling
-                bool isLatest = leafIndex >= ((leafCount - 1) >> i);
-                siblings = [
-                    hash,
-                    isLatest
-                        ? defaultZero(i)
-                        : self.elements[
-                            indexForElement(i, leafIndex + 1, depth)
-                        ]
-                ];
-            } else {
-                // it's a right sibling
-                uint256 elementIndex = indexForElement(i, leafIndex - 1, depth);
-                siblings = [self.elements[elementIndex], hash];
-            }
-
-            hash = PoseidonT3.hash(siblings);
-
-            leafIndex >>= 1;
-
-            unchecked {
-                ++i;
-            }
-        }
-        self.root = hash;
-        return hash;
+        revert('LazyMerkleTree: defaultZero bad index');
     }
 }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol';
 import {ReusableMerkleTree, ReusableTreeData} from '../libraries/ReusableMerkleTree.sol';
+import {LazyMerkleTree, LazyTreeData} from '../libraries/LazyMerkleTree.sol';
 
 interface IUnirep {
     event AttesterSignedUp(
@@ -102,7 +103,7 @@ interface IUnirep {
     struct EpochKeyData {
         uint256 leaf;
         uint256[30] data;
-        uint48 leafIndex;
+        uint40 leafIndex;
         uint48 epoch;
     }
 
@@ -114,7 +115,7 @@ interface IUnirep {
         IncrementalTreeData historyTree;
         // epoch keyed to root
         mapping(uint256 => uint256) epochTreeRoots;
-        ReusableTreeData epochTree;
+        LazyTreeData epochTree;
         uint48 startTimestamp;
         uint48 currentEpoch;
         uint48 epochLength;

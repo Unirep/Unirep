@@ -46,7 +46,7 @@ describe('Attestations max', function () {
         const epoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
-        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
+        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH - 1; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
             const val =
@@ -59,7 +59,7 @@ describe('Attestations max', function () {
         }
         await expect(
             unirepContract.connect(attester).attest(2, epoch, 0, 1)
-        ).to.be.revertedWith('ReusableMerkleTree: tree is full')
+        ).to.be.revertedWith('LazyMerkleTree: tree is full')
     })
 
     it('should submit attestations after max attestations', async () => {
@@ -70,7 +70,7 @@ describe('Attestations max', function () {
             attester.address
         )
 
-        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
+        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH - 1; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
             const val = poseidon1([Math.floor(Math.random() * 10000000000)])
@@ -79,7 +79,7 @@ describe('Attestations max', function () {
                 .attest(epochKey, epoch, fieldIndex, val)
                 .then((t) => t.wait())
         }
-        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH; x++) {
+        for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH - 1; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT)
             const val = poseidon1([Math.floor(Math.random() * 10000000000)])

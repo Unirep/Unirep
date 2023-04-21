@@ -120,6 +120,22 @@ export const deployUnirep = async (
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
+    const lazyMerklePath =
+        'contracts/libraries/LazyMerkleTree.sol/LazyMerkleTree.json'
+    const lazyMerkleArtifacts = tryPath(lazyMerklePath)
+    const _lazyMerkleFactory = new ethers.ContractFactory(
+        lazyMerkleArtifacts.abi,
+        linkLibrary(lazyMerkleArtifacts.bytecode, {
+            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
+        }),
+        deployer
+    )
+    const lazyMerkleFactory = await GlobalFactory(_lazyMerkleFactory)
+    const lazyMerkleContract = await retryAsNeeded(() =>
+        lazyMerkleFactory.deploy()
+    )
+    await lazyMerkleContract.deployed()
+
     const verifiers = {}
     for (const circuit in Circuit) {
         await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
@@ -161,6 +177,8 @@ export const deployUnirep = async (
                             incrementalMerkleTreeLib.address,
                         ['contracts/libraries/ReusableMerkleTree.sol:ReusableMerkleTree']:
                             reusableMerkleContract.address,
+                        ['contracts/libraries/LazyMerkleTree.sol:LazyMerkleTree']:
+                            lazyMerkleContract.address,
                         ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
                             PoseidonT3.address,
                     },
