@@ -162,8 +162,7 @@ describe('Reputation proof', function () {
 
         const graffiti = BigInt(12345)
         const epochKey = genEpochKey(id.secret, attester.address, epoch, 0)
-        // const field = userState.sync.settings.sumFieldCount
-        const field = 4
+        const field = userState.sync.settings.sumFieldCount
         await unirepContract
             .connect(attester)
             .attest(epochKey, epoch, field, graffiti)
