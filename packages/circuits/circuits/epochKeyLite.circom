@@ -6,6 +6,8 @@ include "./circomlib/circuits/poseidon.circom";
 include "./leafHasher.circom";
 
 template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
+    assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**8);
+
     signal input identity_secret;
 
     signal input reveal_nonce;
@@ -36,6 +38,9 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
 
     component epoch_bits = Num2Bits(48);
     epoch_bits.in <== epoch;
+
+    component nonce_range_check = Num2Bits(8);
+    nonce_range_check.in <== nonce;
 
     component nonce_lt = LessThan(8);
     nonce_lt.in[0] <== nonce;

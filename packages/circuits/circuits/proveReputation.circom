@@ -66,21 +66,21 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     prove_zero_rep * (prove_zero_rep - 1) === 0;
 
     // then range check the others
-    component min_rep_bits = Num2Bits(254);
+    component min_rep_bits = Num2Bits(64);
     min_rep_bits.in <== min_rep;
-    for (var x = 64; x < 254; x++) {
-        min_rep_bits.out[x] === 0;
-    }
 
-    component max_rep_bits = Num2Bits(254);
+    component max_rep_bits = Num2Bits(64);
     max_rep_bits.in <== max_rep;
-    for (var x = 64; x < 254; x++) {
-        max_rep_bits.out[x] === 0;
-    }
 
     control[1] <== prove_graffiti * 2 ** 131 + prove_zero_rep * 2 ** 130 + prove_max_rep * 2**129 + prove_min_rep * 2**128 + max_rep * 2**64 + min_rep;
 
     /* 1a. Do the epoch key proof, state tree membership */
+
+    component epoch_range_check = Num2Bits(48);
+    epoch_range_check.in <== epoch;
+
+    component attester_id_check = Num2Bits(160);
+    attester_id_check.in <== attester_id;
 
     component epoch_key_prover = EpochKey(
       STATE_TREE_DEPTH,
@@ -110,7 +110,13 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     /* 2. Check if user has reputation greater than min_rep */
     // if proving min_rep > 0, check if data[0] >= data[1] + min_rep
 
-    component min_rep_check = GreaterEqThan(252);
+    component data_0_check = Num2Bits(64);
+    data_0_check.in <== data[0];
+
+    component data_1_check = Num2Bits(64);
+    data_1_check.in <== data[1];
+
+    component min_rep_check = GreaterEqThan(66);
     min_rep_check.in[0] <== data[0];
     min_rep_check.in[1] <== data[1] + min_rep;
 
@@ -128,7 +134,7 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     /* 3. Check if user has reputation less than max_rep */
     // if proving max_rep > 0, check if data[1] >= data[0] + max_rep
 
-    component max_rep_check = GreaterEqThan(252);
+    component max_rep_check = GreaterEqThan(66);
     max_rep_check.in[0] <== data[1];
     max_rep_check.in[1] <== data[0] + max_rep;
 
