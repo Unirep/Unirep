@@ -1,5 +1,6 @@
 import { ethers } from 'ethers'
 import { Circuit, Prover, CircuitConfig } from '@unirep/circuits'
+import { PoseidonT3 } from 'poseidon-solidity'
 import GlobalFactory from 'global-factory'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import {
@@ -37,6 +38,9 @@ export const deployUnirep = async (
     _settings: CircuitConfig = CircuitConfig.default,
     prover?: Prover
 ): Promise<Unirep> => {
+    if (!deployer.provider) {
+        throw new Error('Deployer must have provider')
+    }
     const {
         EPOCH_TREE_DEPTH,
         STATE_TREE_DEPTH,
@@ -67,18 +71,25 @@ export const deployUnirep = async (
         '-----------------------------------------------------------------'
     )
 
-    let PoseidonT3
-    {
-        const poseidonPath = 'poseidon-solidity/PoseidonT3.sol/PoseidonT3.json'
-        const poseidonArtifacts = tryPath(poseidonPath)
-        const _poseidonFactory = new ethers.ContractFactory(
-            poseidonArtifacts.abi,
-            poseidonArtifacts.bytecode,
-            deployer
+    if ((await deployer.provider.getCode(PoseidonT3.proxyAddress)) === '0x') {
+        await retryAsNeeded(() =>
+            deployer.sendTransaction({
+                to: PoseidonT3.from,
+                value: PoseidonT3.gas,
+            })
         )
-        const poseidonFactory = await GlobalFactory(_poseidonFactory)
-        PoseidonT3 = await retryAsNeeded(() => poseidonFactory.deploy())
-        await PoseidonT3.deployed()
+        await retryAsNeeded(() =>
+            deployer.provider?.sendTransaction(PoseidonT3.tx)
+        )
+    }
+    if ((await deployer.provider.getCode(PoseidonT3.address)) === '0x') {
+        // nothing to do, contract is already deployed
+        await retryAsNeeded(() =>
+            deployer.sendTransaction({
+                to: PoseidonT3.proxyAddress,
+                data: PoseidonT3.data,
+            })
+        )
     }
 
     await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
