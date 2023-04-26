@@ -96,6 +96,27 @@ export class Synchronizer extends EventEmitter {
             sumFieldCount: 0,
             replNonceBits: 0,
         }
+        
+        this.assignEvents()
+        this.setup().then(() => (this.setupComplete = true))
+    }
+
+    get attesterId() {
+        if (this._attesterId.length === 0) return BigInt(0)
+        return this._attesterId[0]
+    }
+
+    get attestersOrClauses() {
+        const orClauses = [] as any[]
+        for (let id = 0; id < this._attesterId.length; id++) {
+            orClauses.push({
+                attesterId: toDecString(this._attesterId[id]),
+            })
+        }
+        return orClauses
+    }
+
+    assignEvents() {
         const allEventNames = {} as any
 
         this._eventHandlers = Object.keys(this.contracts).reduce(
@@ -168,22 +189,6 @@ export class Synchronizer extends EventEmitter {
             },
             {}
         )
-        this.setup().then(() => (this.setupComplete = true))
-    }
-
-    get attesterId() {
-        if (this._attesterId.length === 0) return BigInt(0)
-        return this._attesterId[0]
-    }
-
-    get attestersOrClauses() {
-        const orClauses = [] as any[]
-        for (let id = 0; id < this._attesterId.length; id++) {
-            orClauses.push({
-                attesterId: toDecString(this._attesterId[id]),
-            })
-        }
-        return orClauses
     }
 
     setAttesterId(attesterId: string | bigint) {
