@@ -96,7 +96,7 @@ export class Synchronizer extends EventEmitter {
             sumFieldCount: 0,
             replNonceBits: 0,
         }
-        
+
         this.assignEvents()
         this.setup().then(() => (this.setupComplete = true))
     }
