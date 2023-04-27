@@ -1,7 +1,7 @@
 // @ts-ignore
 import { expect } from 'chai'
 import { CircuitConfig } from '@unirep/circuits'
-import { AttesterSchema, parseSchema } from '../src/AttesterSchema'
+import { AttesterSchema, DataField, parseSchema } from '../src/AttesterSchema'
 
 const schema = [
     {
@@ -122,10 +122,84 @@ describe('Print Details', function () {
         const schemaDetails = a.getSchemaDetails()
 
         expect(Object.keys(schemaDetails).length).to.equal(4)
+
+        const _schema = {
+            'sumData[1]': {
+                field: ['posRep', 'negRep', 'postCount', 'commentCount'],
+                fieldOffset: [0, 64, 128, 177],
+                currentFieldSize: 226,
+                maxFieldSize: 254,
+            },
+            'sumData[2]': {
+                field: ['voteCount'],
+                fieldOffset: [0],
+                currentFieldSize: 49,
+                maxFieldSize: 254,
+            },
+            'replData[1]': {
+                field: ['graffiti'],
+                fieldOffset: [0],
+                currentFieldSize: 206,
+                maxFieldSize: 206,
+            },
+            'replData[2]': {
+                field: ['averageVote'],
+                fieldOffset: [0],
+                currentFieldSize: 8,
+                maxFieldSize: 254,
+            },
+        }
+
+        Object.keys(_schema).forEach((x) => {
+            const d = new DataField()
+            d.field = _schema[x].field
+            d.fieldOffset = _schema[x].fieldOffset
+            d.currentFieldSize = _schema[x].currentFieldSize
+            d.maxFieldSize = _schema[x].maxFieldSize
+
+            expect(d.equals(schemaDetails[x]))
+        })
     })
 })
 
 describe('Encode Attestation Data', function () {
+    it('fail to use schema with excessive bit allocations', () => {
+        {
+            const badSumField = [
+                {
+                    name: 'posRep',
+                    type: 'uint300',
+                    updateBy: 'sum',
+                },
+                {
+                    name: 'graffiti',
+                    type: 'uint206',
+                    updateBy: 'replace',
+                },
+            ]
+            expect(() => new AttesterSchema(badSumField)).to.throw(
+                'Excessive bit allocation'
+            )
+        }
+        {
+            const badReplField = [
+                {
+                    name: 'posRep',
+                    type: 'uint253',
+                    updateBy: 'sum',
+                },
+                {
+                    name: 'graffiti',
+                    type: 'uint207',
+                    updateBy: 'replace',
+                },
+            ]
+            expect(() => new AttesterSchema(badReplField)).to.throw(
+                'Excessive bit allocation'
+            )
+        }
+    })
+
     it('test add', () => {
         for (let i = 0; i < 10; i++) {
             const a = new AttesterSchema(schema)

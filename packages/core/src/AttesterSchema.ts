@@ -2,12 +2,12 @@ import { CircuitConfig } from '@unirep/circuits'
 
 const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
     CircuitConfig.default
-class DataField {
+export class DataField {
     public field: string[]
     public fieldOffset: number[]
     public currentFieldSize: number
 
-    private maxFieldSize: number
+    public maxFieldSize: number
 
     constructor() {
         this.field = []
@@ -36,8 +36,13 @@ class DataField {
         return 0
     }
 
-    public setMaxFieldSize(_maxFieldSize: number) {
-        this.maxFieldSize = _maxFieldSize
+    public equals(x: DataField): boolean {
+        return (
+            this.field == x.field &&
+            this.fieldOffset.every((v, i) => v == x.fieldOffset[i]) &&
+            this.field.every((v, i) => v == x.field[i]) &&
+            this.maxFieldSize == x.maxFieldSize
+        )
     }
 }
 export const parseSchema = (schema: {}[]) => {
@@ -125,6 +130,10 @@ export class AttesterSchema {
             const bits = Number(this.schema[i]['type'].slice(4))
             const updateBy = this.schema[i]['updateBy']
 
+            if (bits > (updateBy == 'replace' ? 254 - REPL_NONCE_BITS : 254)) {
+                throw Error('Excessive bit allocation')
+            }
+
             if (updateBy == 'sum') {
                 while (
                     !this.sumDataFields[this.curSumDataFieldCount].addOrPass(
@@ -139,12 +148,8 @@ export class AttesterSchema {
                     }
                 }
             } else if (updateBy == 'replace') {
-                this.replDataFields[this.curReplDataFieldCount].setMaxFieldSize(
+                this.replDataFields[this.curReplDataFieldCount].maxFieldSize =
                     254 - REPL_NONCE_BITS
-                )
-                if (bits > 254 - REPL_NONCE_BITS) {
-                    throw Error('Excessive replacement bits allocation')
-                }
 
                 while (
                     !this.replDataFields[this.curReplDataFieldCount].addOrPass(
