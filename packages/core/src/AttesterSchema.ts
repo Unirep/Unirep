@@ -1,17 +1,24 @@
+import { CircuitConfig } from '@unirep/circuits'
+
+const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
+    CircuitConfig.default
 class DataField {
     public field: string[]
     public fieldOffset: number[]
-
     public currentFieldSize: bigint
+
+    private maxFieldSize: number
 
     constructor() {
         this.field = []
         this.fieldOffset = []
         this.currentFieldSize = BigInt(0)
+
+        this.maxFieldSize = 254
     }
 
     public addOrPass(entry: string, size: bigint): boolean {
-        if (this.currentFieldSize + size >= 254) {
+        if (this.currentFieldSize + size > this.maxFieldSize) {
             return false
         }
         this.fieldOffset.push(Number(this.currentFieldSize))
@@ -27,6 +34,10 @@ class DataField {
             }
         }
         return 0
+    }
+
+    public setMaxFieldSize(_maxFieldSize: number) {
+        this.maxFieldSize = _maxFieldSize
     }
 }
 export const parseSchema = (schema: {}[]) => {
@@ -66,9 +77,6 @@ export const parseSchema = (schema: {}[]) => {
 }
 
 export class AttesterSchema {
-    public fieldCount: number
-    public sumFieldCount: number
-
     private sumDataFields: DataField[]
     private replDataFields: DataField[]
 
@@ -79,15 +87,12 @@ export class AttesterSchema {
 
     private encodedData: bigint[]
 
-    constructor(_schema: {}[], _fieldCount: number, _sumFieldCount: number) {
-        this.fieldCount = _fieldCount
-        this.sumFieldCount = _sumFieldCount
-
+    constructor(_schema: {}[]) {
         this.curSumDataFieldCount = 0
         this.curReplDataFieldCount = 0
 
-        this.sumDataFields = new Array(this.sumFieldCount)
-        this.replDataFields = new Array(this.fieldCount - this.sumFieldCount)
+        this.sumDataFields = new Array(SUM_FIELD_COUNT)
+        this.replDataFields = new Array(FIELD_COUNT - SUM_FIELD_COUNT)
 
         for (let i = 0; i < this.sumDataFields.length; i++) {
             this.sumDataFields[i] = new DataField()
@@ -98,11 +103,9 @@ export class AttesterSchema {
         }
 
         this.schema = parseSchema(_schema)
-        this.encodedData = new Array(this.fieldCount).fill(
-            BigInt(2) ** BigInt(254)
-        )
+        this.encodedData = new Array(FIELD_COUNT).fill(BigInt(2) ** BigInt(254))
 
-        this.encodedData = new Array(this.fieldCount).fill(BigInt(0))
+        this.encodedData = new Array(FIELD_COUNT).fill(BigInt(0))
 
         this.schemaLookup = {}
 
@@ -133,7 +136,7 @@ export class AttesterSchema {
                 ) {
                     this.curSumDataFieldCount++
 
-                    if (this.curSumDataFieldCount >= this.sumFieldCount) {
+                    if (this.curSumDataFieldCount >= SUM_FIELD_COUNT) {
                         throw Error('Too many sum fields')
                     }
                     const res = this.sumDataFields[
@@ -145,17 +148,27 @@ export class AttesterSchema {
                     }
                 }
             } else if (updateBy == 'replace') {
+                this.replDataFields[this.curReplDataFieldCount].setMaxFieldSize(
+                    254 - REPL_NONCE_BITS
+                )
+                if (bits > 254 - REPL_NONCE_BITS) {
+                    throw Error('Excessive replacement bits allocation')
+                }
+
                 if (
                     !this.replDataFields[this.curReplDataFieldCount].addOrPass(
                         name,
                         bits
                     )
                 ) {
-                    this.curReplDataFieldCount++
-
-                    if (this.curReplDataFieldCount >= this.fieldCount) {
+                    if (
+                        this.curReplDataFieldCount + SUM_FIELD_COUNT ==
+                        FIELD_COUNT
+                    ) {
                         throw Error('Too many replacement and sum fields')
                     }
+                    this.curReplDataFieldCount++
+
                     const res = this.replDataFields[
                         this.curReplDataFieldCount
                     ].addOrPass(name, bits)
@@ -177,13 +190,13 @@ export class AttesterSchema {
         const updateBy = schema['updateBy']
 
         if (updateBy == 'sum') {
-            for (let i = 0; i < this.sumFieldCount; i++) {
+            for (let i = 0; i < SUM_FIELD_COUNT; i++) {
                 if (this.sumDataFields[i].field.includes(entry)) {
                     return i
                 }
             }
         } else if (updateBy == 'replace') {
-            for (let i = 0; i < this.fieldCount - this.sumFieldCount; i++) {
+            for (let i = 0; i < FIELD_COUNT - SUM_FIELD_COUNT; i++) {
                 if (this.replDataFields[i].field.includes(entry)) {
                     return i
                 }
@@ -212,8 +225,12 @@ export class AttesterSchema {
                 (this.encodedData[idx] & ~(maxVal << n)) | ((val & maxVal) << n)
         } else if (updateBy == 'replace') {
             const n = BigInt(this.replDataFields[idx].getFieldOffset(entry))
-            this.encodedData[this.sumFieldCount + idx] =
-                (this.encodedData[this.sumFieldCount + idx] & ~(maxVal << n)) |
+
+            if (v >= BigInt(2) ** BigInt(bits)) {
+                throw Error('Replacement overflows uint' + bits)
+            }
+            this.encodedData[SUM_FIELD_COUNT + idx] =
+                (this.encodedData[SUM_FIELD_COUNT + idx] & ~(maxVal << n)) |
                 ((v & maxVal) << n)
         } else {
             throw Error('Entry does not exist in schema')
@@ -223,7 +240,7 @@ export class AttesterSchema {
     decodeDataArray(): {}[] {
         let out: {}[] = []
 
-        for (let i = 0; i < this.fieldCount; i++) {
+        for (let i = 0; i < FIELD_COUNT; i++) {
             const f = this.sumDataFields.concat(this.replDataFields)[i]
             let bits = 0
             for (let j = 0; j < f.field.length; j++) {
@@ -240,19 +257,15 @@ export class AttesterSchema {
 
     getSchemaDetails() {
         let ans = {}
-        for (let i = 0; i < this.sumFieldCount; i++) {
+        for (let i = 0; i < SUM_FIELD_COUNT; i++) {
             if (this.sumDataFields[i].field.length == 0) continue
             ans[`sumData[${i + 1}]`] = this.sumDataFields[i]
         }
-        for (let i = 0; i < this.fieldCount - this.sumFieldCount; i++) {
+        for (let i = 0; i < FIELD_COUNT - SUM_FIELD_COUNT; i++) {
             if (this.replDataFields[i].field.length == 0) continue
             ans[`replData[${i + 1}]`] = this.replDataFields[i]
         }
         return ans
-    }
-
-    getEncodedData(fieldIndex: number): bigint {
-        return this.encodedData[fieldIndex]
     }
 
     getValue(entry: string) {

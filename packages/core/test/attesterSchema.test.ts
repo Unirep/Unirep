@@ -1,5 +1,9 @@
+// @ts-ignore
 import { expect } from 'chai'
+import { CircuitConfig } from '@unirep/circuits'
 import { AttesterSchema, parseSchema } from '../src/AttesterSchema'
+
+const EPOCH_LENGTH = 1000
 
 const schema = [
     {
@@ -14,7 +18,7 @@ const schema = [
     },
     {
         name: 'graffiti',
-        type: 'uint245',
+        type: 'uint206',
     },
     {
         name: 'postCount',
@@ -36,9 +40,15 @@ const schema = [
         type: 'uint8',
     },
 ]
+
+const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
+    CircuitConfig.default
+
+const smallRandom = (x: number) => Math.floor(Math.random() * x)
+
 describe('Check schema parsing', function () {
     it('Check good schema', () => {
-        expect(new AttesterSchema(schema, 6, 4)).to.not.throw
+        expect(new AttesterSchema(schema)).to.not.throw
     })
 
     it('Check schema with invalid key', () => {
@@ -86,46 +96,40 @@ describe('Check schema parsing', function () {
 
 describe('Print Details', function () {
     it('Print details of a schema', () => {
-        const a = new AttesterSchema(schema, 6, 4)
+        const a = new AttesterSchema(schema)
         const schemaDetails = a.getSchemaDetails()
 
-        expect(Object.keys(schemaDetails).length).to.equal(3)
+        expect(Object.keys(schemaDetails).length).to.equal(4)
     })
 })
 
 describe('Encode Attestation Data', function () {
     it('test add', () => {
-        {
-            const a = new AttesterSchema(schema, 6, 4)
+        for (let i = 0; i < 10; i++) {
+            const a = new AttesterSchema(schema)
+            let cur = Array(5).fill(BigInt(0))
+            const rand = [64, 64, 49, 49, 49].map((x) => BigInt(smallRandom(x)))
 
-            let cur = BigInt(0)
-            const inc = BigInt(50)
+            const attestations = [
+                'posRep',
+                'negRep',
+                'postCount',
+                'commentCount',
+                'voteCount',
+            ]
 
-            for (let i = 0; i < 10; i++) {
-                a.update('posRep', inc)
-                cur += inc
-                expect(a.getValue('posRep')).to.equal(cur)
-            }
-        }
-
-        {
-            const a = new AttesterSchema(schema, 6, 4)
-
-            let cur = BigInt(0)
-            const inc = BigInt(32)
-
-            for (let i = 0; i < 10; i++) {
-                a.update('voteCount', inc)
-                cur += inc
-                expect(a.getValue('voteCount')).to.equal(cur)
-            }
+            attestations.forEach((x, i) => {
+                a.update(x, rand[i])
+                cur[i] += rand[i]
+                expect(a.getValue(x)).to.equal(cur[i])
+            })
         }
     })
 
-    it('fail to add number too big', () => {
-        const a = new AttesterSchema(schema, 6, 4)
+    it('fail to add an exceedingly large number', () => {
+        const a = new AttesterSchema(schema)
         a.update('posRep', BigInt(2) ** BigInt(64) - BigInt(1))
-        expect(a.decodeDataArray()[0]['value']).to.equal(
+        expect(a.getValue('posRep')).to.equal(
             BigInt(2) ** BigInt(64) - BigInt(1)
         )
         expect(() => a.update('posRep', BigInt(1))).to.throw(
@@ -134,12 +138,35 @@ describe('Encode Attestation Data', function () {
     })
 
     it('test replace', () => {
-        const a = new AttesterSchema(schema, 6, 4)
-        a.update('graffiti', BigInt(100))
-        expect(a.getValue('graffiti')).to.equal(100)
-        a.update('graffiti', BigInt(10))
-        expect(a.getValue('graffiti')).to.equal(10)
-        a.update('graffiti', BigInt(100))
-        expect(a.getValue('graffiti')).to.equal(100)
+        for (let i = 0; i < 10; i++) {
+            const a = new AttesterSchema(schema)
+            let cur = Array(5).fill(BigInt(0))
+            const rand = [245, 8].map((x) => BigInt(smallRandom(x)))
+
+            const attestations = ['graffiti', 'averageVote']
+
+            attestations.forEach((x, i) => {
+                a.update(x, rand[i])
+                cur[i] += rand[i]
+                expect(a.getValue(x)).to.equal(cur[i])
+            })
+        }
+    })
+
+    it('fail to replace with an exceedingly large number', () => {
+        const a = new AttesterSchema(schema)
+        a.update(
+            'graffiti',
+            BigInt(2) ** BigInt(254 - REPL_NONCE_BITS) - BigInt(1)
+        )
+        expect(a.getValue('graffiti')).to.equal(
+            BigInt(2) ** BigInt(254 - REPL_NONCE_BITS) - BigInt(1)
+        )
+        expect(() =>
+            a.update(
+                'graffiti',
+                BigInt(2) ** BigInt(254 - REPL_NONCE_BITS) + BigInt(1)
+            )
+        ).to.throw('Replacement overflows uint206')
     })
 })
