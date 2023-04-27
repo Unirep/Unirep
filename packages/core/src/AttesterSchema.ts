@@ -5,19 +5,19 @@ const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
 class DataField {
     public field: string[]
     public fieldOffset: number[]
-    public currentFieldSize: bigint
+    public currentFieldSize: number
 
     private maxFieldSize: number
 
     constructor() {
         this.field = []
         this.fieldOffset = []
-        this.currentFieldSize = BigInt(0)
+        this.currentFieldSize = 0
 
         this.maxFieldSize = 254
     }
 
-    public addOrPass(entry: string, size: bigint): boolean {
+    public addOrPass(entry: string, size: number): boolean {
         if (this.currentFieldSize + size > this.maxFieldSize) {
             return false
         }
@@ -43,7 +43,7 @@ class DataField {
 export const parseSchema = (schema: {}[]) => {
     const SCHEMA_FIELDS = ['name', 'type', 'updateBy']
 
-    schema.forEach((entry) => {
+    schema.forEach((entry, idx) => {
         if (!('name' in entry && 'type' in entry)) {
             throw Error('Missing name or type in schema')
         }
@@ -54,6 +54,10 @@ export const parseSchema = (schema: {}[]) => {
         // Contains an invalid key
         if (Object.keys(entry).some((x) => SCHEMA_FIELDS.indexOf(x) < 0)) {
             throw Error('Schema includes an invalid key')
+        }
+
+        if (schema.some((x, i) => x['name'] == entry['name'] && idx != i)) {
+            throw Error('Schema includes a duplicate entry')
         }
 
         if (entry['type'] == 'uint') {
@@ -92,19 +96,13 @@ export class AttesterSchema {
         this.curReplDataFieldCount = 0
 
         this.sumDataFields = new Array(SUM_FIELD_COUNT)
+            .fill(null)
+            .map((n) => new DataField())
         this.replDataFields = new Array(FIELD_COUNT - SUM_FIELD_COUNT)
-
-        for (let i = 0; i < this.sumDataFields.length; i++) {
-            this.sumDataFields[i] = new DataField()
-        }
-
-        for (let i = 0; i < this.replDataFields.length; i++) {
-            this.replDataFields[i] = new DataField()
-        }
+            .fill(null)
+            .map((n) => new DataField())
 
         this.schema = parseSchema(_schema)
-        this.encodedData = new Array(FIELD_COUNT).fill(BigInt(2) ** BigInt(254))
-
         this.encodedData = new Array(FIELD_COUNT).fill(BigInt(0))
 
         this.schemaLookup = {}
@@ -118,17 +116,17 @@ export class AttesterSchema {
                 return Object.assign({}, this.schema[i])
             }
         }
-        return {}
+        throw Error('Entry does not exist in schema')
     }
 
     buildDataFields() {
         for (let i = 0; i < this.schema.length; i++) {
             const name = this.schema[i]['name']
-            const bits = BigInt(this.schema[i]['type'].slice(4))
+            const bits = Number(this.schema[i]['type'].slice(4))
             const updateBy = this.schema[i]['updateBy']
 
             if (updateBy == 'sum') {
-                if (
+                while (
                     !this.sumDataFields[this.curSumDataFieldCount].addOrPass(
                         name,
                         bits
@@ -136,15 +134,8 @@ export class AttesterSchema {
                 ) {
                     this.curSumDataFieldCount++
 
-                    if (this.curSumDataFieldCount >= SUM_FIELD_COUNT) {
-                        throw Error('Too many sum fields')
-                    }
-                    const res = this.sumDataFields[
-                        this.curSumDataFieldCount
-                    ].addOrPass(name, bits)
-
-                    if (!res) {
-                        throw Error("Couldn't add " + name + ' sum data field')
+                    if (this.curSumDataFieldCount == SUM_FIELD_COUNT) {
+                        throw Error('Excessive sum field allocation')
                     }
                 }
             } else if (updateBy == 'replace') {
@@ -155,30 +146,19 @@ export class AttesterSchema {
                     throw Error('Excessive replacement bits allocation')
                 }
 
-                if (
+                while (
                     !this.replDataFields[this.curReplDataFieldCount].addOrPass(
                         name,
                         bits
                     )
                 ) {
+                    this.curReplDataFieldCount++
+
                     if (
                         this.curReplDataFieldCount + SUM_FIELD_COUNT ==
                         FIELD_COUNT
                     ) {
-                        throw Error('Too many replacement and sum fields')
-                    }
-                    this.curReplDataFieldCount++
-
-                    const res = this.replDataFields[
-                        this.curReplDataFieldCount
-                    ].addOrPass(name, bits)
-
-                    if (!res) {
-                        throw Error(
-                            "Couldn't replace " +
-                                name +
-                                ' replacement data field'
-                        )
+                        throw Error('Excessive replacement field allocation')
                     }
                 }
             }
@@ -201,8 +181,6 @@ export class AttesterSchema {
                     return i
                 }
             }
-        } else {
-            throw Error('Invalid update type')
         }
         return -1
     }
@@ -232,8 +210,6 @@ export class AttesterSchema {
             this.encodedData[SUM_FIELD_COUNT + idx] =
                 (this.encodedData[SUM_FIELD_COUNT + idx] & ~(maxVal << n)) |
                 ((v & maxVal) << n)
-        } else {
-            throw Error('Entry does not exist in schema')
         }
     }
 

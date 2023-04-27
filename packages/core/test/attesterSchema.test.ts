@@ -3,8 +3,6 @@ import { expect } from 'chai'
 import { CircuitConfig } from '@unirep/circuits'
 import { AttesterSchema, parseSchema } from '../src/AttesterSchema'
 
-const EPOCH_LENGTH = 1000
-
 const schema = [
     {
         name: 'posRep',
@@ -51,7 +49,7 @@ describe('Check schema parsing', function () {
         expect(new AttesterSchema(schema)).to.not.throw
     })
 
-    it('Check schema with invalid key', () => {
+    it('fail to parse schema with invalid key', () => {
         const invalidSchema = [
             {
                 name: 'posRep',
@@ -72,6 +70,30 @@ describe('Check schema parsing', function () {
         ]
         expect(() => parseSchema(invalidSchema)).to.throw(
             'Schema includes an invalid key'
+        )
+    })
+
+    it('fail to parse schema with duplicate entry', () => {
+        const invalidSchema = [
+            {
+                name: 'posRep',
+                type: 'uint64',
+                updateBy: 'sum',
+            },
+            {
+                name: 'posRep',
+                type: 'uint64',
+                updateBy: 'sum',
+            },
+            {
+                name: 'averageVote',
+                type: 'uint64',
+                updateBy: 'sum',
+                invalidKey: 'invalidValue',
+            },
+        ]
+        expect(() => parseSchema(invalidSchema)).to.throw(
+            'Schema includes a duplicate entry'
         )
     })
 
@@ -168,5 +190,83 @@ describe('Encode Attestation Data', function () {
                 BigInt(2) ** BigInt(254 - REPL_NONCE_BITS) + BigInt(1)
             )
         ).to.throw('Replacement overflows uint206')
+    })
+
+    it('fail to update an invalid entry', () => {
+        const a = new AttesterSchema(schema)
+        expect(() => a.update('invalidEntry', BigInt(32))).to.throw(
+            'Entry does not exist in schema'
+        )
+    })
+
+    it('fail to include excessive replacement fields in schema', () => {
+        const excessiveSumField = [
+            {
+                name: 'posRep',
+                type: 'uint254',
+                updateBy: 'sum',
+            },
+            {
+                name: 'posRep1',
+                type: 'uint254',
+                updateBy: 'sum',
+            },
+            {
+                name: 'posRep2',
+                type: 'uint254',
+                updateBy: 'sum',
+            },
+            {
+                name: 'posRep3',
+                type: 'uint254',
+                updateBy: 'sum',
+            },
+            {
+                name: 'posRep4',
+                type: 'uint254',
+                updateBy: 'sum',
+            },
+            {
+                name: 'graffiti',
+                type: 'uint206',
+            },
+        ]
+
+        const excessiveReplacementField = [
+            {
+                name: 'posRep',
+                type: 'uint64',
+                updateBy: 'sum',
+            },
+            {
+                name: 'graffiti',
+                type: 'uint206',
+            },
+            {
+                name: 'graffiti1',
+                type: 'uint206',
+            },
+            {
+                name: 'graffiti2',
+                type: 'uint206',
+            },
+            {
+                name: 'graffiti3',
+                type: 'uint206',
+            },
+        ]
+        expect(() => new AttesterSchema(excessiveSumField)).to.throw(
+            'Excessive sum field allocation'
+        )
+        expect(() => new AttesterSchema(excessiveReplacementField)).to.throw(
+            'Excessive replacement field allocation'
+        )
+    })
+
+    it('fail to get an encoded field index for an invalid entry', () => {
+        const a = new AttesterSchema(schema)
+        expect(() => a.getEncodedFieldIndex('invalidEntry')).to.throw(
+            'Entry does not exist in schema'
+        )
     })
 })
