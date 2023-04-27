@@ -33,6 +33,14 @@ Client library for protocol related functions which are used in unirep protocol.
 
 ---
 
+## 💡 About Unirep
+**UniRep** is a *private* and *non-repudiable* **data system**. Users can receive attestations from attesters, and voluntarily prove that they have at least certain amount of data without revealing the exact amount. Moreover, users cannot refuse to receive attestations from an attester.
+
+## 📘 Documentation
+
+Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of Unirep protocol.
+For more information, refer to the [documentation](https://developer.unirep.io/)
+
 ## 🛠 Install
 
 ### npm or yarn
@@ -55,17 +63,18 @@ yarn add @unirep/core
 
 **Construct a synchronizer**
 ```typescript
-import { Synchronizer, schema } from '@unirep/core'
-import { getUnirepContract, Unirep } from '@unirep/contracts'
-import { DB, SQLiteConnector } from 'anondb/node'
+import { Synchronizer } from '@unirep/core'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-// connect a unirep contract with the address and a provider
-const unirepContract: Unirep = getUnirepContract(address, provider)
-// initialize a database
-const db: DB = await SQLiteConnector.create(schema, ':memory:')
+const address = '0x....'
+const provider = 'YOUR/ETH/PROVIDER'
 
 // 1. initialize a synchronizer
-const synchronizer = new Synchronizer(db, provider, unirepContract)
+const synchronizer = new Synchronizer({
+    unirepAddress: address,
+    provider,
+    prover: defaultProver,
+})
 // 2. start listening to unriep contract events
 await synchronizer.start()
 // 3. wait until the latest block is processed
@@ -74,33 +83,35 @@ await synchronizer.waitForSync()
 
 **Example: use the synchronizer to generate unirep state**
 ```typescript
-const epoch = 1
-const stateTree = await synchronizer.genStateTree(epoch)
+const epoch = 0
+const attesterId = 'ATTESTER/ADDRESS' // the msg.sender signs up through `attesterSignUp()`
+// e.g.
+// const attester = new ethers.Wallet(key, provider)
+// const epochLength = 300
+// const tx = await unirepContract.connect(attester).attesterSignUp(epochLength)
+// await tx.wait()
+const stateTree = await synchronizer.genStateTree(epoch, attesterId)
 ```
 
 ### UserState 👤
 
 **Construct a user state**
 ```typescript
-import { ZkIdentity } from '@unirep/utils'
-import { Synchronizer, schema } from '@unirep/core'
-import { getUnirepContract, Unirep } from '@unirep/contracts'
-import { DB, SQLiteConnector } from 'anondb/node'
+import { Identity } from '@semaphore-protocol/identity'
+import { UserState } from '@unirep/core'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 // random generate a user identity
 const identity = new Identity()
-// connect a unirep contract with the address and a provider
-const unirepContract: Unirep = getUnirepContract(address, provider)
-// initialize a database
-const db: DB = await SQLiteConnector.create(schema, ':memory:')
 
 // 1. initialize a user state object
-const userState = new UserState(
-    db,
+const userState = new UserState({
+    unirepAddress: address,
     provider,
-    unirepContract,
-    identity
-)
+    prover: defaultProver,
+}, identity)
+// or through a synchronicr
+// const userState = new UserState(synchronizer, identity)
 // 2. start listening to unriep contract events
 await userState.start()
 // 3. wait until the latest block is processed
@@ -109,38 +120,22 @@ await userState.waitForSync()
 
 **Example: use the user state to generate proofs**
 ```typescript
-const nonce = 1
-const epochKeyProof = await userState.genVerifyEpochKeyProof(nonce)
+// 1. generate a signup proof of the user
+const { publicSignals, proof } = await userState.genUserSignUpProof({ attesterId: attester.address })
 
-// 1. submit the epoch key proof to smart contract
-const tx = await unirepContract.submitEpochKeyProof(
-    epochKeyProof.publicSignals,
-    epochKeyProof.proof
-)
-
-// 2. get the index of the epoch key proof
-const proofHash = epochKeyProof.hash()
-const index = await unirepContract.getProofIndex(proofHash)
-
-// Then the attester can call `submitAttestation` on Unirep contract
-// to send attestation to the epoch key with a proof index
+// 2. submit the signup proof through the attester
+const tx = await unirepContract
+    .connect(attester)
+    .userSignUp(publicSignals, proof)
+await tx.wait()
 ```
 
-### Utils 🧳
-**Example: Compute an epoch key**
-```typescript
-import { ZkIdentity, genEpochKey } from '@unirep/utils'
-import { genEpochKey } from '@unirep/core'
+## 🙌🏻 Join our community
+- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord"></a>
+- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>
+- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram"></a>
 
-const identity = new Identity()
-const epoch = 1
-const nonce = 0
-const epochTreeDepth = 64
+## <img height="24" src="https://ethereum.org/static/a183661dd70e0e5c70689a0ec95ef0ba/13c43/eth-diamond-purple.png"> Privacy & Scaling Explorations
 
-const epk = genEpochKey(
-    identity.secret,
-    epoch,
-    nonce,
-    epochTreeDepth
-)
-```
+This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) in Ethereum Foundation.
+See more projects on: https://appliedzkp.org/.

@@ -33,6 +33,14 @@ Client library for circuit related functions which are used in unirep protocol.
 
 ---
 
+## 💡 About Unirep
+**UniRep** is a *private* and *non-repudiable* **data system**. Users can receive attestations from attesters, and voluntarily prove that they have at least certain amount of data without revealing the exact amount. Moreover, users cannot refuse to receive attestations from an attester.
+
+## 📘 Documentation
+
+Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of Unirep protocol.
+For more information, refer to the [documentation](https://developer.unirep.io/)
+
 ## 🛠 Install
 
 ### npm or yarn
@@ -97,8 +105,8 @@ import { Circuit } from '@unirep/circuits'
 
 // See ./test/verifyEpochKey.test.ts for generating circuit inputs
 const circuitInputs = {
-    identity_nullifier: ...,
-    identity_trapdoor: ...,
+    state_tree_elements: ...,
+    state_tree_indexes: ...,
     ...
 }
 const { proof, publicSignals } = await prover.genProofAndPublicSignals(
@@ -112,3 +120,13 @@ const isValid = await prover.verifyProof(
     proof
 )
 ```
+
+## 🙌🏻 Join our community
+- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord"></a>
+- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>
+- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram"></a>
+
+## <img height="24" src="https://ethereum.org/static/a183661dd70e0e5c70689a0ec95ef0ba/13c43/eth-diamond-purple.png"> Privacy & Scaling Explorations
+
+This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) in Ethereum Foundation.
+See more projects on: https://appliedzkp.org/.
