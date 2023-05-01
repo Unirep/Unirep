@@ -85,7 +85,7 @@ export class DataSchema {
     update(name: string, v: bigint): bigint {
         const field = this.schema.find((f) => f.name === name)
         const idx = field.dataIndex
-        const maxVal: bigint = (1n << BigInt(field.bits)) - 1n
+        const maxVal: bigint = (BigInt(1) << BigInt(field.bits)) - BigInt(1)
 
         if (field.updateBy === 'sum') {
             v += (this.data[idx] >> BigInt(field.offset)) & maxVal
@@ -110,7 +110,7 @@ export class DataSchema {
                 field
             parsed[name] =
                 (data[dataIndex] >> BigInt(offset)) &
-                ((1n << BigInt(bits)) - 1n)
+                ((BigInt(1) << BigInt(bits)) - BigInt(1))
         }
 
         return parsed

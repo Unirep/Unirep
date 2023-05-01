@@ -233,7 +233,7 @@ describe('Check schema parsing', function () {
 
 describe('Check `update`', function () {
     it('successfully update sum fields', () => {
-        let x = Array(schema.length).fill(0n)
+        let x = Array(schema.length).fill(BigInt(0))
         const d = new DataSchema(schema)
         Array(10)
             .fill(0)
@@ -265,15 +265,15 @@ describe('Check `update`', function () {
     it('fails to use exceedingly large number', () => {
         {
             const d = new DataSchema(schema)
-            expect(() => d.update('posRep', 1n << 254n)).to.throw(
+            expect(() => d.update('posRep', BigInt(1) << BigInt(254))).to.throw(
                 'posRep value exceeds allocated storage'
             )
         }
         {
             const d = new DataSchema(schema)
-            expect(() => d.update('graffiti', 1n << 206n)).to.throw(
-                'graffiti value exceeds allocated storage'
-            )
+            expect(() =>
+                d.update('graffiti', BigInt(1) << BigInt(206))
+            ).to.throw('graffiti value exceeds allocated storage')
         }
     })
 })
@@ -281,7 +281,7 @@ describe('Check `update`', function () {
 describe('Parse encoded data', () => {
     it('Parse data', () => {
         const d = new DataSchema(schema)
-        let x = Array(schema.length).fill(0n)
+        let x = Array(schema.length).fill(BigInt(0))
         Array(10)
             .fill(0)
             .forEach(() => {
