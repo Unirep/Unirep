@@ -19,7 +19,6 @@ template EpochKeyHasher() {
 }
 
 template EpochTreeLeaf(FIELD_COUNT) {
-  assert(FIELD_COUNT < 254);
   signal input epoch_key;
   signal input data[FIELD_COUNT];
 
@@ -43,7 +42,6 @@ template EpochTreeLeaf(FIELD_COUNT) {
 // attester_id and epoch must be range checked
 // outside of this component
 template StateTreeLeaf(FIELD_COUNT) {
-  assert(FIELD_COUNT < 254);
   signal input data[FIELD_COUNT];
   signal input identity_secret;
   signal input attester_id;
