@@ -619,7 +619,7 @@ describe('Epoch key proof verifier', function () {
                 proofVerifiers.epochKeyProof
                     .connect(owner)
                     .verifyAndCheckCaller(publicSignals, proof)
-            ).to.not.be.reverted
+            ).to.not.be.revertedWith('attesterId is not caller')
         }
         {
             const data = 0
@@ -648,7 +648,7 @@ describe('Epoch key proof verifier', function () {
                 proofVerifiers.epochKeyProof
                     .connect(owner)
                     .verifyAndCheckCaller(publicSignals, proof)
-            ).to.be.reverted
+            ).to.be.revertedWith('attesterId is not caller')
         }
     })
 })
@@ -968,7 +968,10 @@ describe('Reputation proof verifier', function () {
                     _publicSignals,
                     proof
                 )
-            ).to.be.reverted
+            ).to.be.revertedWithCustomError(
+                proofVerifiers.reputationProof,
+                'InvalidProof'
+            )
         }
     })
 
