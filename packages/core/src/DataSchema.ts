@@ -1,17 +1,25 @@
 import { CircuitConfig } from '@unirep/circuits'
 
+export type SchemaField = {
+    name: string
+    type: string
+    updateBy: 'sum' | 'replace'
+}
+
+export type Attestation = {
+    fieldIndex: number
+    change: bigint
+}
 export class DataSchema {
-    public schema: any[]
+    public schema: SchemaField[]
     public config: CircuitConfig
-    public data: bigint[]
 
     constructor(schema, config = CircuitConfig.default) {
         this.config = config
         this.schema = this.parseSchema(schema)
-        this.data = new Array(config.FIELD_COUNT).fill(BigInt(0))
     }
 
-    parseSchema(schema: any[]): any[] {
+    parseSchema(schema: SchemaField[]): any[] {
         let sumOffset = 0
         let replOffset = 0
         const maxSumOffset = 253 * this.config.SUM_FIELD_COUNT
@@ -19,14 +27,14 @@ export class DataSchema {
             253 * (this.config.FIELD_COUNT - this.config.SUM_FIELD_COUNT)
 
         return schema.map((field, idx) => {
-            const { name, type, updateBy, ...extranousFields } = field
+            const { name, type, updateBy, ...extraFields } = field
             const match = type.match(/^uint(\d+)$/)
             if (match === null)
                 throw new Error(`Invalid type for field ${name}: "${type}"`)
-            if (Object.keys(extranousFields).length !== 0) {
+            if (Object.keys(extraFields).length !== 0) {
                 throw new Error(
                     `Invalid fields included for field ${name}: [${Object.keys(
-                        extranousFields
+                        extraFields
                     )}]`
                 )
             }
@@ -62,7 +70,9 @@ export class DataSchema {
             } else if (updateBy === 'replace') {
                 if (bits !== 253 - this.config.REPL_NONCE_BITS)
                     throw new Error(
-                        `Invalid uint size for field ${name}: ${bits}`
+                        `Field must be ${
+                            253 - this.config.REPL_NONCE_BITS
+                        } bits`
                     )
                 if (replOffset + bits > maxReplOffset) {
                     throw new Error(
@@ -82,27 +92,72 @@ export class DataSchema {
         })
     }
 
-    update(name: string, v: bigint): bigint {
-        const field = this.schema.find((f) => f.name === name)
-        const idx = field.dataIndex
+    buildAttestation(change: { name: string; v: bigint }): Attestation {
+        const field: any = this.schema.find((f) => f.name === change.name)
+
+        if (field === undefined) {
+            throw new Error(`${change.name} not found`)
+        }
+        const fieldIndex: number = field.dataIndex
+        const x: bigint = change.v << BigInt(field.offset)
+
         const maxVal: bigint = (BigInt(1) << BigInt(field.bits)) - BigInt(1)
 
-        if (field.updateBy === 'sum') {
-            v += (this.data[idx] >> BigInt(field.offset)) & maxVal
+        if (x > maxVal << BigInt(field.offset)) {
+            throw new Error(`${change.name} exceeds allocated space`)
         }
 
-        if (v > maxVal) {
-            throw new Error(`${name} value exceeds allocated storage`)
+        const attestation: Attestation = {
+            fieldIndex,
+            change: x,
         }
 
-        this.data[idx] =
-            (this.data[idx] & ~(maxVal << BigInt(field.offset))) |
-            ((v & maxVal) << BigInt(field.offset))
-
-        return this.data[idx]
+        return attestation
     }
 
-    parseData(data: bigint[]): {} {
+    buildAttestations(changes: { name: string; v: bigint }[]): Attestation[] {
+        let attestations: Attestation[] = Array(this.schema.length).fill(null)
+        for (const change of changes) {
+            const field: any = this.schema.find((f) => f.name === change.name)
+
+            if (field === undefined) {
+                throw new Error(`${change.name} not found`)
+            }
+
+            const fieldIndex: number = field.dataIndex
+            let v: bigint = change.v << BigInt(field.offset)
+            const maxVal: bigint = (BigInt(1) << BigInt(field.bits)) - BigInt(1)
+
+            if (attestations[fieldIndex] !== null) {
+                v =
+                    change.v +
+                    (field.updateBy === 'sum'
+                        ? (attestations[fieldIndex].change >>
+                              BigInt(field.offset)) &
+                          maxVal
+                        : BigInt(0))
+            }
+
+            if (v > maxVal << BigInt(field.offset)) {
+                throw new Error(`${change.name} exceeds allocated space`)
+            }
+
+            if (attestations[fieldIndex] !== null)
+                v =
+                    (attestations[fieldIndex].change &
+                        ~(maxVal << BigInt(field.offset))) |
+                    ((v & maxVal) << BigInt(field.offset))
+
+            attestations[fieldIndex] = {
+                fieldIndex,
+                change: v,
+            }
+        }
+
+        return attestations.filter((attestation) => attestation !== null)
+    }
+
+    parseData(data: bigint[]): any {
         const parsed = {}
 
         for (const field of this.schema) {

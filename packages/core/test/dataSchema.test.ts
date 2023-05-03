@@ -1,10 +1,10 @@
 // @ts-ignore
 import { expect } from 'chai'
-import { DataSchema } from '../src/DataSchema'
+import { Attestation, DataSchema, SchemaField } from '../src/DataSchema'
 
 const smallRandom = (x: number) => Math.floor(Math.random() * x)
 
-const schema = [
+const schema: SchemaField[] = [
     {
         name: 'posRep',
         type: 'uint64',
@@ -225,55 +225,125 @@ describe('Check schema parsing', function () {
                 },
             ]
             expect(() => new DataSchema(invalidSchema)).to.throw(
-                'Invalid uint size for field graffiti: 206'
+                'Field must be 205 bits'
             )
         }
     })
 })
 
-describe('Check `update`', function () {
+describe('Build an attestation', function () {
     it('successfully update sum fields', () => {
-        let x = Array(schema.length).fill(BigInt(0))
         const d = new DataSchema(schema)
         Array(10)
             .fill(0)
             .forEach(() => {
-                d.parseSchema(schema).forEach((field, i) => {
+                for (const field of d.schema) {
                     if (field.updateBy !== 'sum') return
-                    const rand = smallRandom(field.bits)
-                    d.update(field.name, BigInt(rand))
-                    x[i] += BigInt(rand)
-                    expect(BigInt(d.parseData(d.data)[field.name])).to.equal(
-                        x[i]
-                    )
-                })
+                    const rand = BigInt(smallRandom(field.bits))
+                    const change = { name: field.name, v: rand }
+                    const a = d.buildAttestation(change)
+                    const x = rand << BigInt(field.offset)
+                    expect(a.change).to.equal(x)
+                }
             })
+    })
+    it('successfully update multiple fields', () => {
+        const d = new DataSchema(schema)
+        let changes: any[] = []
+        let ar = new Array(schema.length).fill(BigInt(0))
+        Array(2)
+            .fill(0)
+            .forEach(() => {
+                for (const field of d.schema) {
+                    const rand = BigInt(smallRandom(field.bits))
+                    const change = { name: field.name, v: rand }
+                    changes.push(change)
+
+                    const x = d.buildAttestation(change)
+                    ar[x.fieldIndex] =
+                        field.updateBy === 'sum'
+                            ? ar[x.fieldIndex] + x.change
+                            : x.change
+                }
+            })
+
+        const a = d.buildAttestations(changes)
+
+        for (const field of a) {
+            expect(field.change).to.equal(ar[field.fieldIndex])
+        }
     })
     it('successfully update replacement fields', () => {
         const d = new DataSchema(schema)
         Array(10)
             .fill(0)
             .forEach(() => {
-                d.parseSchema(schema).forEach((field) => {
+                for (const field of d.schema) {
                     if (field.updateBy !== 'replace') return
-                    const rand = smallRandom(field.bits)
-                    d.update(field.name, BigInt(rand))
-                    expect(d.parseData(d.data)[field.name]).to.equal(rand)
-                })
+                    const rand = BigInt(smallRandom(field.bits))
+                    const change = { name: field.name, v: rand }
+                    const a = d.buildAttestation(change)
+                    const x = rand << BigInt(field.offset)
+                    expect(a.change).to.equal(x)
+                }
             })
     })
     it('fails to use exceedingly large number', () => {
         {
             const d = new DataSchema(schema)
-            expect(() => d.update('posRep', BigInt(1) << BigInt(254))).to.throw(
-                'posRep value exceeds allocated storage'
-            )
+            expect(() =>
+                d.buildAttestation({
+                    name: 'posRep',
+                    v: BigInt(1) << BigInt(64),
+                })
+            ).to.throw('posRep exceeds allocated space')
         }
         {
             const d = new DataSchema(schema)
             expect(() =>
-                d.update('graffiti', BigInt(1) << BigInt(206))
-            ).to.throw('graffiti value exceeds allocated storage')
+                d.buildAttestation({
+                    name: 'graffiti',
+                    v: BigInt(1) << BigInt(206),
+                })
+            ).to.throw('graffiti exceeds allocated space')
+        }
+    })
+
+    it('fail to combine multiple attestations that collectively exceed allocate space', () => {
+        const d = new DataSchema(schema)
+        const a = new Array(4).fill({
+            name: 'posRep',
+            v: BigInt(1) << BigInt(62),
+        })
+        expect(() => d.buildAttestations(a)).to.throw(
+            'posRep exceeds allocated space'
+        )
+    })
+
+    it('fail to attest to an illegal field', () => {
+        {
+            const d = new DataSchema(schema)
+            expect(() =>
+                d.buildAttestation({
+                    name: 'invalidField',
+                    v: BigInt(0),
+                })
+            ).to.throw('invalidField not found')
+        }
+        {
+            const d = new DataSchema(schema)
+            expect(() =>
+                d.buildAttestations([
+                    {
+                        name: 'posRep',
+                        v: BigInt(0),
+                    },
+                    {
+                        name: 'invalidField',
+                        v: BigInt(0),
+                    },
+                ])
+            ).to.throw('invalidField not found')
         }
     })
 })
@@ -281,23 +351,32 @@ describe('Check `update`', function () {
 describe('Parse encoded data', () => {
     it('Parse data', () => {
         const d = new DataSchema(schema)
-        let x = Array(schema.length).fill(BigInt(0))
+        let v = new Array(schema.length).fill(BigInt(0))
+        let changes: any = []
+        let schemaVal = {}
         Array(10)
             .fill(0)
             .forEach(() => {
-                d.parseSchema(schema).forEach((field, i) => {
-                    const rand = smallRandom(field.bits)
-                    d.update(field.name, BigInt(rand))
-                    x[i] =
-                        field.updateBy === 'sum'
-                            ? x[i] + BigInt(rand)
-                            : BigInt(rand)
-                })
-            })
+                for (const field of d.schema) {
+                    const rand = BigInt(smallRandom(field.bits))
+                    const change = { name: field.name, v: rand }
+                    changes.push(change)
 
-        const data = d.parseData(d.data)
-        Object.keys(data).forEach((field, i) => {
-            expect(data[field]).to.equal(x[i])
-        })
+                    schemaVal[field.name] =
+                        rand +
+                        (field.updateBy === 'sum' && field.name in schemaVal
+                            ? schemaVal[field.name]
+                            : BigInt(0))
+                }
+            })
+        const a = d.buildAttestations(changes)
+        for (const field of a) {
+            v[field.fieldIndex] = field.change
+        }
+
+        const p = d.parseData(v)
+        for (const field of Object.keys(p)) {
+            expect(p[field]).to.equal(schemaVal[field])
+        }
     })
 })
