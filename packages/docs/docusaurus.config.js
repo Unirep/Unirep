@@ -83,10 +83,16 @@ const config = {
                         position: 'right',
                     },
                     {
-                        href: 'https://github.com/unirep/unirep',
-                        label: 'GitHub',
+                        href: 'https://airtable.com/shroZ9JGQLMznKU18',
+                        label: 'Feedback',
                         position: 'right',
                     },
+                    {
+                        href: "https://github.com/unirep/unirep",
+                        position: "right",
+                        className: "header-github-link",
+                        "aria-label": "GitHub repository",
+                      },
                 ],
             },
             footer: {
@@ -110,6 +116,10 @@ const config = {
                             {
                                 label: 'Twitter',
                                 href: 'https://twitter.com/UniRep_protocol',
+                            },
+                            {
+                                label: 'Feedback',
+                                href: 'https://airtable.com/shroZ9JGQLMznKU18',
                             },
                         ],
                     },
