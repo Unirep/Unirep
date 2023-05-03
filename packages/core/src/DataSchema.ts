@@ -11,7 +11,7 @@ export type Attestation = {
     change: bigint
 }
 export class DataSchema {
-    public schema: SchemaField[]
+    public schema: any[]
     public config: CircuitConfig
 
     constructor(schema, config = CircuitConfig.default) {
