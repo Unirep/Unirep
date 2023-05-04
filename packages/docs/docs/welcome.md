@@ -2,7 +2,11 @@
 title: What is UniRep?
 ---
 
-# 👏 Welcome
+# Introduction
+
+UniRep is a private, non-repudiable data storage and retrieval system designed as a base layer for building custom and interoperable zk applications. It serves as a memory layer, allowing users to receive data, prove facts about their data, and store results of large proofs with strong privacy guarantees and constant computation complexity. 
+
+UniRep can be utilized for web2 authentication bridging and storing application-specific data such as user reputation, actions, and memberships. This enables seamless interoperability between applications using publicly available state roots for user proofs.
 
 <center><img src="/img/unirep-banner.png" alt="UniRep: Privacy &#x26; provable reputation" width="800px" /></center>
 
