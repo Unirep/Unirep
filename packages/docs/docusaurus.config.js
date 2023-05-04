@@ -74,7 +74,7 @@ const config = {
                         type: 'doc',
                         docId: 'welcome',
                         position: 'left',
-                        label: 'API',
+                        label: 'Docs',
                     },
                     { to: '/blog', label: 'Blog', position: 'left' },
                     {
@@ -83,9 +83,20 @@ const config = {
                         position: 'right',
                     },
                     {
-                        href: 'https://github.com/unirep/unirep',
-                        label: 'GitHub',
+                        href: 'https://airtable.com/shroZ9JGQLMznKU18',
+                        label: 'Feedback',
                         position: 'right',
+                    },
+                    {
+                        href: 'https://explorer.unirep.io',
+                        label: 'Explorer',
+                        position: 'right',
+                    },
+                    {
+                        href: 'https://github.com/unirep/unirep',
+                        position: 'right',
+                        className: 'header-github-link',
+                        'aria-label': 'GitHub repository',
                     },
                 ],
             },
@@ -111,6 +122,10 @@ const config = {
                                 label: 'Twitter',
                                 href: 'https://twitter.com/UniRep_protocol',
                             },
+                            {
+                                label: 'Feedback',
+                                href: 'https://airtable.com/shroZ9JGQLMznKU18',
+                            },
                         ],
                     },
                     {
@@ -119,6 +134,10 @@ const config = {
                             {
                                 label: 'Blog',
                                 to: '/blog',
+                            },
+                            {
+                                label: 'Explorer',
+                                href: 'https://explorer.unirep.io',
                             },
                             {
                                 label: 'GitHub',
