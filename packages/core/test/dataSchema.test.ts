@@ -1,8 +1,10 @@
 // @ts-ignore
 import { expect } from 'chai'
 import { Attestation, DataSchema, SchemaField } from '../src/DataSchema'
+import { poseidon1 } from 'poseidon-lite'
 
 const smallRandom = (x: number) => Math.floor(Math.random() * x)
+const random = () => poseidon1([smallRandom(10000000)])
 
 const schema: SchemaField[] = [
     {
@@ -234,12 +236,13 @@ describe('Check schema parsing', function () {
 describe('Build an attestation', function () {
     it('successfully update sum fields', () => {
         const d = new DataSchema(schema)
-        Array(10)
+        Array(8)
             .fill(0)
             .forEach(() => {
                 for (const field of d.schema) {
                     if (field.updateBy !== 'sum') return
-                    const rand = BigInt(smallRandom(field.bits))
+                    const rand =
+                        random() % (BigInt(1) << BigInt(field.bits - 3))
                     const change = { name: field.name, v: rand }
                     const a = d.buildAttestation(change)
                     const x = rand << BigInt(field.offset)
@@ -251,11 +254,12 @@ describe('Build an attestation', function () {
         const d = new DataSchema(schema)
         let changes: any[] = []
         let ar = new Array(schema.length).fill(BigInt(0))
-        Array(2)
+        Array(8)
             .fill(0)
             .forEach(() => {
                 for (const field of d.schema) {
-                    const rand = BigInt(smallRandom(field.bits))
+                    const rand =
+                        random() % (BigInt(1) << BigInt(field.bits - 3))
                     const change = { name: field.name, v: rand }
                     changes.push(change)
 
@@ -275,12 +279,13 @@ describe('Build an attestation', function () {
     })
     it('successfully update replacement fields', () => {
         const d = new DataSchema(schema)
-        Array(10)
+        Array(8)
             .fill(0)
             .forEach(() => {
                 for (const field of d.schema) {
                     if (field.updateBy !== 'replace') return
-                    const rand = BigInt(smallRandom(field.bits))
+                    const rand =
+                        random() % (BigInt(1) << BigInt(field.bits - 3))
                     const change = { name: field.name, v: rand }
                     const a = d.buildAttestation(change)
                     const x = rand << BigInt(field.offset)
@@ -354,11 +359,12 @@ describe('Parse encoded data', () => {
         let v = new Array(schema.length).fill(BigInt(0))
         let changes: any = []
         let schemaVal = {}
-        Array(10)
+        Array(8)
             .fill(0)
             .forEach(() => {
                 for (const field of d.schema) {
-                    const rand = BigInt(smallRandom(field.bits))
+                    const rand =
+                        random() % (BigInt(1) << BigInt(field.bits - 3))
                     const change = { name: field.name, v: rand }
                     changes.push(change)
 
