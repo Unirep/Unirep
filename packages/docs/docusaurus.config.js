@@ -88,11 +88,11 @@ const config = {
                         position: 'right',
                     },
                     {
-                        href: "https://github.com/unirep/unirep",
-                        position: "right",
-                        className: "header-github-link",
-                        "aria-label": "GitHub repository",
-                      },
+                        href: 'https://github.com/unirep/unirep',
+                        position: 'right',
+                        className: 'header-github-link',
+                        'aria-label': 'GitHub repository',
+                    },
                 ],
             },
             footer: {
