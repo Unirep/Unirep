@@ -20,6 +20,6 @@ UniRep can be used to store the result of large proofs (e.g. proof of Ethereum a
 
 UniRep can be used to store data important to applications. This might include reputation the user has accrued, actions the user has taken, groups the user is a member of, or anything else. Applications can interoperate by having users make proofs using publicly available state roots.
 
-Read the latest UniRep blog post [here](https://mirror.xyz/privacy-scaling-explorations.eth/FCVVfy-TQ6R7_wavKj1lCr5dd1zqRvwjnDOYRM5NtsE)
+**Read the latest UniRep blog post on [Privacy & Scaling Explorations](https://mirror.xyz/privacy-scaling-explorations.eth/FCVVfy-TQ6R7_wavKj1lCr5dd1zqRvwjnDOYRM5NtsE)**
 
 UniRep is originally proposed by BarryWhiteHat in [this ethresear.ch post](https://ethresear.ch/t/anonymous-reputation-risking-and-burning/3926)
