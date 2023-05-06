@@ -2,24 +2,31 @@
 title: What is UniRep?
 ---
 
-# 👏 Welcome
+# Introduction
 
-<center><img src="/img/unirep-banner.png" alt="UniRep: Privacy &#x26; provable reputation" width="800px" /></center>
+UniRep is a zero-knowledge protocol that securely manages user data through anonymous identifiers, enabling trustless interactions and enhanced user privacy in applications. UniRep expands the notion of reputation to include various user data aspects, such as preferences, activity, alignments, and ownership. 
 
-## Overview
+Using anonymous identifiers (epoch keys), The protocol allows for trustless engagement with applications while preserving user privacy. This approach promotes non-custodial applications that don't hold user data, reducing data breach risks and emphasizing security for both users and developers.
 
-**UniRep** (**Uni**versal **Rep**utation) is a _private_ and _non-repudiable_ data storage and retrieval system. Applications can attest to changes in user data using short lived identifiers called **epoch keys**. Users can:
+<center><img src="/img/unirep-banner.png" alt="UniRep: Privacy &#x26; provable reputation" width="100%" /></center>
 
-1. Receive data from applications.
-2. Voluntarily prove facts about their user data.
-3. Users cannot refuse to receive data from an application.
+## 😸  Key Features
 
-The high-level goal for **UniRep** is to be a base layer on top of which anyone can easily build _custom_, yet _interoperable_, zk applications. UniRep acts as a memory layer for zk: anything stored in UniRep can be retrieved and proven with strong privacy guarantees and constant computation complexity.
+UniRep aims to be the ultimate foundation for constructing tailored, yet fully compatible, zero-knowledge (zk) applications. It functions as a powerful memory layer for zk, offering private, non-repudiable data storage and retrieval capabilities. With UniRep, users can effortlessly receive data, prove facts about their information, and store the results while enjoying robust privacy assurances and constant computational complexity. The protocol empowers developers to create bespoke zk applications without compromising on interoperability and efficiency.
 
-UniRep can be used to store the result of large proofs (e.g. proof of Ethereum address control from an ECDSA signature). This result can later be retrieved and proven by a user any number of times. Similar patterns exist for web2 authentication bridging; a user oauths with a trusted entity once, and the entity attests storing information about the users web2 identity in zk.
+Key UniRep features include:
+- **Large Proof Storage**: UniRep facilitates the storage of extensive proofs, such as proof of Ethereum address control from an ECDSA signature, which users can later retrieve and prove multiple times.
+- **Web2 Authentication Bridging**: Users authenticate once with a trusted entity via OAuth, enabling the entity to attest and store information about their web2 identity in zk format.
+- **Versatile Data Storage**: UniRep accommodates a wide array of data essential to applications, including user reputation, actions taken, group memberships, and more.
+- **Seamless Interoperability**: Applications can easily interconnect by enabling users to create proofs using publicly available state for user verifications.
+- **No Forced Data Sharing**: With UniRep, users are never forced to receive unwanted data from applications, maintaining their freedom of choice.
 
-UniRep can be used to store data important to applications. This might include reputation the user has accrued, actions the user has taken, groups the user is a member of, or anything else. Applications can interoperate by having users make proofs using publicly available state roots.
+## Getting started
 
-**Read the latest UniRep blog post on [Privacy & Scaling Explorations](https://mirror.xyz/privacy-scaling-explorations.eth/FCVVfy-TQ6R7_wavKj1lCr5dd1zqRvwjnDOYRM5NtsE)**
+UniRep protocol allows applications to securely attest to user data changes through the use of dynamic, short-lived identifiers known as **epoch keys**.
+
+<center><img src="/img/user & attester flow.png" alt="UniRep: Privacy &#x26; provable reputation" width="100%" /></center>
+
+Read the latest UniRep blog post [here](https://mirror.xyz/privacy-scaling-explorations.eth/FCVVfy-TQ6R7_wavKj1lCr5dd1zqRvwjnDOYRM5NtsE)
 
 UniRep is originally proposed by BarryWhiteHat in [this ethresear.ch post](https://ethresear.ch/t/anonymous-reputation-risking-and-burning/3926)
