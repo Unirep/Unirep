@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula')
 /** @type {import('@docusaurus/types').Config} */
 const config = {
     title: 'UniRep Docs',
-    tagline: 'Universal Reputation',
+    tagline: 'Universal Reputation - Private user data & Provable reputation',
     url: 'https://developer.unirep.io',
     baseUrl: '/',
     onBrokenLinks: 'throw',
@@ -74,7 +74,7 @@ const config = {
                         type: 'doc',
                         docId: 'welcome',
                         position: 'left',
-                        label: 'Documentation',
+                        label: 'Docs',
                     },
                     { to: '/blog', label: 'Blog', position: 'left' },
                     {
@@ -106,7 +106,7 @@ const config = {
                         title: 'Docs',
                         items: [
                             {
-                                label: 'Welcome',
+                                label: 'Introduction',
                                 to: '/docs/welcome',
                             },
                         ],

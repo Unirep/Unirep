@@ -8,7 +8,7 @@ UniRep is a zero-knowledge protocol that securely manages user data through anon
 
 Using anonymous identifiers (epoch keys), The protocol allows for trustless engagement with applications while preserving user privacy. This approach promotes non-custodial applications that don't hold user data, reducing data breach risks and emphasizing security for both users and developers.
 
-<center><img src="/img/unirep-banner.png" alt="UniRep: Privacy &#x26; provable reputation" width="100%" /></center>
+<center><img src="/img/unirep-banner.png" alt="UniRep: Private user data with &#x26; provable reputation" width="100%" /></center>
 
 ## 😸  Key Features
 
@@ -21,11 +21,34 @@ Key UniRep features include:
 - **Seamless Interoperability**: Applications can easily interconnect by enabling users to create proofs using publicly available state for user verifications.
 - **No Forced Data Sharing**: With UniRep, users are never forced to receive unwanted data from applications, maintaining their freedom of choice.
 
-## Getting started
+<center><img src="/img/application.png" alt="UniRep: Private user data with &#x26; provable reputation" width="100%" /></center>
 
-UniRep protocol allows applications to securely attest to user data changes through the use of dynamic, short-lived identifiers known as **epoch keys**.
+##  🤠  Design & Deploy a customized attester
 
-<center><img src="/img/user & attester flow.png" alt="UniRep: Privacy &#x26; provable reputation" width="100%" /></center>
+Attesters are at the application layer. They are the platforms, businesses, and communities in the ZK social ecosystem. They act as world builders and community managers. Attesters have great flexibility in what to build. They decide how many user identities are used, how users are onboarded, and how users interact with each other. Most importantly, attesters decide why someone receives a positive reputation and why someone receives a negative reputation. In other words, attesters provide accountability.
+
+:::info
+UniRep's key offering is providing developers with a pre-built, audited system to create apps that securely handle private user data and manage reputation using ZK technology. UniRep protocol allows applications to securely attest to user data changes through the use of dynamic, short-lived identifiers known as **epoch keys**.
+
+:::
+
+### Few inspriations for you to get started
+
+- Non-custodial shopping, streaming
+- Business review / recommendations
+- B2B reputation
+- P2P marketplace
+- P2P gig services
+- Product review
+- Video rating
+...and more.
+
+In summary, UniRep empowers developers to create applications that foster trust and alignment within the platform, all while ensuring users maintain complete privacy. This unique combination of features enhances user experience, promotes engagement, and supports the growth of a secure and trusted digital community.
+
+** Ready to start? insert link here to go get started** 
+
+## Stay informed
+Have questions? Join our [UniRep Discord](https://discord.gg/qrqq8SeN7F) 
 
 Read the latest UniRep blog post [here](https://mirror.xyz/privacy-scaling-explorations.eth/FCVVfy-TQ6R7_wavKj1lCr5dd1zqRvwjnDOYRM5NtsE)
 

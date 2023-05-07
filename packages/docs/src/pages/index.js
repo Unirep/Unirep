@@ -36,8 +36,7 @@ function HomepageHeader() {
                     </div>
                     <div style={{ height: '24px' }} />
                     <div className={clsx(styles.subtitleText)}>
-                        UniRep protocol is a private and non-repudiable
-                        reputation system.
+                    Securely Enabling Trust and Privacy - A Zero-Knowledge Protocol for Responsible Reputation Management and User Data Protection
                     </div>
                     <div style={{ height: '24px' }} />
                     <Link className={clsx(styles.apiButton)} to="/docs/welcome">

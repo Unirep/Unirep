@@ -19,7 +19,7 @@ const sidebars = {
     apiSidebar: [
         {
             type: 'doc',
-            label: '👏 Welcome',
+            label: '👋  Introduction',
             id: 'welcome',
         },
         {
