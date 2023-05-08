@@ -45,7 +45,7 @@ UniRep's key offering is providing developers with a pre-built, audited system t
 
 In summary, UniRep empowers developers to create applications that foster trust and alignment within the platform, all while ensuring users maintain complete privacy. This unique combination of features enhances user experience, promotes engagement, and supports the growth of a secure and trusted digital community.
 
-** Ready to start? insert link here to go get started** 
+
 
 ## Stay informed
 Have questions? Join our [UniRep Discord](https://discord.gg/qrqq8SeN7F) 
