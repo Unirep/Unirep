@@ -15,6 +15,8 @@ include "./incrementalMerkleTree.circom";
 include "./epochKey.circom";
 
 template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS) {
+    assert(SUM_FIELD_COUNT < FIELD_COUNT);
+
     signal output epoch_key;
 
     // Global state tree leaf: Identity & user state root
