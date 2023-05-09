@@ -9,13 +9,15 @@ import { ptauName } from './circuits.mjs'
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 const outDir = path.join(__dirname, '../zksnarkBuild')
+const buildDir = path.join(__dirname, '../zksnarkBuild.tmp')
 await fs.promises.mkdir(outDir, { recursive: true })
+await fs.promises.mkdir(buildDir, { recursive: true })
 const ptau = path.join(outDir, ptauName)
 
 const ptauExists = await fs.promises.stat(ptau).catch(() => false)
 if (!ptauExists) {
     // download to a temporary file and then move it into place
-    const tmp = path.join(outDir, 'ptau.download.tmp')
+    const tmp = path.join(buildDir, 'ptau.download.tmp')
     await fs.promises.unlink(tmp).catch(() => {})
     await new Promise((rs, rj) => {
         const logPercent = (p) => {
@@ -60,4 +62,5 @@ if (!ptauExists) {
         )
     })
     await fs.promises.rename(tmp, ptau)
+    await fs.promises.rename(ptau, path.join(outDir, ptauName))
 }

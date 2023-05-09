@@ -3,8 +3,10 @@ import os from 'os'
 import url from 'url'
 import path from 'path'
 import { circuitContents } from './circuits.mjs'
+import fs from 'fs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
+const buildDir = path.join(__dirname, '../zksnarkBuild.tmp')
 
 await import('./downloadPtau.mjs')
 
@@ -44,3 +46,4 @@ for (const args of taskArgs) {
     )
 }
 await Promise.all(promises)
+await fs.promises.rm(buildDir, { recursive: true, force: true })
