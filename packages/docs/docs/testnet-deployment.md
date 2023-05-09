@@ -41,7 +41,7 @@ In beta-3 epochs are automatically sealed onchain. No additional proof or transa
 Proving keys for this contract can be accessed at the following url:
 - [https://keys.unirep.io/2-beta-3/](https://keys.unirep.io/2-beta-3/)
 
-This URL can be directly used in a [network prover](circuits-api/network-prover) implementation.
+This URL is used in the [web prover](circuits-api/web-prover).
 
 :::danger
 These keys have not had a secure phase 2 trusted setup.
