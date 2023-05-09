@@ -10,6 +10,8 @@ The server is expected to serve the `zkey`, `wasm`, and `vkey` files at their re
 The keys included are not safe for production use. A phase 2 trusted setup needs to be done before use.
 :::
 
+## Usage
+
 ### Default key server
 
 ```ts
@@ -28,4 +30,20 @@ import { WebProver } from '@unirep/circuits/provers/web'
 // For a local key server
 const prover = new WebProver('http://localhost:8000/keys/')
 await prover.genProofAndPublicSignals(Circuit.signup, { /* inputs */ })
+```
+
+## API
+
+The web prover supports all the methods from the `Prover` interface in addition to the following.
+
+### warmKeys
+
+Load proving keys for a circuit into memory. Future proofs using these keys will not need to wait for download.
+
+:::tip
+Use this function without `await` to start the download in the background.
+:::
+
+```ts
+await webProver.warmKeys(circuitName: string)
 ```
