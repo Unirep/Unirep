@@ -5,8 +5,7 @@ export class WebProver {
     url: string
 
     constructor(serverUrl: string = KEY_URL) {
-        this.url = serverUrl
-        // TODO: check that url has trailing slash
+        this.url = serverUrl.endsWith('/') ? serverUrl : `${serverUrl}/`
     }
 
     async getKey(circuitUrl: string) {
