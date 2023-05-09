@@ -243,7 +243,7 @@ describe('Build an attestation', function () {
                     if (field.updateBy !== 'sum') return
                     const rand =
                         random() % (BigInt(1) << BigInt(field.bits - 3))
-                    const change = { name: field.name, v: rand }
+                    const change = { name: field.name, val: rand }
                     const a = d.buildAttestation(change)
                     const x = rand << BigInt(field.offset)
                     expect(a.change).to.equal(x)
@@ -260,7 +260,7 @@ describe('Build an attestation', function () {
                 for (const field of d.schema) {
                     const rand =
                         random() % (BigInt(1) << BigInt(field.bits - 3))
-                    const change = { name: field.name, v: rand }
+                    const change = { name: field.name, val: rand }
                     changes.push(change)
 
                     const x = d.buildAttestation(change)
@@ -286,7 +286,7 @@ describe('Build an attestation', function () {
                     if (field.updateBy !== 'replace') return
                     const rand =
                         random() % (BigInt(1) << BigInt(field.bits - 3))
-                    const change = { name: field.name, v: rand }
+                    const change = { name: field.name, val: rand }
                     const a = d.buildAttestation(change)
                     const x = rand << BigInt(field.offset)
                     expect(a.change).to.equal(x)
@@ -299,7 +299,7 @@ describe('Build an attestation', function () {
             expect(() =>
                 d.buildAttestation({
                     name: 'posRep',
-                    v: BigInt(1) << BigInt(64),
+                    val: BigInt(1) << BigInt(64),
                 })
             ).to.throw('posRep exceeds allocated space')
         }
@@ -308,7 +308,7 @@ describe('Build an attestation', function () {
             expect(() =>
                 d.buildAttestation({
                     name: 'graffiti',
-                    v: BigInt(1) << BigInt(206),
+                    val: BigInt(1) << BigInt(206),
                 })
             ).to.throw('graffiti exceeds allocated space')
         }
@@ -318,7 +318,7 @@ describe('Build an attestation', function () {
         const d = new DataSchema(schema)
         const a = new Array(4).fill({
             name: 'posRep',
-            v: BigInt(1) << BigInt(62),
+            val: BigInt(1) << BigInt(62),
         })
         expect(() => d.buildAttestations(a)).to.throw(
             'posRep exceeds allocated space'
@@ -331,7 +331,7 @@ describe('Build an attestation', function () {
             expect(() =>
                 d.buildAttestation({
                     name: 'invalidField',
-                    v: BigInt(0),
+                    val: BigInt(0),
                 })
             ).to.throw('invalidField not found')
         }
@@ -341,11 +341,11 @@ describe('Build an attestation', function () {
                 d.buildAttestations([
                     {
                         name: 'posRep',
-                        v: BigInt(0),
+                        val: BigInt(0),
                     },
                     {
                         name: 'invalidField',
-                        v: BigInt(0),
+                        val: BigInt(0),
                     },
                 ])
             ).to.throw('invalidField not found')
@@ -365,7 +365,7 @@ describe('Parse encoded data', () => {
                 for (const field of d.schema) {
                     const rand =
                         random() % (BigInt(1) << BigInt(field.bits - 3))
-                    const change = { name: field.name, v: rand }
+                    const change = { name: field.name, val: rand }
                     changes.push(change)
 
                     schemaVal[field.name] =

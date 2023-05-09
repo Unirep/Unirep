@@ -92,14 +92,14 @@ export class DataSchema {
         })
     }
 
-    buildAttestation(change: { name: string; v: bigint }): Attestation {
+    buildAttestation(change: { name: string; val: bigint }): Attestation {
         const field: any = this.schema.find((f) => f.name === change.name)
 
         if (field === undefined) {
             throw new Error(`${change.name} not found`)
         }
         const fieldIndex: number = field.dataIndex
-        const x: bigint = change.v << BigInt(field.offset)
+        const x: bigint = change.val << BigInt(field.offset)
 
         const maxVal: bigint = (BigInt(1) << BigInt(field.bits)) - BigInt(1)
 
@@ -115,8 +115,8 @@ export class DataSchema {
         return attestation
     }
 
-    buildAttestations(changes: { name: string; v: bigint }[]): Attestation[] {
-        let attestations: Attestation[] = Array(this.schema.length).fill(null)
+    buildAttestations(changes: { name: string; val: bigint }[]): Attestation[] {
+        const attestations: Attestation[] = Array(this.schema.length).fill(null)
         for (const change of changes) {
             const field: any = this.schema.find((f) => f.name === change.name)
 
@@ -124,29 +124,26 @@ export class DataSchema {
                 throw new Error(`${change.name} not found`)
             }
 
-            const fieldIndex: number = field.dataIndex
-            let v: bigint = change.v << BigInt(field.offset)
             const maxVal: bigint = (BigInt(1) << BigInt(field.bits)) - BigInt(1)
+            const fieldIndex: number = field.dataIndex
+            let v: bigint = change.val << BigInt(field.offset)
 
-            if (attestations[fieldIndex] !== null) {
-                v =
-                    change.v +
-                    (field.updateBy === 'sum'
-                        ? (attestations[fieldIndex].change >>
-                              BigInt(field.offset)) &
-                          maxVal
-                        : BigInt(0))
-            }
+            // Get existing attestation sum value
+            let sumBits: bigint =
+                field.updateBy === 'sum' && attestations[fieldIndex] !== null
+                    ? (attestations[fieldIndex].change >>
+                          BigInt(field.offset)) &
+                      maxVal
+                    : BigInt(0)
 
-            if (v > maxVal << BigInt(field.offset)) {
+            if (v + sumBits > maxVal << BigInt(field.offset)) {
                 throw new Error(`${change.name} exceeds allocated space`)
             }
 
-            if (attestations[fieldIndex] !== null)
-                v =
-                    (attestations[fieldIndex].change &
-                        ~(maxVal << BigInt(field.offset))) |
-                    ((v & maxVal) << BigInt(field.offset))
+            // Include previous attestation change value in our new attestation
+            // This is necessary to get the value of other schema fields in the attestation
+            if (attestations[fieldIndex] !== null && field.updateBy === 'sum')
+                v += attestations[fieldIndex].change
 
             attestations[fieldIndex] = {
                 fieldIndex,
