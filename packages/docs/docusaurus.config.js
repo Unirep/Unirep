@@ -3,6 +3,8 @@
 
 const lightCodeTheme = require('prism-react-renderer/themes/github')
 const darkCodeTheme = require('prism-react-renderer/themes/dracula')
+const math = require('remark-math')
+const katex = require('rehype-katex')
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -45,6 +47,8 @@ const config = {
                             path: 'next',
                         },
                     },
+                    remarkPlugins: [math],
+                    rehypePlugins: [katex],
                 },
                 blog: {
                     showReadingTime: true,

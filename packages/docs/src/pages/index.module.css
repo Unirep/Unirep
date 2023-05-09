@@ -55,3 +55,9 @@
     font-size: min(20px, 3vw);
     line-height: 120%;
 }
+
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
