@@ -11,26 +11,26 @@ contract BaseProofVerifier {
 
     struct EpochKeySignals {
         bool revealNonce;
+        uint8 nonce;
+        uint48 epoch;
+        uint160 attesterId;
         uint256 stateTreeRoot;
         uint256 epochKey;
         uint256 data;
-        uint8 nonce;
-        uint48 epoch;
-        uint160 attesterId;
     }
 
     struct ReputationSignals {
-        uint256 stateTreeRoot;
-        uint256 epochKey;
-        uint256 graffitiPreImage;
-        uint256 proveGraffiti;
+        bool proveGraffiti;
+        bool proveMinRep;
+        bool proveMaxRep;
+        bool proveZeroRep;
+        bool revealNonce;
         uint8 nonce;
         uint48 epoch;
         uint160 attesterId;
-        bool revealNonce;
-        uint256 proveMinRep;
-        uint256 proveMaxRep;
-        uint256 proveZeroRep;
+        uint256 stateTreeRoot;
+        uint256 epochKey;
+        uint256 graffitiPreImage;
         uint256 minRep;
         uint256 maxRep;
     }
@@ -51,7 +51,7 @@ contract BaseProofVerifier {
             uint8 nonce
         )
     {
-        revealNonce = (control >> 232) & 1 != 0;
+        revealNonce = ((control >> 232) & 1) != 0;
         attesterId = uint160((control >> 72) & ((1 << 160) - 1));
         epoch = uint48((control >> 8) & ((1 << 64) - 1));
         nonce = uint8(control & ((1 << 8) - 1));

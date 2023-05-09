@@ -30,6 +30,10 @@ contract ReputationProofVerifier is BaseProofVerifier {
             signals.proveZeroRep,
             signals.proveGraffiti
         ) = decodeReputationControl(publicSignals[3]);
+
+        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
+        if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
+
         return signals;
     }
 
@@ -41,18 +45,18 @@ contract ReputationProofVerifier is BaseProofVerifier {
         returns (
             uint256 minRep,
             uint256 maxRep,
-            uint256 proveMinRep,
-            uint256 proveMaxRep,
-            uint256 proveZeroRep,
-            uint256 proveGraffiti
+            bool proveMinRep,
+            bool proveMaxRep,
+            bool proveZeroRep,
+            bool proveGraffiti
         )
     {
         minRep = control & ((1 << 64) - 1);
         maxRep = (control >> 64) & ((1 << 64) - 1);
-        proveMinRep = (control >> 128) & 1;
-        proveMaxRep = (control >> 129) & 1;
-        proveZeroRep = (control >> 130) & 1;
-        proveGraffiti = (control >> 131) & 1;
+        proveMinRep = (control >> 128) & 1 > 0;
+        proveMaxRep = (control >> 129) & 1 > 0;
+        proveZeroRep = (control >> 130) & 1 > 0;
+        proveGraffiti = (control >> 131) & 1 > 0;
         return (
             minRep,
             maxRep,
@@ -74,8 +78,6 @@ contract ReputationProofVerifier is BaseProofVerifier {
         bool valid = verifier.verifyProof(publicSignals, proof);
 
         if (!valid) revert InvalidProof();
-        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
-        if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
 
         return signals;
     }
@@ -93,6 +95,10 @@ contract ReputationProofVerifier is BaseProofVerifier {
             'attesterId is not caller'
         );
 
-        return verifyAndCheck(publicSignals, proof);
+        bool valid = verifier.verifyProof(publicSignals, proof);
+
+        if (!valid) revert InvalidProof();
+
+        return signals;
     }
 }

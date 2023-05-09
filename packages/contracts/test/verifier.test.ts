@@ -807,18 +807,18 @@ describe('Reputation proof verifier', function () {
                         expect(decodedControl.maxRep.toString()).to.equal(
                             maxRep.toString()
                         )
-                        expect(decodedControl.proveMinRep.toString()).to.equal(
-                            proveMinRep.toString()
+                        expect(decodedControl.proveMinRep).to.equal(
+                            Boolean(proveMinRep)
                         )
-                        expect(decodedControl.proveMaxRep.toString()).to.equal(
-                            proveMaxRep.toString()
+                        expect(decodedControl.proveMaxRep).to.equal(
+                            Boolean(proveMaxRep)
                         )
-                        expect(decodedControl.proveZeroRep.toString()).to.equal(
-                            proveZeroRep.toString()
+                        expect(decodedControl.proveZeroRep).to.equal(
+                            Boolean(proveZeroRep)
                         )
-                        expect(
-                            decodedControl.proveGraffiti.toString()
-                        ).to.equal(proveGraffiti.toString())
+                        expect(decodedControl.proveGraffiti).to.equal(
+                            Boolean(proveGraffiti)
+                        )
                     }
                 }
             }

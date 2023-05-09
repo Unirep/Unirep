@@ -21,6 +21,10 @@ contract EpochKeyProofVerifier is BaseProofVerifier {
             signals.epoch,
             signals.nonce
         ) = super.decodeEpochKeyControl(publicSignals[2]);
+
+        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
+        if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
+
         return signals;
     }
 
@@ -33,8 +37,6 @@ contract EpochKeyProofVerifier is BaseProofVerifier {
         bool valid = verifier.verifyProof(publicSignals, proof);
 
         if (!valid) revert InvalidProof();
-        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
-        if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
 
         return signals;
     }
@@ -50,6 +52,10 @@ contract EpochKeyProofVerifier is BaseProofVerifier {
             'attesterId is not caller'
         );
 
-        return verifyAndCheck(publicSignals, proof);
+        bool valid = verifier.verifyProof(publicSignals, proof);
+
+        if (!valid) revert InvalidProof();
+
+        return signals;
     }
 }
