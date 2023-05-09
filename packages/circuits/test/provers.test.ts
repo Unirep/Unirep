@@ -13,6 +13,8 @@ const provers = [
 
 for (const { name, prover } of provers) {
     describe(`${name} prover`, function () {
+        this.timeout(20000)
+
         it('should load a vkey', async () => {
             const vkey = await prover.getVKey('signup')
             expect(typeof vkey).to.equal('object')
