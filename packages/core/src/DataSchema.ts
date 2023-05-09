@@ -129,12 +129,12 @@ export class DataSchema {
             let v: bigint = change.val << BigInt(field.offset)
 
             // Get existing attestation sum value
-            let sumBits: bigint =
-                field.updateBy === 'sum' && attestations[fieldIndex] !== null
-                    ? (attestations[fieldIndex].change >>
-                          BigInt(field.offset)) &
-                      maxVal
-                    : BigInt(0)
+            let sumBits: bigint = BigInt(0)
+
+            if (field.updateBy === 'sum' && attestations[fieldIndex] !== null)
+                sumBits =
+                    (attestations[fieldIndex].change >> BigInt(field.offset)) &
+                    maxVal
 
             if (v + sumBits > maxVal << BigInt(field.offset)) {
                 throw new Error(`${change.name} exceeds allocated space`)
