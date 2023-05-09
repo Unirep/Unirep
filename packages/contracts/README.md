@@ -36,6 +36,14 @@ Client library for contracts related functions which are used in unirep protocol
 
 ---
 
+## 💡 About Unirep
+**UniRep** is a *private* and *non-repudiable* **data system**. Users can receive attestations from attesters, and voluntarily prove facts about their data without revealing the data itself. Moreover, users cannot refuse to receive attestations from an attester.
+
+## 📘 Documentation
+
+Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of Unirep protocol.
+For more information, refer to the [documentation](https://developer.unirep.io/)
+
 ## 🛠 Install
 
 ### npm or yarn
@@ -58,18 +66,11 @@ yarn add @unirep/contracts
 
 **🍀 Solution 1. Download circuit keys from server**
 
-Get circuits files from [PSE server](http://www.trusted-setup-pse.org/).
+Get circuits files from [key server](https://developer.unirep.io/docs/testnet-deployment#keys).
 
-**🍀 Solution 2. Build circuits locally**
+**🍀 Solution 2. Access the keys from node_modules**
 
-```bash
-git clone https://github.com/Unirep/Unirep.git && \
-cd Unirep/ && \
-yarn install && \
-yarn build
-```
-
-By default, The `zksnarkBuild` directory will be found in `./packages/circuits`
+By default, The `zksnarkBuild` directory will be found in `node_modules/@unirep/circuits/circuits/zksnarkBuild/`
 
 ### Compile contracts from the keys
 
@@ -90,8 +91,9 @@ By default, The `artifacts` directory will be found in `./packages/contracts/bui
 Deploy Unirep smart contract with default [config](../circuits/config/index.ts):
 
 ```typescript
-import ethers from 'ethers'
-import { deployUnirep, Unirep } from '@unirep/contracts/deploy'
+import { ethers } from 'ethers'
+import { Unirep } from '@unirep/contracts'
+import { deployUnirep } from '@unirep/contracts/deploy'
 
 const privateKey = 'YOUR/PRIVATE/KEY'
 const provider = 'YOUR/ETH/PROVIDER'
@@ -100,15 +102,10 @@ const deployer = new ethers.Wallet(privateKey, provider);
 const unirepContract: Unirep = await deployUnirep(deployer)
 ```
 
-_(TODO) A `deploy` script_
-```bash
-yarn contracts deploy
-```
-
 ### Get unirep contract with address
 
 ```typescript
-import ethers from 'ethers'
+import { ethers } from 'ethers'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 const address = '0x....'
@@ -121,7 +118,6 @@ const unirepContract: Unirep = getUnirepContract(address, provider)
 
 ```typescript
 import { ethers } from 'ethers'
-import { ZkIdentity } from '@unirep/utils'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 const address = '0x....'
@@ -132,72 +128,53 @@ const provider = 'YOUR/ETH/PROVIDER'
 const signer = new ethers.Wallet(privateKey, provider)
 const unirepContract: Unirep = getUnirepContract(address, signer)
 
-// user sign up
-const id = new Identity()
-const tx = await unirepContract.userSignUp(id.commitment)
-
 // attester sign up
-const tx = await unirepContract.attesterSignUp()
+const epochLength = 300 // 300 seconds
+const tx = await unirepContract.attesterSignUp(epochLength)
+await tx.wait()
 ```
 
 ## 🙋🏻‍♂️ Call Unirep contract in DApps
 
--   🚸 Please copy `verifiers/*.sol` files to `node_modules/@unirep/contracts/verifiers/` directories.
-    ```bash
-    cp -rf ../Unirep/packages/contracts/contracts/verifiers/* ./node_modules/@unirep/contracts/verifiers
-    ```
-    _(TODO) Find a better way to do this._
+```solidity
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.0;
+import { Unirep } from "@unirep/contracts/Unirep.sol";
 
-```javascript
-import { Unirep } from '@unirep/contracts/Unirep.sol';
-
-contract YourContract {
+contract UnirepApp {
     Unirep public unirep;
 
-    uint256 internal _attesterId;
+    constructor(Unirep _unirep, uint48 _epochLength) {
+        // set unirep address
+        unirep = _unirep;
 
-    // Initialize contract with a deployed
-    constructor(Unirep _unirepContract) {
-        // Set the unirep contract address
-        unirep = _unirepContract;
+        // set verifier address
+        dataVerifier = _dataVerifier;
+
+        // sign up as an attester
+        unirep.attesterSignUp(_epochLength);
     }
 
-    // Relay Users sign up in Unirep
-    function signUp(uint256 idCommitment) external {
-        unirep.userSignUp(idCommitment);
+    // sign up users in this app
+    function userSignUp(
+        uint256[] memory publicSignals,
+        uint256[8] memory proof
+    ) public {
+        unirep.userSignUp(publicSignals, proof);
     }
 
-    // Sign up this contract as an attester
-    function signUpContract() external {
-        unirep.attesterSignUp();
-        _attesterId = unirep.attesters(address(this));
-    }
-
-    // Users submit their epoch key proof to Unirep contract
-    // And get attestation from the contract
-    function submitEpochKeyProof(Unirep.EpochKeyProof memory input)
-        external
-        payable
-    {
-        // Step 1. submit epoch key proof
-        unirep.submitEpochKeyProof(input);
-
-        // Step 2. get proof index
-        bytes32 proofNullifier = unirep.hashEpochKeyProof(input);
-        uint256 proofIndex = unirep.getProofIndex(proofNullifier);
-
-        // Step 3. init attestation
-        // create an attestation which sends 5 positive Rep to the epochKey
-        Unirep.Attestation memory attestation;
-        attestation.attesterId = _attesterId;
-        attestation.posRep = 5;
-
-        // Step 4. send attestation
-        unirep.submitAttestation{ value: unirep.attestingFee() }(
-            attestation,
-            input.epochKey,
-            proofIndex,
-            0 // if no reputation spent required
+    // submit attestations
+    function submitAttestation(
+        uint256 epochKey,
+        uint48 targetEpoch,
+        uint256 fieldIndex,
+        uint256 val
+    ) public {
+        unirep.attest(
+            epochKey,
+            targetEpoch,
+            fieldIndex,
+            val
         );
     }
 }
@@ -244,15 +221,20 @@ const stateTree = epkProof.stateTree
 const isValid = await epkProof.verify()
 ```
 
-**4. Compute keccak256 hash of the proof**
-```typescript
-const hash = epkProof.hash()
-```
-
-**5. The proof structure can help with formatting the proof on chain**
+**4. The proof structure can help with formatting the proof on chain**
 ```typescript
 const tx = await unirepContract.submitEpochKeyProof(
     epkProof.publicSignals,
     epkProof.proof
 )
 ```
+
+## 🙌🏻 Join our community
+- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord"></a>
+- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>
+- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram"></a>
+
+## <img height="24" src="https://ethereum.org/static/a183661dd70e0e5c70689a0ec95ef0ba/13c43/eth-diamond-purple.png"> Privacy & Scaling Explorations
+
+This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) in Ethereum Foundation.
+See more projects on: https://appliedzkp.org/.
