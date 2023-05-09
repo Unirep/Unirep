@@ -36,7 +36,9 @@ function HomepageHeader() {
                     </div>
                     <div style={{ height: '24px' }} />
                     <div className={clsx(styles.subtitleText)}>
-                    Securely Enabling Trust and Privacy - A Zero-Knowledge Protocol for Responsible Reputation Management and User Data Protection
+                        Securely Enabling Trust and Privacy - A Zero-Knowledge
+                        Protocol for Responsible Reputation Management and User
+                        Data Protection
                     </div>
                     <div style={{ height: '24px' }} />
                     <Link className={clsx(styles.apiButton)} to="/docs/welcome">
