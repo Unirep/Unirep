@@ -33,7 +33,7 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'typescript/javascript',
+                    label: 'Typescript/Javascript',
                     id: 'getting-started/ts-js',
                 },
             ],
