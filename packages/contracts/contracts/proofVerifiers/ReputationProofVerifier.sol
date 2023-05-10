@@ -53,10 +53,10 @@ contract ReputationProofVerifier is BaseProofVerifier {
     {
         minRep = control & ((1 << 64) - 1);
         maxRep = (control >> 64) & ((1 << 64) - 1);
-        proveMinRep = (control >> 128) & 1 > 0;
-        proveMaxRep = (control >> 129) & 1 > 0;
-        proveZeroRep = (control >> 130) & 1 > 0;
-        proveGraffiti = (control >> 131) & 1 > 0;
+        proveMinRep = ((control >> 128) & 1) != 0;
+        proveMaxRep = ((control >> 129) & 1) != 0;
+        proveZeroRep = ((control >> 130) & 1) != 0;
+        proveGraffiti = ((control >> 131) & 1) != 0;
         return (
             minRep,
             maxRep,

@@ -434,7 +434,6 @@ describe('Epoch key proof verifier', function () {
         const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
 
-        let leaf
         {
             const epoch = 0
             const r = await defaultProver.genProofAndPublicSignals(
@@ -451,10 +450,9 @@ describe('Epoch key proof verifier', function () {
                 r.proof,
                 defaultProver
             )
-            leaf = publicSignals[1]
+            const leaf = publicSignals[1]
+            stateTree.insert(leaf)
         }
-
-        stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
         const data = 0
@@ -511,8 +509,6 @@ describe('Epoch key proof verifier', function () {
         const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
 
-        let leaf
-
         {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.signup,
@@ -529,10 +525,9 @@ describe('Epoch key proof verifier', function () {
                 defaultProver
             )
 
-            leaf = publicSignals[1]
+            const leaf = publicSignals[1]
+            stateTree.insert(leaf)
         }
-
-        stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
         const data = 0
@@ -833,7 +828,6 @@ describe('Reputation proof verifier', function () {
         const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
 
-        let leaf
         {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.signup,
@@ -850,10 +844,9 @@ describe('Reputation proof verifier', function () {
                 defaultProver
             )
 
-            leaf = publicSignals[1]
+            const leaf = publicSignals[1]
+            stateTree.insert(leaf)
         }
-
-        stateTree.insert(leaf)
 
         const invalidEpoch = 3333
         const merkleProof = stateTree.createProof(index)
@@ -910,8 +903,6 @@ describe('Reputation proof verifier', function () {
         const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
 
-        let leaf
-
         {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.signup,
@@ -928,9 +919,9 @@ describe('Reputation proof verifier', function () {
                 defaultProver
             )
 
-            leaf = publicSignals[1]
+            const leaf = publicSignals[1]
+            stateTree.insert(leaf)
         }
-        stateTree.insert(leaf)
 
         const merkleProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
