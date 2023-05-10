@@ -25,7 +25,6 @@ for (const name of circuits) {
     if (!circuitContents[name])
         throw new Error(`Unknown circuit name: "${name}"`)
 
-
     const inputFile = path.join(buildDir, `${name}_main.circom`)
     const circuitOut = path.join(outDir, `${name}_main.r1cs`)
     const circuitBuild = path.join(buildDir, `${name}_main.r1cs`)
@@ -44,7 +43,9 @@ for (const name of circuits) {
         .catch(() => false)
     const zkeyOutFileExists = await fs.promises.stat(zkey).catch(() => false)
     const vkeyOutFileExists = await fs.promises.stat(vkOut).catch(() => false)
-    const wasmOutFileExists = await fs.promises.stat(wasmOutFinal).catch(() => false)
+    const wasmOutFileExists = await fs.promises
+        .stat(wasmOutFinal)
+        .catch(() => false)
 
     await fs.promises.writeFile(
         path.join(buildDir, `${name}_main.circom`),
@@ -89,12 +90,10 @@ for (const name of circuits) {
         console.log(
             `Generated ${zkey.split('/').pop()} and ${vkOut.split('/').pop()}`
         )
-        await fs.promises.rename(wasmOut, wasmOutFinal)
-        await fs.promises.rename(vkOutBuild, vkOut)
-        await fs.promises.rename(zkeyBuild, zkey)
     }
+    if (!wasmOutFileExists) await fs.promises.rename(wasmOut, wasmOutFinal)
+    if (!vkeyOutFileExists) await fs.promises.rename(vkOutBuild, vkOut)
+    if (!zkeyOutFileExists) await fs.promises.rename(zkeyBuild, zkey)
 }
 
-
 process.exit(0)
-
