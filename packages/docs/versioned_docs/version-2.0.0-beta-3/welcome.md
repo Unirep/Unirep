@@ -15,8 +15,7 @@ Using anonymous identifiers (epoch keys), The protocol allows for trustless enga
 UniRep aims to be the ultimate foundation for constructing tailored, yet fully compatible, zero-knowledge (zk) applications. It functions as a powerful memory layer for zk, offering private, non-repudiable data storage and retrieval capabilities. With UniRep, users can effortlessly receive data, prove facts about their information, and store the results while enjoying robust privacy assurances and constant computational complexity. The protocol empowers developers to create bespoke zk applications without compromising on interoperability and efficiency.
 
 Key UniRep features include:
-- **Large Proof Storage**: UniRep facilitates the storage of extensive proofs, such as proof of Ethereum address control from an ECDSA signature, which users can later retrieve and prove multiple times.
-- **Web2 Authentication Bridging**: Users authenticate once with a trusted entity via OAuth, enabling the entity to attest and store information about their web2 identity in zk format.
+- **Proof Storage**: UniRep facilitates the storage of extensive proofs, such as proof of Ethereum address control from an ECDSA signature, which users can later retrieve and prove multiple times.
 - **Versatile Data Storage**: UniRep accommodates a wide array of data essential to applications, including user reputation, actions taken, group memberships, and more.
 - **Seamless Interoperability**: Applications can easily interconnect by enabling users to create proofs using publicly available state for user verifications.
 - **No Forced Data Sharing**: With UniRep, users are never forced to receive unwanted data from applications, maintaining their freedom of choice.
@@ -31,8 +30,13 @@ Attesters are at the application layer. They are the platforms, businesses, and 
 UniRep's key offering is providing developers with a pre-built, audited system to create apps that securely handle private user data and manage reputation using ZK technology. UniRep protocol allows applications to securely attest to user data changes through the use of dynamic, short-lived identifiers known as **epoch keys**.
 
 :::
+### Application built by our core contributors ###
 
-### Few inspriations for you to get started
+- Built by [Kittybest](https://github.com/kittybest),  Web2 Authentication Bridging: [My-Badge](https://github.com/kittybest/my-badge)
+- Built by [CJ](https://github.com/CJ-Rose) ,  Craiglist reinvent: [Trustlist](https://github.com/CJ-Rose/trustlist)
+
+
+### Other ideas Few for you to get started
 
 - Non-custodial shopping, streaming
 - Business review / recommendations
