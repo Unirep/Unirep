@@ -121,22 +121,22 @@ const sidebars = {
                 {
                     type: 'doc',
                     label: 'BaseProofVerifier.sol',
-                    id: 'contracts-api/base-proof-verifier'
+                    id: 'contracts-api/base-proof-verifier',
                 },
                 {
                     type: 'doc',
                     label: 'ReputationProofVerifier.sol',
-                    id: 'contracts-api/reputation-proof-verifier'
+                    id: 'contracts-api/reputation-proof-verifier',
                 },
                 {
                     type: 'doc',
                     label: 'EpochKeyProofVerifier.sol',
-                    id: 'contracts-api/epoch-key-proof-verifier'
+                    id: 'contracts-api/epoch-key-proof-verifier',
                 },
                 {
                     type: 'doc',
                     label: 'EpochKeyLiteProofVerifier.sol',
-                    id: 'contracts-api/epoch-key-lite-proof-verifier'
+                    id: 'contracts-api/epoch-key-lite-proof-verifier',
                 },
             ],
         },
