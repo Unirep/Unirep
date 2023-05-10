@@ -5,9 +5,9 @@ title: Data Schema
 User-defined data schemas can be used when interfacing with the exposed `uint253` attestation data. This tool encodes and decodes attestation data, consolidating a user-defined attestation changes. 
 
 ## SchemaField
-Schema field type must be `uint`
+Type describing each field in the user-defined schema. Schema field type must be a `uint`
 ```ts
-{
+type SchemaField = {
     name: string // field name
     type: string // uint*
     updateBy: 'sum' | 'replace'
@@ -15,9 +15,9 @@ Schema field type must be `uint`
 ```
 
 ## Attestation 
-To be used with a deployed `unirepContract` object
+Type to be used with a deployed `unirepContract` object
 ```ts
-{
+type Attestation = {
     fieldIndex: number
     change: bigint
 }
@@ -34,16 +34,17 @@ dataSchema.parseSchema(schema: SchemaField[]):
 }
 ```
 ## buildAttestation
+Build an `Attestation` object to be used for a UniRep contract
 ```ts
-buildAttestation(change: { name: string; val: bigint }): Attestation 
+dataSchema.buildAttestation(change: { name: string; val: bigint }): Attestation 
 ```
 ## buildAttestations
 Build multiple `Attestation` objects trying to combine attestation changes when possible.
 ```ts
-buildAttestations(changes: { name: string; val: bigint }[]): Attestation[]
+dataSchema.buildAttestations(changes: { name: string; val: bigint }[]): Attestation[]
 ```
 ## parseData
 Parse encoded schema, producing a dictionary of user-defined field names and attestation value
 ```ts
-    parseData(data: bigint[]): any
+dataSchema.parseData(data: bigint[]): any
 ```
