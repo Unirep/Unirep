@@ -13,9 +13,9 @@ function decodeEpochKeyControl(uint256 control)
     public
     pure
     returns (
-      uint256 revealNonce,
-      uint256 attesterId,
-      uint256 epoch,
-      uint256 nonce
+      bool revealNonce,
+      uint160 attesterId,
+      uint48 epoch,
+      uint8 nonce
     )
 ```

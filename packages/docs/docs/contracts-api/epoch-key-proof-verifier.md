@@ -35,6 +35,11 @@ Verify an [epoch key proof](../circuits-api/circuits#epoch-key-proof) and valida
 This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
+:::danger
+This function does not verify that the `attesterId` is the same as the caller. Thus, we recommend that to either use [verifyAndCheckCaller](#verifyandcheckcaller) or to manually verify the `attesterId`
+:::
+
+
 ```sol
 function verifyAndCheck(
     uint256[] calldata publicSignals,
