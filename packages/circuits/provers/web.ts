@@ -1,4 +1,6 @@
-const KEY_URL = 'https://keys.unirep.io/2-beta-3/'
+import { version } from '../package.json'
+
+const KEY_URL = `https://keys.unirep.io/${version}/`
 
 export class WebProver {
     cache: { [key: string]: any } = {}
