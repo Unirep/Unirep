@@ -136,8 +136,8 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'networkProver',
-                    id: 'circuits-api/network-prover',
+                    label: 'webProver',
+                    id: 'circuits-api/web-prover',
                 },
                 {
                     type: 'doc',

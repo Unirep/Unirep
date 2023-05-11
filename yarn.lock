@@ -4553,6 +4553,7 @@ __metadata:
     "@semaphore-protocol/identity": ^3.5.0
     "@unirep/utils": 2.0.0-beta-3
     mocha: ^10.0.0
+    node-fetch: ^2.6.7
     snarkjs: ^0.5.0
     typescript: ^4.7.3
   languageName: unknown
