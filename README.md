@@ -1,5 +1,5 @@
 <p align="center">
-    <h1 align="center">Unirep Protocol</h1>
+    <h1 align="center">UniRep Protocol</h1>
 </p>
 
 <p align="center">
@@ -20,14 +20,15 @@
     </a>
 </p>
 
-![unirep](https://user-images.githubusercontent.com/16527634/206505107-c27e9c4f-f954-40c4-8b65-103392561fd0.png)
+
+![UniRep](https://github.com/Unirep/Unirep/assets/16527634/47a8f18b-fc4b-4cc8-99a3-7a6e2a5ce464)
 
 
 
 
 
 ​
-## 💡 About Unirep
+## 💡 About UniRep
 **UniRep** is a *private* and *non-repudiable* **data system**. Users can receive attestations from attesters, and voluntarily prove facts about their data without revealing the data itself. Moreover, users cannot refuse to receive attestations from an attester.
 
 ## 📘 Documentation
