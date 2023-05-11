@@ -2,9 +2,20 @@
 title: Web Prover
 ---
 
-The circuits package includes a browser compatible prover. This prover loads the proving keys from a remote URL. By default this url is `https://keys.unirep.io/2-beta-3/`.
+export const version = require('../../../circuits/package.json').version
 
-The server is expected to serve the `zkey`, `wasm`, and `vkey` files at their respective names in the provided subpath. e.g. for the above url the signup zkey is at `https://keys.unirep.io/2-beta-3/signup.zkey`.
+<p>
+    The circuits package includes a browser compatible prover. This prover loads
+    the proving keys from a remote URL. By default this url is{' '}
+    <code>https://keys.unirep.io/{version}/</code>.
+</p>
+
+<p>
+    The server is expected to serve the <code>zkey</code>, <code>wasm</code>,
+    and <code>vkey</code> files at their respective names in the provided
+    subpath. e.g. for the above url the signup zkey is at{' '}
+    <code>https://keys.unirep.io/{version}/signup.zkey`</code>.
+</p>
 
 :::caution
 The keys included are not safe for production use. A phase 2 trusted setup needs to be done before use.
@@ -18,7 +29,9 @@ The keys included are not safe for production use. A phase 2 trusted setup needs
 import { Circuit } from '@unirep/circuits'
 import prover from '@unirep/circuits/provers/web'
 
-await prover.genProofAndPublicSignals(Circuit.signup, { /* inputs */ })
+await prover.genProofAndPublicSignals(Circuit.signup, {
+    /* inputs */
+})
 ```
 
 ### Custom key server
@@ -29,7 +42,9 @@ import { WebProver } from '@unirep/circuits/provers/web'
 
 // For a local key server
 const prover = new WebProver('http://localhost:8000/keys/')
-await prover.genProofAndPublicSignals(Circuit.signup, { /* inputs */ })
+await prover.genProofAndPublicSignals(Circuit.signup, {
+    /* inputs */
+})
 ```
 
 ## API

@@ -2,15 +2,33 @@
 title: Testnet Addresses
 ---
 
+export const coreVersion = require('../../core/package.json').version
+export const contractsVersion = require('../../contracts/package.json').version
+export const circuitsVersion = require('../../circuits/package.json').version
+export const utilsVersion = require('../../utils/package.json').version
+
 # Deployment
 
 The UniRep team maintains up to date deployments of the contracts matching our releases.
 
 Latest package versions:
-- [@unirep/core@2.0.0-beta-3](https://www.npmjs.com/package/@unirep/core/v/2.0.0-beta-3)
-- [@unirep/contracts@2.0.0-beta-3](https://www.npmjs.com/package/@unirep/contracts/v/2.0.0-beta-3)
-- [@unirep/circuits@2.0.0-beta-3](https://www.npmjs.com/package/@unirep/circuits/v/2.0.0-beta-3)
-- [@unirep/utils@2.0.0-beta-3](https://www.npmjs.com/package/@unirep/utils/v/2.0.0-beta-3)
+
+-   <a href={`https://www.npmjs.com/package/@unirep/core/v/${coreVersion}`}>
+        @unirep/core@{coreVersion}
+    </a>
+-   <a
+        href={`https://www.npmjs.com/package/@unirep/contracts/v/${contractsVersion}`}
+    >
+        @unirep/contracts@{contractsVersion}
+    </a>
+-   <a
+        href={`https://www.npmjs.com/package/@unirep/circuits/v/${circuitsVersion}`}
+    >
+        @unirep/circuits@{circuitsVersion}
+    </a>
+-   <a href={`https://www.npmjs.com/package/@unirep/utils/v/${utilsVersion}`}>
+        @unirep/utils@{utilsVersion}
+    </a>
 
 Our contracts are deployed on the Arbitrum Goerli testnet.
 
@@ -39,7 +57,10 @@ In beta-3 epochs are automatically sealed onchain. No additional proof or transa
 ## Keys
 
 Proving keys for this contract can be accessed at the following url:
-- [https://keys.unirep.io/2-beta-3/](https://keys.unirep.io/2-beta-3/)
+
+-   <a href={`https://keys.unirep.io/${circuitsVersion}/`}>
+        https://keys.unirep.io/{circuitsVersion}/
+    </a>
 
 This URL is used in the [web prover](circuits-api/web-prover).
 
