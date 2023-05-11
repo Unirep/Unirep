@@ -32,11 +32,11 @@ UniRep's key offering is providing developers with a pre-built, audited system t
 :::
 ### Application built by our core contributors ###
 
-- Built by [Vimwitch](https://github.com/vimwitch),  Do things with ethereum addresses in zk: [ZKETH repo](https://github.com/Unirep/zketh) App [try it now](https://zketh.io/)
-- Built by [Vimwitch](https://github.com/vimwitch),  DAO: [ZKDAO repo](https://github.com/vimwitch/zkdao) 
-- Built by [Kittybest](https://github.com/kittybest),  Web2 Authentication Bridging: [My-Badge repo](https://github.com/kittybest/my-badge)
-- Built by [CJ](https://github.com/CJ-Rose) ,  Craiglist reinvent: [Trustlist repo](https://github.com/CJ-Rose/trustlist)
-- Built by [Vivian](https://github.com/vivianjeng) & [Kittybest](https://github.com/kittybest) , Social network with reputation touch: Unirep.social app[Unirep.social@Staging](https://social-staging.unirep.io/)
+- Built by [Vimwitch](https://github.com/vimwitch),  Do things with ethereum addresses in zk: ZKETH [Repo](https://github.com/Unirep/zketh) App [Try it now](https://zketh.io/)
+- Built by [Vimwitch](https://github.com/vimwitch),  DAO: ZKDAO [Repo](https://github.com/vimwitch/zkdao) 
+- Built by [Kittybest](https://github.com/kittybest),  Web2 Authentication Bridging: My Badge [Repo](https://github.com/kittybest/my-badge)
+- Built by [CJ](https://github.com/CJ-Rose) ,  Craiglist reinvent: Trustlist [Repo](https://github.com/CJ-Rose/trustlist)
+- Built by UniRep team, Social network with reputation touch: Unirep.social [Repo](https://github.com/unirep/unirep-social)
 
 
 ### Other ideas Few for you to get started
