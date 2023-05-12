@@ -5,14 +5,15 @@ import * as snarkjs from 'snarkjs'
 import url from 'url'
 import child_process from 'child_process'
 import { circuitContents, ptauName } from './circuits.mjs'
+import os from 'os'
 
 await import('./downloadPtau.mjs')
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 const outDir = path.join(__dirname, '../zksnarkBuild')
-const buildDir = path.join(__dirname, '../zksnarkBuild.tmp')
-await fs.promises.mkdir(buildDir, { recursive: true })
+const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zksnarkBuild'))
+await fs.promises.mkdir(outDir, { recursive: true })
 
 // pass a space separated list of circuit names to this executable
 const [, , ...circuits] = process.argv

@@ -3,15 +3,15 @@ import path from 'path'
 import https from 'https'
 import readline from 'readline'
 import fs from 'fs'
+import os from 'os'
 
 import { ptauName } from './circuits.mjs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 const outDir = path.join(__dirname, '../zksnarkBuild')
-const buildDir = path.join(__dirname, '../zksnarkBuild.tmp')
 await fs.promises.mkdir(outDir, { recursive: true })
-await fs.promises.mkdir(buildDir, { recursive: true })
+const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zksnarkBuild'))
 const ptau = path.join(outDir, ptauName)
 
 const ptauExists = await fs.promises.stat(ptau).catch(() => false)
@@ -61,6 +61,5 @@ if (!ptauExists) {
             }
         )
     })
-    await fs.promises.rename(tmp, ptau)
-    await fs.promises.rename(ptau, path.join(outDir, ptauName))
+    await fs.promises.rename(tmp, path.join(outDir, ptauName))
 }
