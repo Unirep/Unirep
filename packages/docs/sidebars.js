@@ -92,6 +92,11 @@ const sidebars = {
                     label: 'schema',
                     id: 'core-api/schema',
                 },
+                {
+                    type: 'doc',
+                    label: 'Data Schema',
+                    id: 'core-api/data-schema',
+                },
             ],
         },
         {
