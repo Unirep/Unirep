@@ -10,8 +10,6 @@ import {
     tryPath,
 } from './utils'
 
-const DEPLOY_DELAY = +(process.env.DEPLOY_DELAY ?? 1500)
-
 const retryAsNeeded = async (fn: any, maxRetry = 10) => {
     let retryCount = 0
     let backoff = 1000
@@ -92,7 +90,6 @@ export const deployUnirep = async (
         )
     }
 
-    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
     const incPath =
         '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
     const incArtifacts: any = tryPath(incPath)
@@ -111,8 +108,6 @@ export const deployUnirep = async (
     )
     await incrementalMerkleTreeLib.deployed()
 
-    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
-
     const reusableMerklePath =
         'contracts/libraries/ReusableMerkleTree.sol/ReusableMerkleTree.json'
     const reusableMerkleArtifacts = tryPath(reusableMerklePath)
@@ -128,8 +123,6 @@ export const deployUnirep = async (
         reusableMerkleFactory.deploy()
     )
     await reusableMerkleContract.deployed()
-
-    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
     const lazyMerklePath =
         'contracts/libraries/LazyMerkleTree.sol/LazyMerkleTree.json'
@@ -149,7 +142,6 @@ export const deployUnirep = async (
 
     const verifiers = {}
     for (const circuit in Circuit) {
-        await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
         const contractName = createVerifierName(circuit)
 
         console.log(`Deploying ${contractName}`)
@@ -175,7 +167,6 @@ export const deployUnirep = async (
         await verifierContract.deployed()
         verifiers[circuit] = verifierContract.address
     }
-    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
     console.log('Deploying Unirep')
 
