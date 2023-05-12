@@ -50,7 +50,7 @@ for (const name of circuits) {
         .catch(() => false)
 
     await fs.promises.writeFile(
-        path.join(buildDir, `${name}_main.circom`),
+        path.join(outDir, `${name}_main.circom`),
         circuitContents[name]
     )
 
@@ -62,7 +62,6 @@ for (const name of circuits) {
         )
     } else {
         console.log(`Compiling ${inputFileBuild.split('/').pop()}...`)
-        await fs.promises.rename(inputFileBuild, inputFileOut)
         // Compile the .circom file
         await new Promise((rs, rj) =>
             child_process.exec(
@@ -79,7 +78,7 @@ for (const name of circuits) {
             'and',
             wasmOut.split('/').pop()
         )
-        fs.promises.rename(circuitBuild, circuitOut)
+        await fs.promises.rename(circuitBuild, circuitOut)
     }
 
     if (zkeyOutFileExists && vkeyOutFileExists) {
