@@ -244,14 +244,6 @@ Start by modifying the [`UnirepApp.sol`](https://github.com/Unirep/create-unirep
 See all [`Unirep.sol` APIs](../contracts-api/unirep-sol.md)
 :::
 
-### Sign up users
-
-Attesters may allow anyone to join and use their application, as in the example attester, or..
-
-e.g:
-
-<!-- TODO:
-provide ideas how an attester can require zk proof for users to join, example from zketh? -->
 ### Define epoch length
 
 Each attester sets its own [epoch](../protocol/epoch.md) length, determined by the needs of the application. When deciding their attester's epoch length, developers should consider the following trade-offs.<br/>
@@ -280,8 +272,6 @@ See [attesterSignUp](../contracts-api/unirep-sol.md#attestersignup)
 Attesters define their own systems to format user data and regulate how that data is attributed to users. An application's user data might represent aspects of a user's status, actions, associations, reputation, etc.<br/>
 The attester may implement its policy with any combination of smart contract code (customizing `UnirepApp.sol`) and traditional application logic. (The application may require a user to satisfy an on-chain OR an off-chain condition in order to receive new data.)
 
-<!-- If users can request as much data as they want, the data will not be valuable in this app. 🙁 <br/>
-Try to give each epoch key only `1` data 0 value in each epoch. -->
 **e.g.**<br/>
 An attester wants to limit the amount of data a user can receive in each epoch. The code below utilizes a simple mapping to prevent an attestation to an epoch key if it has already recieved a value:
 
@@ -345,12 +335,10 @@ See [`attesterCurrentEpoch`](../contracts-api/unirep-sol.md#attestercurrentepoch
 See [`attest`](../contracts-api/unirep-sol.md#attest)
 :::
 
-### Verify epoch key on-chain
+### Verify epoch key
 
-Wait. What if a user requests data with an invalid epoch key? 😨 <br/>
-Don't worry. The attester contract can force users to provide valid epoch keys with an [epoch key proof](../circuits-api/circuits.md#epoch-key-proof).<br/>
-
-For example, we can change the function inputs with an epoch key proof:
+An [epoch key proof](../circuits-api/circuits.md#epoch-key-proof) is submitted when a request is made to change to user data. Attesters can choose to verify proofs off-chain (with a relay, as in the demo attester) or on-chain.<br/>
+For example, `UnirepApp.sol` can be modified by adding the epoch key proof:
 
 ```sol
 function submitAttestation(
@@ -367,7 +355,7 @@ See [`verifyEpochKeyProof`](../contracts-api/unirep-sol.md#verifyepochkeyproof)
 :::
 
 But how can we tell which signal is the epoch key?<br/>
-`Unirep.sol` also provides [`decodeEpochKeySignals`](../contracts-api/unirep-sol.md#decodeepochkeysignals) to fix this problem.
+`Unirep.sol` provides [`decodeEpochKeySignals`](../contracts-api/unirep-sol.md#decodeepochkeysignals) to fix this problem.
 
 We can complete the `submitAttestation` function with `decodeEpochKeySignals`.
 
