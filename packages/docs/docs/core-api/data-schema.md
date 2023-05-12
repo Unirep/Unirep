@@ -42,9 +42,6 @@ const schema: SchemaField[] = [
 
 const d = new DataSchema(schema)
 
-// The schema is parsed in the `DataSchema` constructor, but can also be manually parsed
-const parsedSchema: [] = d.parseSchema(schema)
-
 // 10 will be added to the 'posRep' field in the user data
 const sumChange = { name: 'posRep', val: BigInt(10) }
 const sumAttestation: Attestation = d.buildAttestation(sumChange)
