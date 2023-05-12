@@ -11,14 +11,13 @@ We have developed the [create-unirep-app](https://www.npmjs.com/package/create-u
 ## 💻 Run the application locally
 ### Installation
 
-1. 
-Run
+1. Run:
 ```shell
 npx create-unirep-app
 ```
 or 
 
-2. Clone the [Unirep/create-unirep-app](https://github.com/unirep/create-unirep-app) repository.
+2. Clone the [Unirep/create-unirep-app](https://github.com/unirep/create-unirep-app) repository:
 ```shell
 git clone https://github.com/unirep/create-unirep-app && \
 cd create-unirep-app && \
@@ -27,7 +26,7 @@ yarn
 
 ### Build the files
 
-Go to the app directory and run
+Go to the app directory and run:
 
 ```shell
 yarn build
@@ -45,9 +44,9 @@ See [hardhat tutorial](https://hardhat.org/hardhat-runner/docs/getting-started#q
 
 ### Deploy smart contracts
 
-The app builder will deploy the `UnirepApp.sol` as an **[attester](../protocol/users-and-attesters.md#attesters-🤖)** to interact directly with `Unirep.sol`.
+The app builder will deploy the `UnirepApp.sol` smart contract, which is an **[attester](../protocol/users-and-attesters.md#attesters-🤖)**, to interact directly with `Unirep.sol`.
 
-In new terminal window, deploy smart contracts with the following command from root:
+In a new terminal window, deploy smart contracts with the following command from root:
 
 ```shell
 yarn contracts deploy
@@ -67,8 +66,8 @@ And the configurations will be written to `create-unirep-app/config.ts`
 
 ### Start a relayer (backend)
 
-The app builder can host a relayer to handle request from frontend and relay transactions.<br/>
-Also it can provide proving keys for frontend prover.
+The app builder can host a relayer to handle a request from the frontend and post transactions to the blockchain.<br/>
+Also, it can provide proving keys for frontend prover.
 
 :::info
 Relayer is optional for a unirep application. <br/>
@@ -81,19 +80,29 @@ Start a relayer with the following command from root:
 yarn relay start
 ```
 
-When it shows up `Listening on port 8000`, you can run a frontend in a new terminal window.
+When `Listening on port 8000` displays in terminal, you can run a frontend in a new terminal window.
 
 ### Start a frontend server
 
-The frontend is the **[user](../protocol/users-and-attesters.md#users-👤)**s' interfact to interact with the attester (`UnirepApp.sol`).
+The frontend is the **[user](../protocol/users-and-attesters.md#users-👤)**s' interface to interact with the attester (`UnirepApp.sol`).
 
-In new terminal window, start a frontend server with the following command from root:
+In a new terminal window, start a frontend server with the following command from root:
 
 ```shell
 yarn frontend start
 ```
 
 The frontend will be running at `http://127.0.0.1:3000/` by default.
+
+### Create-Unirep-App Architecture
+
+
+It is important to note the architecture of this application is different than traditional dapps. Traditionally, dapps have to force users to use a browser wallet, get eth, understand gas fees, etc. This is poor UX because of the large learning curve users will have to endure. 
+
+With Create-Unirep-App, the architecture is Web App <-> Relay <-> Blockchain which reduces the cognitive load of a user new to blockchain appplications by abstracting the learning curve into the relay:
+
+![Architecture](https://imgur.com/VdmLjZe.png)
+
 
 ## 🕹️ Open frontend to interact with the application
 
@@ -103,7 +112,7 @@ Click on the **Join** button.
 
 ![Join](https://i.imgur.com/vcR3x9D.png)
 
-Then the client will generate a [semaphore identity](https://semaphore.appliedzkp.org/) and a [signup proof](../circuits-api/circuits.md#signup-proof). <br/>
+'Join' will prompt the client to generate a [semaphore identity](https://semaphore.appliedzkp.org/) and a [signup proof](../circuits-api/circuits.md#signup-proof). <br/>
 The relayer will submit the signup proof to `UnirepApp.sol` and the user will keep the semaphore identity secretly in the browser.
 After the transaction successfully submitted, the window will show a **Dashboard** button.
 
@@ -138,8 +147,8 @@ There are two types of data field: *sum field* and *replacement field*. <br/>
 The data in *sum field* can only be added together by a new data. <br/>
 The data in *replace field* will be only replaced by a new data. <br/>
 
-Also, the user can choose which anonymous identifier ([epoch key](../protocol/epoch-key.md)) with an *epoch key nonce*. <br/>
-With different epoch key nonce, the user will generate totally different identifiers. <br/>
+Also, the user can choose which anonymous identifier ([epoch key](../protocol/epoch-key.md)) they want to receieve attestations with by choosing an *epoch key nonce*. <br/>
+With a different epoch key nonce, the user will generate a totally different identifier. <br/>
 e.g.
 ```shell
 # epoch key nonce = 0
@@ -150,32 +159,32 @@ Requesting data with epoch key:
 0x15e1358a646a10aa99756a250d9463b6026fbd09c5f4d28e477085f21eecd197
 ```
 
-Each epoch key can receive data and they contribute to the same user.
+Each epoch key can receive data and that data is accumulated to a user.
 
 e.g. <br/>
 `data[0] = 1` is requested by epoch key: `0x2b4b15e0173f69807318198d5c1db6c00c44380af2e05912608950e10ba04b43`<br/>
 `data[0] = 2` is requested by epoch key: `0x15e1358a646a10aa99756a250d9463b6026fbd09c5f4d28e477085f21eecd197`
 
-the final `data[0]` of the user is `3` since 1 + 2 = 3
+The final `data[0]` of the user is `3` since 1 + 2 = 3
 
 :::caution
-These epoch keys only last for one epoch. If epoch updates, new epoch keys will be generated and old epoch keys become invalid.
+These epoch keys only last for one epoch. If the epoch updates, new epoch keys will be generated and old epoch keys become invalid.
 :::
 
 #### Attest
 
-After the user clicks the **attest** button, an attestation will happen. It executes
+After the user clicks the **attest** button, an attestation will happen and following steps take place:
 1. User generates an epoch key proof to prove the epoch key is valid.
 2. User submits the epoch key proof and the requested data to the relayer.
-3. Relayer use `UnirepApp.sol` to call [attest](../contracts-api/unirep-sol.md#attest) in `Unirep.sol` 
+3. Relayer uses `UnirepApp.sol` to call [attest](../contracts-api/unirep-sol.md#attest) in `Unirep.sol` 
 
 ### User State Transtion
 
 <a href="https://imgur.com/Gly6cti"><img src="https://i.imgur.com/Gly6cti.png" title="User state transition" width="300"/></a>
 
-If `Current epoch #` does not equal to `Latest transition epoch`, a [user state transition](../protocol/user-state-transition.md) should be performed to receive more data. 
+If `Current epoch #` does not equal to `Latest transition epoch` (found under the Epoch section), a [user state transition](../protocol/user-state-transition.md) should be performed to be able to receive more data. 
 The user state transition should be done manually by users. <br/>
-It executes
+The following steps take place for a user state transition:
 1. Generate a [user state transition proof](../circuits-api/circuits.md#user-state-transition-proof)
 2. Submit the proof to the relayer
 3. Relayer updates the `Unirep.sol` contract
@@ -196,14 +205,14 @@ The app builders can customize their own ZK circuits and deploy verifiers to fit
 
 e.g.
 
-If user's provable data is
+If user's provable data is:
 ```shell
 Provable Data 0 = 2
 Provable Data 1 = 3
 Provable Data 2 = 4
 Provable Data 3 = 5
 ```
-and user can claim he has data
+and user can claim he has data:
 ```shell
 Claim Data 0 = 2
 Claim Data 1 = 2
@@ -211,38 +220,38 @@ Claim Data 2 = 2
 Claim Data 3 = 2
 ```
 
-since
+since:
 ```shell
-2 (Provable Data 0) >= 2 (Claim Data 0) # satisfied
-3 (Provable Data 1) >= 2 (Claim Data 1) # satisfied
-4 (Provable Data 2) >= 2 (Claim Data 2) # satisfied
-5 (Provable Data 3) >= 2 (Claim Data 3) # satisfied
+2 (Provable Data 0) >= 2 (Claim Data 0) # satisfied. 2 === 2
+3 (Provable Data 1) >= 2 (Claim Data 1) # satisfied. 3 > 2
+4 (Provable Data 2) >= 2 (Claim Data 2) # satisfied. 4 > 2
+5 (Provable Data 3) >= 2 (Claim Data 3) # satisfied. 5 > 2
 ```
 
-If the proof is valid, it shows the proof and "Is proof valid? **true**". <br/>
+If the proof is valid, it shows the proof and "Is proof valid? **true**" below the 'Generate Proof' button. <br/>
 If the proof is invalid, the snarkjs prover throws an error.
 
 e.g.
 
-If user's provable data is
+If user's provable data is:
 ```shell
-Provable Data 0 = 2
+Provable Data 0 = 2 👈
 Provable Data 1 = 3
 Provable Data 2 = 4
 Provable Data 3 = 5
 ```
-and user claims he has data
+and user claims he has data:
 ```shell
-Claim Data 0 = 3
+Claim Data 0 = 3 👈
 Claim Data 1 = 3
 Claim Data 2 = 3
 Claim Data 3 = 3
 ```
 
-It throws an error since
+It throws an error since the fields where the emojis are do not satisfy the conditions:
 
 ```shell
-2 (Provable Data 0) >= 3 (Claim Data 0) # not satisfied
+2 (Provable Data 0) >= 3 (Claim Data 0) # not satisfied. 2 is not greater than or equal to 3
 ```
 
 ## 💡 Build your own application
@@ -256,8 +265,8 @@ See all [`Unirep.sol` APIs](../contracts-api/unirep-sol.md)
 ### Change epoch length
 
 Each attester has its own [epoch](../protocol/epoch.md) length. <br/>
-Too long: users will use the same epoch keys for a long time and new data cannot be proved immediately. <br/>
-Too short: epoch keys last for a short period, it does not have enough time receive much data.
+If the epoch is too long: users will use the same epoch keys for a long time, new data cannot be proved immediately, and you risk making users pseudoanonymous because of the re-use of epoch keys. <br/>
+If the epoch is too short: epoch keys last for a short period and the user does not have enough time to receive much data.
 
 ```sol
 unit48 epochLength = 60 * 15; // 15 minutes
@@ -272,6 +281,8 @@ See [attesterSignUp](../contracts-api/unirep-sol.md#attestersignup)
 
 If users can request as much data as they want, the data will not be valuable in this app. 🙁 <br/>
 Try to give each epoch key only `1` data 0 value in each epoch.
+
+Here is an example of creating a simple mapping to track if an epoch key recieved a value after an attetation was submitted to that epoch key:
 
 ```sol
 mapping(uint => bool) epochKeyReceivedValue;
@@ -307,10 +318,10 @@ See [`attesterCurrentEpoch`](../contracts-api/unirep-sol.md#attestercurrentepoch
 
 ### Verify epoch key on-chain
 
-Wait. What if user requests with an invalid epoch key? 😨 <br/>
-Don't worry. The attester contract can force users provide valid epoch keys with [epoch key proof](../circuits-api/circuits.md#epoch-key-proof).<br/>
+Wait. What if a user requests data with an invalid epoch key? 😨 <br/>
+Don't worry. The attester contract can force users to provide valid epoch keys with an [epoch key proof](../circuits-api/circuits.md#epoch-key-proof).<br/>
 
-For example, we can change the function inputs with epoch key proof.
+For example, we can change the function inputs with an epoch key proof:
 
 ```sol
 function submitAttestation(
@@ -340,7 +351,7 @@ function submitAttestation(
 ) public {
    // verify epoch key proof
    unirep.verifyEpochKeyProof(publicSignals, proof);
-   // deocode epoch key signals
+   // decode epoch key signals
    Unirep.EpochKeySignals memory signals = unirep.decodeEpochKeySignals(publicSignals);
    // check if the epoch key receives data or not
    require(epochKeyReceivedValue[signals.epochKey] == false);
@@ -364,4 +375,5 @@ function submitAttestation(
 }
 ```
 
-Now, start building your own application with UniRep. 🚀
+Now, you can start building your own application with UniRep. 🚀
+
