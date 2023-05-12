@@ -45,18 +45,11 @@ contract EpochKeyLiteProofVerifier is BaseProofVerifier {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) public view returns (EpochKeySignals memory) {
-        EpochKeySignals memory signals = decodeEpochKeyLiteSignals(
-            publicSignals
-        );
+        EpochKeySignals memory signals = verifyAndCheck(publicSignals, proof);
 
-        require(
-            signals.attesterId == uint160(msg.sender),
-            'attesterId is not caller'
-        );
-
-        bool valid = verifier.verifyProof(publicSignals, proof);
-
-        if (!valid) revert InvalidProof();
+        if (signals.attesterId != uint160(msg.sender)) {
+            revert CallerInvalid();
+        }
 
         return signals;
     }

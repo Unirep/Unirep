@@ -86,18 +86,11 @@ contract ReputationProofVerifier is BaseProofVerifier {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) public view returns (ReputationSignals memory) {
-        ReputationSignals memory signals = decodeReputationSignals(
-            publicSignals
-        );
+        ReputationSignals memory signals = verifyAndCheck(publicSignals, proof);
 
-        require(
-            signals.attesterId == uint160(msg.sender),
-            'attesterId is not caller'
-        );
-
-        bool valid = verifier.verifyProof(publicSignals, proof);
-
-        if (!valid) revert InvalidProof();
+        if (signals.attesterId != uint160(msg.sender)) {
+            revert CallerInvalid();
+        }
 
         return signals;
     }

@@ -614,7 +614,10 @@ describe('Epoch key proof verifier', function () {
                 proofVerifiers.epochKeyProof
                     .connect(owner)
                     .verifyAndCheckCaller(publicSignals, proof)
-            ).to.not.be.revertedWith('attesterId is not caller')
+            ).to.not.be.revertedWithCustomError(
+                proofVerifiers.epochKeyProof,
+                'CallerInvalid'
+            )
         }
         {
             const data = 0
@@ -643,7 +646,10 @@ describe('Epoch key proof verifier', function () {
                 proofVerifiers.epochKeyProof
                     .connect(owner)
                     .verifyAndCheckCaller(publicSignals, proof)
-            ).to.be.revertedWith('attesterId is not caller')
+            ).to.be.revertedWithCustomError(
+                proofVerifiers.epochKeyProof,
+                'CallerInvalid'
+            )
         }
     })
 })
@@ -1019,7 +1025,10 @@ describe('Reputation proof verifier', function () {
                 proofVerifiers.reputationProof
                     .connect(attester)
                     .verifyAndCheckCaller(publicSignals, proof)
-            ).to.be.revertedWith('attesterId is not caller')
+            ).to.be.revertedWithCustomError(
+                proofVerifiers.reputationProof,
+                'CallerInvalid'
+            )
         }
         {
             const data = 0
@@ -1048,7 +1057,10 @@ describe('Reputation proof verifier', function () {
                 proofVerifiers.epochKeyProof
                     .connect(attester)
                     .verifyAndCheckCaller(publicSignals, proof)
-            ).to.be.revertedWith('attesterId is not caller')
+            ).to.be.revertedWithCustomError(
+                proofVerifiers.epochKeyProof,
+                'CallerInvalid'
+            )
         }
         {
             const randomAddress = randomBits(160)
@@ -1071,7 +1083,10 @@ describe('Reputation proof verifier', function () {
                 proofVerifiers.epochKeyLiteProof
                     .connect(attester)
                     .verifyAndCheckCaller(publicSignals, proof)
-            ).to.be.revertedWith('attesterId is not caller')
+            ).to.be.revertedWithCustomError(
+                proofVerifiers.epochKeyLiteProof,
+                'CallerInvalid'
+            )
         }
     })
 })

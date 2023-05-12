@@ -38,6 +38,7 @@ contract BaseProofVerifier {
     error AttesterInvalid();
     error InvalidEpochKey();
     error InvalidProof();
+    error CallerInvalid();
 
     function decodeEpochKeyControl(
         uint256 control
