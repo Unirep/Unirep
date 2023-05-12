@@ -12,7 +12,7 @@ await import('./downloadPtau.mjs')
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 const outDir = path.join(__dirname, '../zksnarkBuild')
-const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zksnarkBuild'))
+const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zksnarkBuild-'))
 await fs.promises.mkdir(outDir, { recursive: true })
 
 // pass a space separated list of circuit names to this executable
@@ -26,7 +26,8 @@ for (const name of circuits) {
     if (!circuitContents[name])
         throw new Error(`Unknown circuit name: "${name}"`)
 
-    const inputFile = path.join(buildDir, `${name}_main.circom`)
+    const inputFileBuild = path.join(buildDir, `${name}_main.circom`)
+    const inputFileOut = path.join(outDir, `${name}_main.circom`)
     const circuitOut = path.join(outDir, `${name}_main.r1cs`)
     const circuitBuild = path.join(buildDir, `${name}_main.r1cs`)
     const wasmOut = path.join(buildDir, `${name}_main_js/${name}_main.wasm`)
@@ -60,11 +61,12 @@ for (const name of circuits) {
             'exists. Skipping compilation.'
         )
     } else {
-        console.log(`Compiling ${inputFile.split('/').pop()}...`)
+        console.log(`Compiling ${inputFileBuild.split('/').pop()}...`)
+        await fs.promises.rename(inputFileBuild, inputFileOut)
         // Compile the .circom file
         await new Promise((rs, rj) =>
             child_process.exec(
-                `circom --r1cs --wasm -o ${buildDir} ${inputFile}`,
+                `circom --r1cs --wasm -o ${buildDir} ${inputFileOut}`,
                 (err, stdout, stderr) => {
                     if (err) rj(err)
                     else rs()
