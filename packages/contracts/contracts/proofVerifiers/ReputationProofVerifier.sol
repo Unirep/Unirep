@@ -13,6 +13,7 @@ contract ReputationProofVerifier is BaseProofVerifier {
         ReputationSignals memory signals;
         signals.epochKey = publicSignals[0];
         signals.stateTreeRoot = publicSignals[1];
+        signals.graffiti = publicSignals[4];
         // now decode the control values
         (
             signals.revealNonce,
