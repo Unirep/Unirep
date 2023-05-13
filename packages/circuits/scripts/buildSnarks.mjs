@@ -26,14 +26,11 @@ for (const name of circuits) {
     if (!circuitContents[name])
         throw new Error(`Unknown circuit name: "${name}"`)
 
-    const inputFileBuild = path.join(buildDir, `${name}_main.circom`)
     const inputFileOut = path.join(outDir, `${name}_main.circom`)
     const circuitOut = path.join(outDir, `${name}_main.r1cs`)
     const circuitBuild = path.join(buildDir, `${name}_main.r1cs`)
     const wasmOut = path.join(buildDir, `${name}_main_js/${name}_main.wasm`)
-    const wasmOutDir = path.join(buildDir, `${name}_main_js`)
     const wasmOutFinal = path.join(outDir, `${name}.wasm`)
-    const ptauBuild = path.join(buildDir, ptauName)
     const zkeyBuild = path.join(buildDir, `${name}.zkey`)
     const vkOutBuild = path.join(buildDir, `${name}.vkey.json`)
     const ptau = path.join(outDir, ptauName)
@@ -50,7 +47,7 @@ for (const name of circuits) {
         .catch(() => false)
 
     await fs.promises.writeFile(
-        path.join(outDir, `${name}_main.circom`),
+        inputFileOut,
         circuitContents[name]
     )
 
@@ -61,7 +58,7 @@ for (const name of circuits) {
             'exists. Skipping compilation.'
         )
     } else {
-        console.log(`Compiling ${inputFileBuild.split('/').pop()}...`)
+        console.log(`Compiling ${inputFileOut.split('/').pop()}...`)
         // Compile the .circom file
         await new Promise((rs, rj) =>
             child_process.exec(
