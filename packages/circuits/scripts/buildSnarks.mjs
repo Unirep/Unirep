@@ -46,10 +46,7 @@ for (const name of circuits) {
         .stat(wasmOutFinal)
         .catch(() => false)
 
-    await fs.promises.writeFile(
-        inputFileOut,
-        circuitContents[name]
-    )
+    await fs.promises.writeFile(inputFileOut, circuitContents[name])
 
     // Check if the circuitOut file exists
     if (circuitOutFileExists && wasmOutFileExists) {
