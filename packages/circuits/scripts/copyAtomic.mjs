@@ -7,8 +7,7 @@ async function tmpFile(file) {
         try {
             await fs.stat(_file)
         } catch (err) {
-            if (err.toString().indexOf('no such file or directory') !== -1)
-                return _file
+            if (err.code === 'ENOENT') return _file
         }
     }
 }
