@@ -5,13 +5,16 @@ import readline from 'readline'
 import fs from 'fs'
 import os from 'os'
 
+import { copyAtomic } from './copyAtomic.mjs'
 import { ptauName } from './circuits.mjs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 const outDir = path.join(__dirname, '../zksnarkBuild')
 await fs.promises.mkdir(outDir, { recursive: true })
-const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zksnarkBuild-'))
+const buildDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'zksnarkBuild-')
+)
 const ptau = path.join(outDir, ptauName)
 
 const ptauExists = await fs.promises.stat(ptau).catch(() => false)
@@ -61,5 +64,5 @@ if (!ptauExists) {
             }
         )
     })
-    await fs.promises.rename(tmp, path.join(outDir, ptauName))
+    await copyAtomic(tmp, path.join(outDir, ptauName))
 }

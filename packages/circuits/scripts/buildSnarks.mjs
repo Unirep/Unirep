@@ -6,13 +6,16 @@ import url from 'url'
 import child_process from 'child_process'
 import { circuitContents, ptauName } from './circuits.mjs'
 import os from 'os'
+import { copyAtomic } from './copyAtomic.mjs'
 
 await import('./downloadPtau.mjs')
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 const outDir = path.join(__dirname, '../zksnarkBuild')
-const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zksnarkBuild-'))
+const buildDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'zksnarkBuild-')
+)
 await fs.promises.mkdir(outDir, { recursive: true })
 
 // pass a space separated list of circuit names to this executable
@@ -72,7 +75,7 @@ for (const name of circuits) {
             'and',
             wasmOut.split('/').pop()
         )
-        await fs.promises.rename(circuitBuild, circuitOut)
+        await copyAtomic(circuitBuild, circuitOut)
     }
 
     if (zkeyOutFileExists && vkeyOutFileExists) {
@@ -87,9 +90,9 @@ for (const name of circuits) {
             `Generated ${zkey.split('/').pop()} and ${vkOut.split('/').pop()}`
         )
     }
-    if (!wasmOutFileExists) await fs.promises.rename(wasmOut, wasmOutFinal)
-    if (!vkeyOutFileExists) await fs.promises.rename(vkOutBuild, vkOut)
-    if (!zkeyOutFileExists) await fs.promises.rename(zkeyBuild, zkey)
+    if (!wasmOutFileExists) await copyAtomic(wasmOut, wasmOutFinal)
+    if (!vkeyOutFileExists) await copyAtomic(vkOutBuild, vkOut)
+    if (!zkeyOutFileExists) await copyAtomic(zkeyBuild, zkey)
 }
 
 process.exit(0)
