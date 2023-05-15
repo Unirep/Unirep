@@ -57,7 +57,7 @@ contract Unirep is IUnirep, VerifySignature {
         sumFieldCount = _config.sumFieldCount;
         numEpochKeyNoncePerEpoch = _config.numEpochKeyNoncePerEpoch;
         replNonceBits = _config.replNonceBits;
-        replFieldBits = 253 - _config.replNonceBits;
+        replFieldBits = _config.replFieldBits;
 
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
@@ -83,7 +83,8 @@ contract Unirep is IUnirep, VerifySignature {
                 fieldCount: fieldCount,
                 sumFieldCount: sumFieldCount,
                 numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-                replNonceBits: replNonceBits
+                replNonceBits: replNonceBits,
+                replFieldBits: replNonceBits
             });
     }
 

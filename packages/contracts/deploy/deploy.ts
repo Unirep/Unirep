@@ -147,7 +147,8 @@ export const deployUnirep = async (
         FIELD_COUNT,
         SUM_FIELD_COUNT,
         REPL_NONCE_BITS,
-    } = config
+        REPL_FIELD_BITS,
+    } = new CircuitConfig(_settings)
 
     console.log(
         '-----------------------------------------------------------------'

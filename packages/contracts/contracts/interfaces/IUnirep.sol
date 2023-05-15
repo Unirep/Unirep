@@ -114,5 +114,6 @@ interface IUnirep {
         uint8 sumFieldCount;
         uint8 numEpochKeyNoncePerEpoch;
         uint8 replNonceBits;
+        uint8 replFieldBits;
     }
 }

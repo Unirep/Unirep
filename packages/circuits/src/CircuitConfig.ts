@@ -34,6 +34,7 @@ export class CircuitConfig {
             fieldCount: this.FIELD_COUNT,
             sumFieldCount: this.SUM_FIELD_COUNT,
             replNonceBits: this.REPL_NONCE_BITS,
+            replFieldBits: this.REPL_FIELD_BITS,
         }
     }
 
@@ -41,7 +42,7 @@ export class CircuitConfig {
         return 253 - this.REPL_NONCE_BITS
     }
 
-    constructor(config: {
+    constructor(_config: {
         STATE_TREE_DEPTH: number
         EPOCH_TREE_DEPTH: number
         HISTORY_TREE_DEPTH: number
@@ -50,6 +51,7 @@ export class CircuitConfig {
         SUM_FIELD_COUNT: number
         REPL_NONCE_BITS: number
     }) {
+        const config = Object.assign(defaultConfig, _config)
         this.STATE_TREE_DEPTH = config.STATE_TREE_DEPTH
         this.EPOCH_TREE_DEPTH = config.EPOCH_TREE_DEPTH
         this.HISTORY_TREE_DEPTH = config.HISTORY_TREE_DEPTH
