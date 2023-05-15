@@ -492,7 +492,7 @@ describe('Prove reputation from attester circuit', function () {
         const nonce = 0
         const graffiti = 124914219
         const graffitiWithUpperField =
-            BigInt(graffiti) + (BigInt(1) << BigInt(254 - REPL_NONCE_BITS))
+            BigInt(graffiti) + (BigInt(1) << BigInt(253 - REPL_NONCE_BITS))
         expect(graffiti.toString()).not.equal(graffitiWithUpperField.toString())
         const proveGraffiti = 1
         const circuitInputs = genReputationCircuitInput({

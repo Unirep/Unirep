@@ -161,7 +161,7 @@ describe('Attestations', function () {
                 attester.address,
                 fieldIndex,
                 BigInt(val) +
-                    (BigInt(attestationCount) << BigInt(254 - REPL_NONCE_BITS))
+                    (BigInt(attestationCount) << BigInt(253 - REPL_NONCE_BITS))
             )
     })
 
@@ -179,7 +179,7 @@ describe('Attestations', function () {
                     epochKey,
                     epoch,
                     SUM_FIELD_COUNT,
-                    BigInt(2) ** BigInt(254 - REPL_NONCE_BITS)
+                    BigInt(2) ** BigInt(253 - REPL_NONCE_BITS)
                 )
         ).to.be.revertedWithCustomError(unirepContract, 'OutOfRange')
     })
@@ -233,7 +233,7 @@ describe('Attestations', function () {
                     fieldIndex,
                     BigInt(val) +
                         (BigInt(attestationCount) <<
-                            BigInt(254 - REPL_NONCE_BITS))
+                            BigInt(253 - REPL_NONCE_BITS))
                 )
             attestationCount++
             expect(attestationCount).to.equal(
@@ -255,7 +255,7 @@ describe('Attestations', function () {
         const fieldIndex = SUM_FIELD_COUNT
 
         for (let x = 1; x <= 3; x++) {
-            const v = randomf(BigInt(2) ** BigInt(254 - REPL_NONCE_BITS))
+            const v = randomf(BigInt(2) ** BigInt(253 - REPL_NONCE_BITS))
             const tx = await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, v)
@@ -273,7 +273,7 @@ describe('Attestations', function () {
                     fieldIndex,
                     v +
                         (BigInt(attestationCount) <<
-                            BigInt(254 - REPL_NONCE_BITS))
+                            BigInt(253 - REPL_NONCE_BITS))
                 )
 
             attestationCount++

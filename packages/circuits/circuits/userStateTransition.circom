@@ -19,7 +19,7 @@ template UserStateTransition(
 ) {
     assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**8);
     assert(SUM_FIELD_COUNT < FIELD_COUNT);
-    
+
     signal input from_epoch;
     signal input to_epoch;
 

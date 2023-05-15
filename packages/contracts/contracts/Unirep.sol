@@ -104,7 +104,7 @@ contract Unirep is IUnirep, VerifySignature {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
             if (
                 x >= sumFieldCount &&
-                initialData[x] >= 2 ** (254 - replNonceBits)
+                initialData[x] >= 2 ** (253 - replNonceBits)
             ) revert OutOfRange();
             if (x != 0) {
                 initialDataHash = PoseidonT3.hash(
@@ -282,10 +282,10 @@ contract Unirep is IUnirep, VerifySignature {
             uint256 newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
             epkData.data[fieldIndex] = newVal;
         } else {
-            if (change >= 2 ** (254 - replNonceBits)) {
+            if (change >= 2 ** (253 - replNonceBits)) {
                 revert OutOfRange();
             }
-            change += (uint(attestationCount) << (254 - replNonceBits));
+            change += (uint(attestationCount) << (253 - replNonceBits));
             epkData.data[fieldIndex] = change;
         }
         emit Attestation(

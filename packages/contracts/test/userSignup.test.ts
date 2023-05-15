@@ -429,7 +429,7 @@ describe('User Signup', function () {
             .fill(0)
             .map((_, i) => {
                 if (i >= config.sumFieldCount) {
-                    return BigInt(2) ** BigInt(254 - REPL_NONCE_BITS)
+                    return BigInt(2) ** BigInt(253 - REPL_NONCE_BITS)
                 }
                 return 0
             })

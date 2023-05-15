@@ -12,10 +12,18 @@ const {
     FIELD_COUNT,
 } = CircuitConfig.default
 
-export const randomData = () =>
-    Array(FIELD_COUNT)
+export const randomData = () => [
+    ...Array(SUM_FIELD_COUNT)
         .fill(0)
-        .map(() => poseidon1([Math.floor(Math.random() * 199191919)]))
+        .map(() => poseidon1([Math.floor(Math.random() * 199191919)])),
+    ...Array(FIELD_COUNT - SUM_FIELD_COUNT)
+        .fill(0)
+        .map(
+            () =>
+                poseidon1([Math.floor(Math.random() * 199191919)]) %
+                BigInt(2) ** BigInt(253)
+        ),
+]
 
 export const combineData = (data0, data1) => {
     const out = [] as bigint[]

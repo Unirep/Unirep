@@ -6,13 +6,13 @@ include "./modulo.circom";
 //~~ support comparisons of numbers up to the field size
 
 template UpperLessThan(n) {
-    assert(n < 254);
+    assert(n < 253);
     signal input in[2];
     signal output out;
 
     component bits[2];
     for (var x = 0; x < 2; x++) {
-        bits[x] = Num2Bits_strict();
+        bits[x] = Num2Bits(253);
         bits[x].in <== in[x];
     }
 
@@ -21,8 +21,8 @@ template UpperLessThan(n) {
     upper_bits[1] = Bits2Num(n);
 
     for (var x = 0; x < n; x++) {
-        upper_bits[0].in[x] <== bits[0].out[x+(254-n)];
-        upper_bits[1].in[x] <== bits[1].out[x+(254-n)];
+        upper_bits[0].in[x] <== bits[0].out[x+(253-n)];
+        upper_bits[1].in[x] <== bits[1].out[x+(253-n)];
     }
 
     component lt = LessThan(n);
@@ -33,14 +33,14 @@ template UpperLessThan(n) {
 }
 
 template replFieldEqual(REPL_NONCE_BITS) {
-    assert(REPL_NONCE_BITS < 254);
+    assert(REPL_NONCE_BITS < 253);
     signal input in[2];
     signal output out;
 
     component bits[2];
-    var n = 254 - REPL_NONCE_BITS;
+    var n = 253 - REPL_NONCE_BITS;
     for (var x = 0; x < 2; x++) {
-        bits[x] = Num2Bits_strict();
+        bits[x] = Num2Bits(253);
         bits[x].in <== in[x];
     }
 
