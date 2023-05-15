@@ -10,8 +10,13 @@ import { deployUnirep } from '../deploy'
 
 import randomf from 'randomf'
 
-const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_NONCE_BITS } =
-    CircuitConfig.default
+const {
+    FIELD_COUNT,
+    EPOCH_TREE_DEPTH,
+    SUM_FIELD_COUNT,
+    REPL_NONCE_BITS,
+    REPL_FIELD_BITS,
+} = CircuitConfig.default
 
 describe('Attestations', function () {
     this.timeout(120000)
@@ -161,7 +166,7 @@ describe('Attestations', function () {
                 attester.address,
                 fieldIndex,
                 BigInt(val) +
-                    (BigInt(attestationCount) << BigInt(253 - REPL_NONCE_BITS))
+                    (BigInt(attestationCount) << BigInt(REPL_FIELD_BITS))
             )
     })
 
@@ -179,7 +184,7 @@ describe('Attestations', function () {
                     epochKey,
                     epoch,
                     SUM_FIELD_COUNT,
-                    BigInt(2) ** BigInt(253 - REPL_NONCE_BITS)
+                    BigInt(2) ** BigInt(REPL_FIELD_BITS)
                 )
         ).to.be.revertedWithCustomError(unirepContract, 'OutOfRange')
     })
@@ -232,8 +237,7 @@ describe('Attestations', function () {
                     attester.address,
                     fieldIndex,
                     BigInt(val) +
-                        (BigInt(attestationCount) <<
-                            BigInt(253 - REPL_NONCE_BITS))
+                        (BigInt(attestationCount) << BigInt(REPL_FIELD_BITS))
                 )
             attestationCount++
             expect(attestationCount).to.equal(
@@ -255,7 +259,7 @@ describe('Attestations', function () {
         const fieldIndex = SUM_FIELD_COUNT
 
         for (let x = 1; x <= 3; x++) {
-            const v = randomf(BigInt(2) ** BigInt(253 - REPL_NONCE_BITS))
+            const v = randomf(BigInt(2) ** BigInt(REPL_FIELD_BITS))
             const tx = await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, v)
@@ -271,9 +275,7 @@ describe('Attestations', function () {
                     epochKey,
                     attester.address,
                     fieldIndex,
-                    v +
-                        (BigInt(attestationCount) <<
-                            BigInt(253 - REPL_NONCE_BITS))
+                    v + (BigInt(attestationCount) << BigInt(REPL_FIELD_BITS))
                 )
 
             attestationCount++

@@ -25,6 +25,9 @@ contract Unirep is IUnirep, VerifySignature {
     uint256 public constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
+    // The number of usable bits in the field
+    uint256 public constant FIELD_BITS = 253;
+
     // Attester id == address
     mapping(uint160 => AttesterData) attesters;
 
@@ -104,7 +107,7 @@ contract Unirep is IUnirep, VerifySignature {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
             if (
                 x >= sumFieldCount &&
-                initialData[x] >= 2 ** (253 - replNonceBits)
+                initialData[x] >= 2 ** (FIELD_BITS - replNonceBits)
             ) revert OutOfRange();
             if (x != 0) {
                 initialDataHash = PoseidonT3.hash(
@@ -282,10 +285,10 @@ contract Unirep is IUnirep, VerifySignature {
             uint256 newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
             epkData.data[fieldIndex] = newVal;
         } else {
-            if (change >= 2 ** (253 - replNonceBits)) {
+            if (change >= 2 ** (FIELD_BITS - replNonceBits)) {
                 revert OutOfRange();
             }
-            change += (uint(attestationCount) << (253 - replNonceBits));
+            change += (uint(attestationCount) << (FIELD_BITS - replNonceBits));
             epkData.data[fieldIndex] = change;
         }
         emit Attestation(

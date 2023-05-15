@@ -4,8 +4,12 @@ import { genEpochKey } from '@unirep/utils'
 import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
-const { SUM_FIELD_COUNT, NUM_EPOCH_KEY_NONCE_PER_EPOCH, REPL_NONCE_BITS } =
-    CircuitConfig.default
+const {
+    SUM_FIELD_COUNT,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    REPL_NONCE_BITS,
+    REPL_FIELD_BITS,
+} = CircuitConfig.default
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -492,7 +496,7 @@ describe('Prove reputation from attester circuit', function () {
         const nonce = 0
         const graffiti = 124914219
         const graffitiWithUpperField =
-            BigInt(graffiti) + (BigInt(1) << BigInt(253 - REPL_NONCE_BITS))
+            BigInt(graffiti) + (BigInt(1) << BigInt(REPL_FIELD_BITS))
         expect(graffiti.toString()).not.equal(graffitiWithUpperField.toString())
         const proveGraffiti = 1
         const circuitInputs = genReputationCircuitInput({

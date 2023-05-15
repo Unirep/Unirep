@@ -16,7 +16,7 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
-const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_NONCE_BITS } = CircuitConfig.default
+const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_FIELD_BITS } = CircuitConfig.default
 
 describe('User Signup', function () {
     this.timeout(300000)
@@ -429,7 +429,7 @@ describe('User Signup', function () {
             .fill(0)
             .map((_, i) => {
                 if (i >= config.sumFieldCount) {
-                    return BigInt(2) ** BigInt(253 - REPL_NONCE_BITS)
+                    return BigInt(2) ** BigInt(REPL_FIELD_BITS)
                 }
                 return 0
             })

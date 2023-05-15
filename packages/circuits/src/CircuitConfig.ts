@@ -37,6 +37,10 @@ export class CircuitConfig {
         }
     }
 
+    get REPL_FIELD_BITS() {
+        return 253 - this.REPL_NONCE_BITS
+    }
+
     constructor(config: {
         STATE_TREE_DEPTH: number
         EPOCH_TREE_DEPTH: number

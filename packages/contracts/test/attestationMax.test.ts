@@ -51,8 +51,7 @@ describe('Attestations max', function () {
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
             const val =
                 poseidon1([Math.floor(Math.random() * 10000000000)]) %
-                    BigInt(2) ** BigInt(253) >>
-                BigInt(REPL_NONCE_BITS)
+                BigInt(2) ** BigInt(REPL_FIELD_BITS)
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, val)

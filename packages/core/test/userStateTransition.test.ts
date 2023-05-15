@@ -54,10 +54,7 @@ describe('User state transition', function () {
                     if (i < config.sumFieldCount) {
                         return v
                     }
-                    return (
-                        v % BigInt(2) ** BigInt(253) >>
-                        BigInt(config.replNonceBits)
-                    )
+                    return v % BigInt(2) ** BigInt(config.replFieldBits)
                 })
 
         const users = Array(3)
