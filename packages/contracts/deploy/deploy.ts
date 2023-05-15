@@ -132,7 +132,7 @@ export const deployVerifierHelper = async (
  */
 export const deployUnirep = async (
     deployer: ethers.Signer,
-    _settings: CircuitConfig = CircuitConfig.default,
+    _settings: CircuitConfig,
     prover?: Prover
 ): Promise<Unirep> => {
     if (!deployer.provider) {
