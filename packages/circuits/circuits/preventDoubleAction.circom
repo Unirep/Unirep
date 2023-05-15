@@ -23,6 +23,8 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
 
     // Some arbitrary data to endorse
     signal input sig_data; // public input
+    // dummy square to ensure constraint
+    signal sig_data_square <== sig_data * sig_data;
 
     // Optionally reveal nonce, epoch, attester_id
     signal output control;
