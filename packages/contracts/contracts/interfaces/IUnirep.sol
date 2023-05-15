@@ -102,9 +102,10 @@ interface IUnirep {
 
     struct EpochKeyData {
         uint256 leaf;
-        uint256[30] data;
         uint40 leafIndex;
         uint48 epoch;
+        // use a constant because compile time variables are not supported
+        uint256[128] data;
     }
 
     struct AttesterData {

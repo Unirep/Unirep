@@ -52,6 +52,8 @@ contract Unirep is IUnirep, VerifySignature {
         IVerifier _epochKeyVerifier,
         IVerifier _epochKeyLiteVerifier
     ) {
+        // see IUnirep.sol EpochKeyData.data
+        require(_config.fieldCount < 128, 'datasize');
         stateTreeDepth = _config.stateTreeDepth;
         epochTreeDepth = _config.epochTreeDepth;
         historyTreeDepth = _config.historyTreeDepth;
