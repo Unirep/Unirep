@@ -13,8 +13,16 @@ async function tmpFile(file) {
     }
 }
 
-export const copyAtomic = async (from, to) => {
+/**
+ * Functionally this moves a file from => to
+ * This happens by copy and delete to support
+ * moving across logical devices
+ **/
+export const copyAtomic = async (from, to, unlinkFrom = true) => {
     const tmpTo = await tmpFile(to)
     await fs.copyFile(from, tmpTo)
-    await fs.rename(tmpTo, to)
+    await Promise.all([
+        fs.rename(tmpTo, to),
+        unlinkFrom ? fs.unlink(from) : Promise.resolve(),
+    ])
 }
