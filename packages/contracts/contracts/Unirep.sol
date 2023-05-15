@@ -25,9 +25,6 @@ contract Unirep is IUnirep, VerifySignature {
     uint256 public constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
-    // The number of usable bits in the field
-    uint256 public constant FIELD_BITS = 253;
-
     // Attester id == address
     mapping(uint160 => AttesterData) attesters;
 
@@ -41,6 +38,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable sumFieldCount;
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
+    uint8 public immutable replFieldBits;
     uint256 public immutable defaultDataHash;
 
     uint48 public attestationCount = 1;
@@ -59,6 +57,7 @@ contract Unirep is IUnirep, VerifySignature {
         sumFieldCount = _config.sumFieldCount;
         numEpochKeyNoncePerEpoch = _config.numEpochKeyNoncePerEpoch;
         replNonceBits = _config.replNonceBits;
+        replFieldBits = 253 - _config.replNonceBits;
 
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
@@ -105,10 +104,8 @@ contract Unirep is IUnirep, VerifySignature {
         }
         for (uint8 x = 0; x < initialData.length; x++) {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
-            if (
-                x >= sumFieldCount &&
-                initialData[x] >= 2 ** (FIELD_BITS - replNonceBits)
-            ) revert OutOfRange();
+            if (x >= sumFieldCount && initialData[x] >= 2 ** replFieldBits)
+                revert OutOfRange();
             if (x != 0) {
                 initialDataHash = PoseidonT3.hash(
                     [initialDataHash, initialData[x]]
@@ -285,10 +282,10 @@ contract Unirep is IUnirep, VerifySignature {
             uint256 newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
             epkData.data[fieldIndex] = newVal;
         } else {
-            if (change >= 2 ** (FIELD_BITS - replNonceBits)) {
+            if (change >= 2 ** replFieldBits) {
                 revert OutOfRange();
             }
-            change += (uint(attestationCount) << (FIELD_BITS - replNonceBits));
+            change += uint(attestationCount) << replFieldBits;
             epkData.data[fieldIndex] = change;
         }
         emit Attestation(

@@ -8,7 +8,7 @@ import { poseidon1 } from 'poseidon-lite'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
-const { FIELD_COUNT, SUM_FIELD_COUNT, REPL_NONCE_BITS } = CircuitConfig.default
+const { FIELD_COUNT, SUM_FIELD_COUNT, REPL_FIELD_BITS } = CircuitConfig.default
 
 const EPOCH_TREE_DEPTH = 3
 

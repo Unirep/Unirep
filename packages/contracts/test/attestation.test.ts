@@ -10,13 +10,8 @@ import { deployUnirep } from '../deploy'
 
 import randomf from 'randomf'
 
-const {
-    FIELD_COUNT,
-    EPOCH_TREE_DEPTH,
-    SUM_FIELD_COUNT,
-    REPL_NONCE_BITS,
-    REPL_FIELD_BITS,
-} = CircuitConfig.default
+const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_FIELD_BITS } =
+    CircuitConfig.default
 
 describe('Attestations', function () {
     this.timeout(120000)
