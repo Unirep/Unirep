@@ -96,6 +96,13 @@ export class Synchronizer extends EventEmitter {
             sumFieldCount: 0,
             replNonceBits: 0,
         }
+        new Promise((r) => setTimeout(r, 0))
+            .then(() => this.buildEventHandlers())
+            .then(() => this.setup())
+            .then(() => (this.setupComplete = true))
+    }
+
+    private buildEventHandlers() {
         const allEventNames = {} as any
 
         this._eventHandlers = Object.keys(this.contracts).reduce(
@@ -168,7 +175,6 @@ export class Synchronizer extends EventEmitter {
             },
             {}
         )
-        this.setup().then(() => (this.setupComplete = true))
     }
 
     get attesterId() {
