@@ -45,7 +45,7 @@ struct ReputationSignals {
     uint160 attesterId;
     uint256 stateTreeRoot;
     uint256 epochKey;
-    uint256 graffitiPreImage;
+    uint256 graffiti;
     uint256 minRep;
     uint256 maxRep;
 }
