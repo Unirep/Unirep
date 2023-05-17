@@ -45,8 +45,6 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     signal output control[2];
 
     signal input sig_data;
-    // dummy square to ensure constraint
-    signal sig_data_square <== sig_data * sig_data;
 
     /**
      * control[0]:
