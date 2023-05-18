@@ -33,7 +33,6 @@ export const retryAsNeeded = async (fn: any, maxRetry = 10) => {
 
 export const deployVerifiers = async (
     deployer: ethers.Signer,
-    settings: CircuitConfig = CircuitConfig.default,
     prover?: Prover
 ): Promise<{ [circuit: string]: Promise<Prover> }> => {
     let verifiers = {}
@@ -68,10 +67,9 @@ export const deployVerifiers = async (
 
 export const deployProofVerifiers = async (
     deployer: ethers.Signer,
-    settings: CircuitConfig = CircuitConfig.default,
     prover?: Prover
 ) => {
-    const verifiers = await deployVerifiers(deployer, settings, prover)
+    const verifiers = await deployVerifiers(deployer, prover)
     let proofVerifiers = {}
 
     for (const proofVerifier in ProofVerifiers) {
@@ -218,7 +216,7 @@ export const deployUnirep = async (
     )
     await lazyMerkleContract.deployed()
 
-    const verifiers = await deployVerifiers(deployer, _settings, prover)
+    const verifiers = await deployVerifiers(deployer, prover)
 
     console.log('Deploying Unirep')
     const c: Unirep = await retryAsNeeded(async () =>
