@@ -16,6 +16,8 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     signal input nonce;
 
     signal input sig_data;
+    // dummy square to ensure constraint
+    signal sig_data_square <== sig_data * sig_data;
 
     signal output control;
     signal output epoch_key;
