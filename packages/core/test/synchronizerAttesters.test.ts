@@ -331,9 +331,10 @@ describe('Synchronizer watch multiple attesters', function () {
             const attesterId = BigInt(accounts[i].address).toString()
             const { publicSignals, proof, epochKey, epoch } =
                 await userState.genEpochKeyProof({ attesterId })
-            await proofVerifiers.epochKeyProof
-                .verifyAndCheck(publicSignals, proof)
-                .then((t) => t.wait())
+            await proofVerifiers.epochKeyProof.verifyAndCheck(
+                publicSignals,
+                proof
+            )
             await unirepContract
                 .connect(accounts[i])
                 .attest(epochKey, epoch, index, change)
