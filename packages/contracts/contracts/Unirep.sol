@@ -21,9 +21,6 @@ contract Unirep is IUnirep, VerifySignature {
     // All verifier contracts
     IVerifier public immutable signupVerifier;
     IVerifier public immutable userStateTransitionVerifier;
-    IVerifier public immutable reputationVerifier;
-    IVerifier public immutable epochKeyVerifier;
-    IVerifier public immutable epochKeyLiteVerifier;
 
     uint256 public constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
@@ -47,10 +44,7 @@ contract Unirep is IUnirep, VerifySignature {
     constructor(
         Config memory _config,
         IVerifier _signupVerifier,
-        IVerifier _userStateTransitionVerifier,
-        IVerifier _reputationVerifier,
-        IVerifier _epochKeyVerifier,
-        IVerifier _epochKeyLiteVerifier
+        IVerifier _userStateTransitionVerifier
     ) {
         // see IUnirep.sol EpochKeyData.data
         require(_config.fieldCount < 128, 'datasize');
@@ -65,9 +59,6 @@ contract Unirep is IUnirep, VerifySignature {
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
-        reputationVerifier = _reputationVerifier;
-        epochKeyVerifier = _epochKeyVerifier;
-        epochKeyLiteVerifier = _epochKeyLiteVerifier;
 
         emit AttesterSignedUp(0, type(uint48).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint48).max;

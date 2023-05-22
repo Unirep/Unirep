@@ -239,10 +239,7 @@ export const deployUnirep = async (
         ).deploy(
             config.contractConfig,
             verifiers[Circuit.signup],
-            verifiers[Circuit.userStateTransition],
-            verifiers[Circuit.proveReputation],
-            verifiers[Circuit.epochKey],
-            verifiers[Circuit.epochKeyLite]
+            verifiers[Circuit.userStateTransition]
         )
     )
 
