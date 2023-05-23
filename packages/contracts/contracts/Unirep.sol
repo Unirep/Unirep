@@ -117,7 +117,9 @@ contract Unirep is IUnirep, VerifySignature {
                 identityCommitment,
                 uint160(msg.sender),
                 x,
-                initialData[x] << replNonceBits
+                x >= sumFieldCount
+                    ? initialData[x] << replNonceBits
+                    : initialData[x]
             );
         }
         uint256 stateTreeLeaf = PoseidonT3.hash(
