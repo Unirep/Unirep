@@ -10,7 +10,7 @@ import {
     tryPath,
 } from './utils'
 
-const retryAsNeeded = async (fn: any, maxRetry = 3) => {
+const retryAsNeeded = async (fn: any, maxRetry = 5) => {
     let retryCount = 0
     let backoff = 1000
     for (;;) {
