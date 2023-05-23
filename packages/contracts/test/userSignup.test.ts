@@ -346,11 +346,7 @@ describe('User Signup', function () {
         const data = Array(config.fieldCount)
             .fill(0)
             .map((_, i) => {
-                if (i < SUM_FIELD_COUNT) {
-                    return i + 100
-                } else {
-                    return BigInt(i + 100) << BigInt(REPL_NONCE_BITS)
-                }
+                return i + 100
             })
 
         const leaf = genStateTreeLeaf(
@@ -364,6 +360,13 @@ describe('User Signup', function () {
             attester.address,
             contractEpoch
         )
+        const expectedData = data.map((d, i) => {
+            if (i < SUM_FIELD_COUNT) {
+                return d
+            } else {
+                return BigInt(d) << BigInt(REPL_NONCE_BITS)
+            }
+        })
         const tx = await unirepContract
             .connect(attester)
             .manualUserSignUp(contractEpoch, id.commitment, identityHash, data)
@@ -374,7 +377,7 @@ describe('User Signup', function () {
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(contractEpoch, attester.address, leafIndex, leaf)
-        for (const [i, d] of Object.entries(data)) {
+        for (const [i, d] of Object.entries(expectedData)) {
             await expect(tx)
                 .to.emit(unirepContract, 'Attestation')
                 .withArgs(MAX_EPOCH, id.commitment, attester.address, i, d)

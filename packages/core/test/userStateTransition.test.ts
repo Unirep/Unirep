@@ -56,6 +56,14 @@ describe('User state transition', function () {
                     }
                     return v % BigInt(2) ** BigInt(config.replFieldBits)
                 })
+        const randomDataShifted = (da) =>
+            da.map((d, i) => {
+                if (i < config.sumFieldCount) {
+                    return d
+                } else {
+                    return BigInt(d) << BigInt(config.replNonceBits)
+                }
+            })
 
         const users = Array(3)
             .fill(null)

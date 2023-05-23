@@ -137,7 +137,7 @@ describe('User Signup', function () {
         await userState.waitForSync()
         const _data = await userState.getData()
         for (let x = 0; x < config.fieldCount; x++) {
-            if (x < config.fieldCount) {
+            if (x < config.sumFieldCount) {
                 expect(_data[x].toString()).to.equal(data[x].toString())
             } else {
                 expect(_data[x].toString()).to.equal(
