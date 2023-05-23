@@ -345,7 +345,11 @@ describe('User Signup', function () {
         const data = Array(config.fieldCount)
             .fill(0)
             .map((_, i) => {
-                return i + 100
+                if (i < SUM_FIELD_COUNT) {
+                    return i + 100
+                } else {
+                    return BigInt(i + 100) << BigInt(REPL_NONCE_BITS)
+                }
             })
 
         const leaf = genStateTreeLeaf(

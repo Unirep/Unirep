@@ -160,8 +160,8 @@ describe('Attestations', function () {
                 epochKey,
                 attester.address,
                 fieldIndex,
-                BigInt(val) +
-                    (BigInt(attestationCount) << BigInt(REPL_FIELD_BITS))
+                BigInt(attestationCount) +
+                    (BigInt(val) << BigInt(REPL_NONCE_BITS))
             )
     })
 
@@ -241,7 +241,7 @@ describe('Attestations', function () {
         }
     })
 
-    it('verify upper bits of replacement field', async () => {
+    it('verify lower bits of replacement field', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const epoch = await unirepContract.attesterCurrentEpoch(
@@ -270,7 +270,7 @@ describe('Attestations', function () {
                     epochKey,
                     attester.address,
                     fieldIndex,
-                    v + (BigInt(attestationCount) << BigInt(REPL_FIELD_BITS))
+                    attestationCount + (BigInt(v) << BigInt(REPL_NONCE_BITS))
                 )
 
             attestationCount++

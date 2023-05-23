@@ -489,14 +489,14 @@ describe('Prove reputation from attester circuit', function () {
         expect(data.graffiti.toString()).to.equal(graffiti.toString())
     })
 
-    it('should prove graffiti regardless upper fields', async () => {
+    it('should prove graffiti regardless of lower bits', async () => {
         const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
         const graffiti = 124914219
         const graffitiWithUpperField =
-            BigInt(graffiti) + (BigInt(1) << BigInt(REPL_FIELD_BITS))
+            BigInt(graffiti) << BigInt(REPL_NONCE_BITS)
         expect(graffiti.toString()).not.equal(graffitiWithUpperField.toString())
         const proveGraffiti = 1
         const circuitInputs = genReputationCircuitInput({
