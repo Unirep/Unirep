@@ -286,9 +286,8 @@ contract Unirep is IUnirep, VerifySignature {
             if (change >= 2 ** replFieldBits) {
                 revert OutOfRange();
             }
-            epkData.data[fieldIndex] =
-                (change << replNonceBits) +
-                uint(attestationCount);
+            change = (change << uint(replNonceBits)) + uint(attestationCount);
+            epkData.data[fieldIndex] = change;
         }
         emit Attestation(
             epoch,
