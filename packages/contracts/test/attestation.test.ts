@@ -275,7 +275,8 @@ describe('Attestations', function () {
                     epochKey,
                     attester.address,
                     fieldIndex,
-                    attestationCount + (BigInt(v) << BigInt(REPL_NONCE_BITS))
+                    BigInt(attestationCount) +
+                        (BigInt(v) << BigInt(REPL_NONCE_BITS))
                 )
 
             attestationCount++

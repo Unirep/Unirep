@@ -16,7 +16,8 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { EPOCH_LENGTH, SUM_FIELD_COUNT } from '../src'
 import { deployUnirep } from '../deploy'
 
-const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_FIELD_BITS } = CircuitConfig.default
+const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_FIELD_BITS, REPL_NONCE_BITS } =
+    CircuitConfig.default
 
 describe('User Signup', function () {
     this.timeout(300000)
