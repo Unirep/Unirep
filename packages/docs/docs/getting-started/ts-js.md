@@ -24,16 +24,16 @@ import TabItem from '@theme/TabItem';
 <Tabs>
   <TabItem value="yarn" label="Yarn" default>
 
-    
+
     yarn add @unirep/core
-    
+
 
   </TabItem>
   <TabItem value="npm" label="Npm">
 
-    
+
     npm i @unirep/core
-    
+
 
   </TabItem>
 </Tabs>
@@ -84,7 +84,7 @@ const deployer = new ethers.Wallet(privateKey, provider)
 // deploy unirep contract
 const unirepContract = await deployUnirep(deployer)
 ```
-    
+
 ```mdx-code-block
   </TabItem>
 </Tabs>
@@ -126,18 +126,18 @@ const provider = 'YOUR/ETH/PROVIDER'
 
 const unirepContract = getUnirepContract(address, provider)
 ```
-    
+
 ```mdx-code-block
   </TabItem>
 </Tabs>
 ```
 
 :::info
-See [Testnet Deployment](../testnet-deployment.md) to see the currently deployed `Unirep.sol` contract.
+See [Testnet Deployment](testnet-deployment.md) to see the currently deployed `Unirep.sol` contract.
 :::
 
 **The following actions are initiated by either an attester or a user.**<br/>
-Read the section [users and attesters](../protocol/users-and-attesters.md) to learn more.
+Read the section [users and attesters](protocol/users-and-attesters.md) to learn more.
 
 ## 🤖 Attester sign up
 
@@ -147,7 +147,7 @@ The app builder must sign up with `Unirep.sol` as an attester. There are two way
 
 ### 1. Attester sign up with a wallet 👛
 
-Connect a wallet with a private key and a provider, and then call [`attesterSignUp`](../contracts-api/unirep-sol.md#attestersignup) in `Unirep.sol`.
+Connect a wallet with a private key and a provider, and then call [`attesterSignUp`](contracts-api/unirep-sol.md#attestersignup) in `Unirep.sol`.
 
 ```ts
 // deploy or connect to a unirep smart contract
@@ -162,7 +162,7 @@ await tx.wait()
 ```
 
 :::info
-See [Define epoch length](create-unirep-app.md#define-epoch-length) for more information.
+See [Define epoch length](getting-started/create-unirep-app.md#define-epoch-length) for more information.
 :::
 
 The `msg.sender` will be recorded as an attester ID in `Unirep.sol`. The attester should connect to this wallet to help users sign up and send attestations to users.
@@ -193,9 +193,9 @@ contract App {
 
 ## 👤 User sign up
 
-TThe attester can now start signing up users. Users of this application should provide a [signup proof](../circuits-api/circuits.md#signup-proof) which includes:
+TThe attester can now start signing up users. Users of this application should provide a [signup proof](circuits-api/circuits.md#signup-proof) which includes:
 1. Proving the user owns a [semaphore identity](https://semaphore.appliedzkp.org/)
-2. Proving the user has initialized [data](../protocol/data.md)
+2. Proving the user has initialized [data](protocol/data.md)
 3. Proving the user wants to sign up to this attester (proving attester ID)
 
 ### User generates sign up proof
@@ -259,19 +259,19 @@ await userState.waitForSync()
 // generate signup proof
 const { proof, publicSignals } = await userState.genUserSignUpProof()
 ```
-    
+
 ```mdx-code-block
   </TabItem>
 </Tabs>
 ```
 
 :::info
-See [`UserState`](../core-api/user-state.md) for more information.
+See [`UserState`](core-api/user-state.md) for more information.
 :::
 
 ### Attester submits sign up proof
 
-The attester will submit this proof by calling the [`userSignUp`](../contracts-api/unirep-sol.md#usersignup) function on `Unirep.sol`.
+The attester will submit this proof by calling the [`userSignUp`](contracts-api/unirep-sol.md#usersignup) function on `Unirep.sol`.
 
 ```mdx-code-block
 <Tabs
@@ -304,7 +304,7 @@ function userSignUp(
     unirep.userSignUp(publicSignals, proof);
 }
 ```
-    
+
 ```mdx-code-block
   </TabItem>
 </Tabs>
@@ -317,12 +317,12 @@ A user can check if they have signed up successfully with `userState`:
 await userState.waitForSync()
 console.log(await userState.hasSignedUp()) // true
 ```
-See [`waitForSync`](../core-api/synchronizer.md#waitforsync) for more information.
+See [`waitForSync`](core-api/synchronizer.md#waitforsync) for more information.
 :::
 
 ## 📮 Attestation
 
-Users must provide [epoch keys](../protocol/epoch-key.md) to receive [data](../protocol/data.md) from attesters, similar to how Ethereum users provide address to receive ETH. An [attestation](../protocol/attestation.md) is the data an attester gives to a specified epoch key.
+Users must provide [epoch keys](protocol/epoch-key.md) to receive [data](protocol/data.md) from attesters, similar to how Ethereum users provide address to receive ETH. An [attestation](protocol/attestation.md) is the data an attester gives to a specified epoch key.
 
 ### User generates epoch keys
 
@@ -370,36 +370,36 @@ const epochKey = genEpochKey(
     nonce
 )
 ```
-    
+
 ```mdx-code-block
   </TabItem>
 </Tabs>
 ```
 
 :::info
-See [`genEpochKey`](../utils-api/hashes.md#genepochkey) for more information.
+See [`genEpochKey`](utils-api/hashes.md#genepochkey) for more information.
 :::
 
 
 ### Attester submits the transaction
 
-The attester will submit attestations by calling the [`attest`](../contracts-api/unirep-sol.md#attest) function on `Unirep.sol`.<br/>
+The attester will submit attestations by calling the [`attest`](contracts-api/unirep-sol.md#attest) function on `Unirep.sol`.<br/>
 To add to a user's data:
 ```
 data[0] += 5
 ```
-the attester will define: 
+the attester will define:
 ```ts
 const fieldIndex = 0
-const change = 5 
+const change = 5
 ```
 
 :::caution
-There are **addition data fields** and **replacement data fields**.<br/>
-Please make sure the index of the data is correct.<br/>
+There are **addition data fields** and **replacement data fields**. Please make sure the index of the data is correct.
+
 For example, if `SUM_FIELD_COUNT = 4` then the `data[4]` will be *replaced* by the `change` but not added together.
 
-See [Data](../protocol/data.md) for more information.
+See [Data](protocol/data.md) for more information.
 :::
 
 
@@ -422,9 +422,9 @@ const change = 5
 const tx = await unirepContract
     .connect(attester)
     .attest(
-        epochKey, 
-        epoch, 
-        fieldIndex, 
+        epochKey,
+        epoch,
+        fieldIndex,
         change
     )
 await tx.wait()
@@ -454,20 +454,21 @@ function attest(
     );
 }
 ```
-    
+
 ```mdx-code-block
   </TabItem>
 </Tabs>
 ```
 
 :::caution
-To verify an epoch key on-chain, see [Verify epoch key on-chain](./create-unirep-app.md#verify-epoch-key-on-chain).
+To verify an epoch key on-chain, see [Verify epoch key on-chain](getting-started/create-unirep-app.md#verify-epoch-key-on-chain).
 :::
 
 ## ⏱️ User state transition
 
-After an epoch ends, the user will perform [user state transition](../protocol/user-state-transition.md) to finalize the state in the previous epoch, and use a new state to receive more data in a new epoch.<br/>
-The user state transition should be done manually by users because only the user holds the secret semaphore identity.
+After an epoch ends, the user will perform [user state transition](protocol/user-state-transition.md) to finalize the state in the previous epoch, and use a new state to receive more data in a new epoch.
+
+The user state transition proof must be built by the user because only the user holds the semaphore identity secret key.
 
 ### User generates user state transition proof
 
@@ -479,7 +480,7 @@ const { proof, publicSignals } = await userState.genUserStateTransitionProof()
 ```
 
 :::info
-See [`genUserStateTransitionProof`](../core-api/user-state.md#genuserstatetransitionproof) for more information.
+See [`genUserStateTransitionProof`](core-api/user-state.md#genuserstatetransitionproof) for more information.
 :::
 
 ### A transition proof can be relayed
@@ -502,7 +503,7 @@ The user state transition proof should be submitted to `Unirep.sol` to update th
 const tx = await unirepContract
     .connect(relayer)
     .userStateTransition(
-        publicSignals, 
+        publicSignals,
         proof
     )
 await tx.wait()
@@ -517,7 +518,7 @@ await tx.wait()
 // sends the tx
 // it doesn't need to be the attester
 function transition(
-    uint[] memory publicSignals, 
+    uint[] memory publicSignals,
     uint[8] memory proof
 ) public {
     unirep.userStateTransition(
@@ -526,14 +527,14 @@ function transition(
     );
 }
 ```
-    
+
 ```mdx-code-block
   </TabItem>
 </Tabs>
 ```
 
 :::info
-See [`userStateTransition`](../contracts-api/unirep-sol.md#userstatetransition) for more information.
+See [`userStateTransition`](contracts-api/unirep-sol.md#userstatetransition) for more information.
 :::
 
 ## 🔐 Prove data
@@ -558,18 +559,20 @@ const { publicSignals, proof } = repProof
 ```
 
 In this example, we define `data[0]` as positive reputation and `data[1]` as negative reputation. <br/>
-Proving `minRep = 3` is a claim that `(data[0] - data[1]) >= 3`. <br/>
-In the [above attestation](#attester-submits-the-transaction), the user's `data[0]` increased by `5` and `data[1]` was not changed. <br/>
+Proving `minRep = 3` is a claim that `(data[0] - data[1]) >= 3`.
+
+In the [above attestation](#attester-submits-the-transaction), the user's `data[0]` increased by `5` and `data[1]` was not changed.
+
 Therefore in this case `data[0] - data[1]` = `5`.
 
-Use [`getProvableData`](../core-api/user-state.md#getprovabledata) to know the data that a user can prove.
+Use [`getProvableData`](core-api/user-state.md#getprovabledata) to know the data that a user can prove.
 
 ```ts
 const data = await userState.getProvableData()
 ```
 
 :::info
-See [`reputationProof`](../circuits-api/circuits.md#prove-reputation-proof) for more information.
+See [`reputationProof`](circuits-api/circuits.md#prove-reputation-proof) for more information.
 :::
 
 ### Other users and attesters verify the proof
@@ -590,7 +593,7 @@ See [`reputationProof`](../circuits-api/circuits.md#prove-reputation-proof) for 
 const tx = await unirepContract
     .connect(relayer)
     .verifyReputationProof(
-        publicSignals, 
+        publicSignals,
         proof
     )
 await tx.wait()
@@ -605,7 +608,7 @@ await tx.wait()
 // sends the tx
 // it doesn't need to be the attester
 function verifyProof(
-    uint[] memory publicSignals, 
+    uint[] memory publicSignals,
     uint[8] memory proof
 ) public {
     unirep.verifyReputationProof(
@@ -614,14 +617,14 @@ function verifyProof(
     );
 }
 ```
-    
+
 ```mdx-code-block
   </TabItem>
 </Tabs>
 ```
 
 :::info
-See [`verifyReputationProof`](../contracts-api/unirep-sol.md#verifyreputationproof) for more information.
+See [`verifyReputationProof`](contracts-api/unirep-sol.md#verifyreputationproof) for more information.
 :::
 
 Now, start building your own application with UniRep. 🚀
