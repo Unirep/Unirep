@@ -132,14 +132,26 @@ describe('Compare large numbers', function () {
         const n = randomf(BigInt(2) ** BigInt(64))
         const n1 = n + (randomf(BigInt(2) ** BigInt(150)) << BigInt(64))
         const n2 = n + (randomf(BigInt(2) ** BigInt(150)) << BigInt(64))
-        const { isValid, publicSignals } = await genProofAndVerify(
-            'lowerComparators' as any,
-            {
-                in: [n1.toString(), n2.toString()],
-            }
-        )
-        expect(isValid).to.be.true
-        expect(publicSignals[0].toString()).to.equal('0')
+        {
+            const { isValid, publicSignals } = await genProofAndVerify(
+                'lowerComparators' as any,
+                {
+                    in: [n1.toString(), n2.toString()],
+                }
+            )
+            expect(isValid).to.be.true
+            expect(publicSignals[0].toString()).to.equal('0')
+        }
+        {
+            const { isValid, publicSignals } = await genProofAndVerify(
+                'lowerComparators' as any,
+                {
+                    in: [n2.toString(), n1.toString()],
+                }
+            )
+            expect(isValid).to.be.true
+            expect(publicSignals[0].toString()).to.equal('0')
+        }
     })
 
     it('should compare upper bits', async () => {
