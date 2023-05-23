@@ -494,10 +494,11 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
-        const graffiti = 124914219
-        const graffitiWithUpperField =
-            BigInt(graffiti) << BigInt(REPL_NONCE_BITS)
-        expect(graffiti.toString()).not.equal(graffitiWithUpperField.toString())
+        const graffiti = BigInt(1284912489214) << BigInt(REPL_NONCE_BITS)
+        const graffitiWithLowerField =
+            graffiti + randomf(BigInt(2) ** BigInt(REPL_NONCE_BITS))
+
+        expect(graffiti.toString()).not.equal(graffitiWithLowerField.toString())
         const proveGraffiti = 1
         const circuitInputs = genReputationCircuitInput({
             id,
@@ -508,7 +509,7 @@ describe('Prove reputation from attester circuit', function () {
             graffiti,
             startBalance: [
                 ...Array(SUM_FIELD_COUNT).fill(0),
-                graffitiWithUpperField,
+                graffitiWithLowerField,
             ],
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(
