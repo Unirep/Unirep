@@ -2,9 +2,7 @@ pragma circom 2.0.0;
 
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/bitify.circom";
-include "./incrementalMerkleTree.circom";
-include "./epochKeyLite.circom";
-include "./leafHasher.circom";
+include "./epochKey.circom";
 include "./identity.circom";
 
 template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
@@ -32,7 +30,6 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     signal output nullifier;
 
     signal input identity_trapdoor;
-    signal output identity_commitment;
 
     signal input data[FIELD_COUNT];
 
@@ -46,34 +43,23 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     component commitment = IdentityCommitment();
     commitment.nullifier <== identity_nullifier;
     commitment.trapdoor <== identity_trapdoor;
-    identity_commitment <== commitment.out;
 
-    /* 3. Check if user exists in the Global State Tree*/
-    // Compute user state tree root
-    component leaf_hasher = StateTreeLeaf(FIELD_COUNT);
-    leaf_hasher.identity_secret <== commitment.secret;
-    leaf_hasher.attester_id <== attester_id;
-    leaf_hasher.epoch <== epoch;
-    for (var x = 0; x < FIELD_COUNT; x++) {
-      leaf_hasher.data[x] <== data[x];
-    }
-
-    component merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
-    merkletree.leaf <== leaf_hasher.out;
+    /* 3. Check epoch key is valid */
+    component epoch_key_proof = EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT);
     for (var i = 0; i < STATE_TREE_DEPTH; i++) {
-        merkletree.path_index[i] <== state_tree_indexes[i];
-        merkletree.path_elements[i] <== state_tree_elements[i];
+        epoch_key_proof.state_tree_indexes[i] <== state_tree_indexes[i];
+        epoch_key_proof.state_tree_elements[i] <== state_tree_elements[i];
     }
-    state_tree_root <== merkletree.root;
-
-    /* 4. Check epoch key is valid */
-    component epoch_key_lite = EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH);
-    epoch_key_lite.identity_secret <== commitment.secret;
-    epoch_key_lite.reveal_nonce <== reveal_nonce;
-    epoch_key_lite.attester_id <== attester_id;
-    epoch_key_lite.epoch <== epoch;
-    epoch_key_lite.nonce <== nonce;
-    epoch_key_lite.sig_data <== sig_data;
-    control <== epoch_key_lite.control;
-    epoch_key <== epoch_key_lite.epoch_key;
+    for (var x = 0; x < FIELD_COUNT; x++) {
+        epoch_key_proof.data[x] <== data[x];
+    }
+    epoch_key_proof.identity_secret <== commitment.secret;
+    epoch_key_proof.reveal_nonce <== reveal_nonce;
+    epoch_key_proof.attester_id <== attester_id;
+    epoch_key_proof.epoch <== epoch;
+    epoch_key_proof.nonce <== nonce;
+    epoch_key_proof.sig_data <== sig_data;
+    control <== epoch_key_proof.control;
+    epoch_key <== epoch_key_proof.epoch_key;
+    state_tree_root <== epoch_key_proof.state_tree_root;
 }
