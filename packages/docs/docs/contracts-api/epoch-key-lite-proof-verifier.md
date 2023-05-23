@@ -2,7 +2,7 @@
 title: Epoch Key Lite Proof Verifier Contract
 ---
 
-This smart contract is dedicated to verifying epoch key lite proofs
+A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
 ## decodeEpochKeyLiteSignals
 

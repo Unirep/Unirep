@@ -2,7 +2,7 @@
 title: Reputation Proof Verifier Contract 
 ---
 
-This smart contract is dedicated to verifying a reputation proof
+A contract address for a reputation proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 ## decodeReputationControl
 
