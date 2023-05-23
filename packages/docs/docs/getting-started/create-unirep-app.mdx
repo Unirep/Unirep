@@ -1,5 +1,4 @@
 ---
-
 title: Getting Started with create-unirep-app
 ---
 
@@ -7,17 +6,20 @@ title: Getting Started with create-unirep-app
 
 The [create-unirep-app](https://www.npmjs.com/package/create-unirep-app) package provides a convenient and efficient way to build applications that leverage the power of UniRep. Developers can use the following guide to explore the example attester, and then customize the attester to suit their unique application.
 
-
 ## 💻 Run the application locally
+
 ### Installation
 
 1. Run:
+
 ```shell
 npx create-unirep-app
 ```
+
 **OR**
 
 2. Clone the [Unirep/create-unirep-app](https://github.com/unirep/create-unirep-app) repository:
+
 ```
 git clone https://github.com/unirep/create-unirep-app &&
 cd create-unirep-app &&
@@ -54,12 +56,14 @@ yarn contracts deploy
 
 :::info
 If `Unirep.sol` has been deployed in the testnet, specify the address of the `Unirep.sol` in the `UnirepApp` constructor:
+
 ```solidity
 constructor(
    Unirep _unirep,
    ...
 )
 ```
+
 :::
 The contract configurations will be written to `create-unirep-app/config.ts`
 
@@ -84,13 +88,14 @@ yarn frontend start
 The frontend will be running at `http://127.0.0.1:3000/` by default.
 
 :::info
-##  🏗️  `create-unirep-app` Architecture
+
+## 🏗️ `create-unirep-app` Architecture
 
 It is important to note that the architecture of this application is different from that of traditional dApps, which require users to obtain ETH, use a browser wallet, understand gas fees, etc. This presents a steep learning curve for new users and a poor UX.
 
 With `create-unirep-app`, the architecture is Web App <-> Relay <-> Blockchain. This reduces the cognitive load for a user new to blockchain appplications by abstracting that learning curve into the relay:
 
-![Architecture](https://imgur.com/VdmLjZe.png)
+![Architecture](@site/static/img/create-unirep-app/architecture.png)
 
 While use of the relayer is optional for a Unirep application, developers should be aware that if users send transactions directly to `UnirepApp.sol`, their privacy could be compromised.
 :::
@@ -99,17 +104,21 @@ While use of the relayer is optional for a Unirep application, developers should
 
 ### User Sign Up
 
-![Join](https://i.imgur.com/vcR3x9D.png)
+![Join](@site/static/img/create-unirep-app/join.png)
 
 Clicking the **Join** button prompts the client to generate a [Semaphore Identity](https://semaphore.appliedzkp.org/) and a [signup proof](circuits-api/circuits.md#signup-proof).
 
-The relayer will submit the signup proof to `UnirepApp.sol` and the client will store the Semaphore identity secret in the browser. When the transaction completes successfully, the user has been added to the attester's membership and can access the application with the  **Dashboard** button.
+The relayer will submit the signup proof to `UnirepApp.sol` and the client will store the Semaphore identity secret in the browser. When the transaction completes successfully, the user has been added to the attester's membership and can access the application with the **Dashboard** button.
 
-![Dashboard](https://i.imgur.com/NURZkvA.png)
+![Dashboard](@site/static/img/create-unirep-app/dashboard.png)
 
 ### Information
 
-<a href="https://imgur.com/8922mih"><img src="https://i.imgur.com/8922mih.png" title="Information" width="300"/></a>
+<img
+    src={require('@site/static/img/create-unirep-app/information.png').default}
+    title="Information"
+    width="300"
+/>
 
 **Epoch** <br />
 Displays the attester's [epoch](protocol/epoch.md) details and the current user's last transitioned epoch.
@@ -119,20 +128,26 @@ Displays the user's total [data](protocol/data.md), including data changed in th
 This is updated upon each data change request.
 
 **Provable Data**<br/>
-Displays only [provable data](#provable-data ) that the user can currently prove ownership of. Any change made to the user's data since their last [user state transition](protocol/user-state-transition.md) is not included here. This is updated **after** UST is performed.
+Displays only [provable data](#provable-data) that the user can currently prove ownership of. Any change made to the user's data since their last [user state transition](protocol/user-state-transition.md) is not included here. This is updated **after** UST is performed.
 
 ### Request Data
 
-<a href="https://imgur.com/qUDm4nB"><img src="https://i.imgur.com/qUDm4nB.png" title="Request data" width="400"/></a>
+<img
+    src={require('@site/static/img/create-unirep-app/request_data.png').default}
+    title="Request data"
+    width="400"
+/>
 
 **Change Data**<br/>
 In the example application, the user simply requests the [data](protocol/data.md) they want to receive. (Real attesters will implement their own logic to determine why and how data is attributed to their users.)
 
-There are two types of data fields: *sum fields* and *replacement fields*. <br />
-- A *sum field* carries a total of all the data that has been added to it.
-- A *replacement field* is used to fully replace old data with new data.
+There are two types of data fields: _sum fields_ and _replacement fields_. <br />
 
-Users can choose which of their anonymous identifiers ([epoch keys](protocol/epoch-key.md)) will receieve the attestation by choosing an *epoch key nonce*. A unique identifier is generated for each epoch key nonce in each epoch.
+-   A _sum field_ carries a total of all the data that has been added to it.
+-   A _replacement field_ is used to fully replace old data with new data.
+
+Users can choose which of their anonymous identifiers ([epoch keys](protocol/epoch-key.md)) will receieve the attestation by choosing an _epoch key nonce_. A unique identifier is generated for each epoch key nonce in each epoch.
+
 ```shell
 # epoch key nonce = 0
 Requesting data with epoch key:
@@ -157,27 +172,37 @@ These epoch keys last for only one epoch. At the start of each epoch, new epoch 
 **Attest**
 
 Upon clicking the **attest** button, the following steps are executed to process an attestation:
+
 1. Client generates an [epoch key proof](circuits-api/circuits.md#epoch-key-proof) to prove the epoch key is valid
 2. Client submits the epoch key proof and the requested data to the relayer
 3. Relayer uses `UnirepApp.sol` to call [attest](contracts-api/unirep-sol.md#attest) on the `Unirep.sol` contract
-4. Frontend updates the user's *latest data* (data is not yet provable)
+4. Frontend updates the user's _latest data_ (data is not yet provable)
 
 ### User State Transtion
 
-<a href="https://imgur.com/Gly6cti"><img src="https://i.imgur.com/Gly6cti.png" title="User state transition" width="300"/></a>
+<img
+    src={require('@site/static/img/create-unirep-app/ust.png').default}
+    title="User state transition"
+    width="300"
+/>
 
-A [user state transition](protocol/user-state-transition.md) is performed manually by a  user in any any epoch they want to participate in. The user will not be able to receive data if `Current epoch #` does not match `Latest transition epoch` (found under the Epoch section); UST must be completed first. <br/>
+A [user state transition](protocol/user-state-transition.md) is performed manually by a user in any any epoch they want to participate in. The user will not be able to receive data if `Current epoch #` does not match `Latest transition epoch` (found under the Epoch section); UST must be completed first. <br/>
 Clicking the **Transition** button executes the following steps:
+
 1. Client generates a [user state transition proof](circuits-api/circuits.md#user-state-transition-proof)
 2. Client submits the proof to the relayer
 3. Relayer updates the `Unirep.sol` contract
-4. Frontend updates the user's *provable data*
+4. Frontend updates the user's _provable data_
 
 The latest user status has been recorded on chain; the user can now receive data in the current epoch and their updated provable data can be used to generate a [data proof](#prove-data).
 
 ### Prove Data
 
-<a href="https://imgur.com/6hDmLSs"><img src="https://i.imgur.com/6hDmLSs.png" title="Prova data" width="200" /></a>
+<img
+    src={require('@site/static/img/create-unirep-app/prove_data.png').default}
+    title="Prova data"
+    width="200"
+/>
 
 In the example attester, there is no functionality that requires proof of any data; individual attesters will define the purpose of proofs for their unique application.
 
@@ -185,13 +210,16 @@ The example input fields take the data a user wishes to claim. Clicking the **Ge
 
 **e.g.**<br/>
 If user's provable data is:
+
 ```shell
 Provable Data 0 = 2
 Provable Data 1 = 3
 Provable Data 2 = 4
 Provable Data 3 = 5
 ```
+
 the user can claim they have data:
+
 ```shell
 Claim Data 0 = 2
 Claim Data 1 = 2
@@ -200,6 +228,7 @@ Claim Data 3 = 2
 ```
 
 because:
+
 ```shell
 2 (Provable Data 0) >= 2 (Claim Data 0) # satisfied. 2 === 2
 3 (Provable Data 1) >= 2 (Claim Data 1) # satisfied. 3 > 2
@@ -213,13 +242,16 @@ If the proof is invalid, the snarkjs prover will throw an error.
 
 **e.g.**<br/>
 If user's provable data is:
+
 ```shell
 Provable Data 0 = 2 👈
 Provable Data 1 = 3
 Provable Data 2 = 4
 Provable Data 3 = 5
 ```
+
 and they claim to own the data:
+
 ```shell
 Claim Data 0 = 3 👈
 Claim Data 1 = 3
@@ -251,14 +283,16 @@ See all [`Unirep.sol` APIs](contracts-api/unirep-sol.md)
 Each attester sets its own [epoch](protocol/epoch.md) length, determined by the needs of the application. When deciding their attester's epoch length, developers should consider the following trade-offs.<br/>
 
 Longer epoch lengths:
-- allow users more time to receive new data, especially in cases with user-to-user interactions
-- extend the time users must wait for changed data to be provable
-- risk making users pseudonymous, as their activities may be tracked when using the same epoch keys for an long period of time
+
+-   allow users more time to receive new data, especially in cases with user-to-user interactions
+-   extend the time users must wait for changed data to be provable
+-   risk making users pseudonymous, as their activities may be tracked when using the same epoch keys for an long period of time
 
 Shorter epoch lengths:
-- allow users to prove new data sooner
-- limit opportunities for users to receive new data, as their epoch keys expire quickly
-- may enable a higher degree of user anonymity, as user's anonymous identifiers change more frequently
+
+-   allow users to prove new data sooner
+-   limit opportunities for users to receive new data, as their epoch keys expire quickly
+-   may enable a higher degree of user anonymity, as user's anonymous identifiers change more frequently
 
 ```sol
 unit48 epochLength = 60 * 15; // 15 minutes
@@ -311,25 +345,22 @@ An attester needs to track the total number of posts a user has made. The code b
 
 ```js
 <input
-  type='submit'
-  value='POST'
-  onClick={async () => {
-    // check if user is transitioned to current epoch
-    if (
-      user.userState &&
-      user.userState.sync.calcCurrentEpoch() !==
-        (await user.userState.latestTransitionedEpoch())
-    ) {
-        throw new Error('Needs transition')
-    }
-    // create new entry in off-chain database
-    await app.createNewPost(postData)
-    // submit attestation to increment user's post count
-    await user.requestReputation(
-      {[0]: 1},
-      reqInfo.nonce ?? 0
-    )
-  }}
+    type="submit"
+    value="POST"
+    onClick={async () => {
+        // check if user is transitioned to current epoch
+        if (
+            user.userState &&
+            user.userState.sync.calcCurrentEpoch() !==
+                (await user.userState.latestTransitionedEpoch())
+        ) {
+            throw new Error('Needs transition')
+        }
+        // create new entry in off-chain database
+        await app.createNewPost(postData)
+        // submit attestation to increment user's post count
+        await user.requestReputation({ [0]: 1 }, reqInfo.nonce ?? 0)
+    }}
 />
 ```
 
@@ -346,11 +377,11 @@ For example, `UnirepApp.sol` can be modified by adding the epoch key proof:
 
 ```sol
 function submitAttestation(
-   uint[] memory publicSignals,
-   uint[8] memory proof
+    uint[] memory publicSignals,
+    uint[8] memory proof
 ) public {
-   // verify epoch key proof
-   unirep.verifyEpochKeyProof(publicSignals, proof);
+    // verify epoch key proof
+    unirep.verifyEpochKeyProof(publicSignals, proof);
 }
 ```
 
@@ -397,4 +428,3 @@ function submitAttestation(
 ```
 
 **Now you can start building your own application with UniRep. 🚀**
-
