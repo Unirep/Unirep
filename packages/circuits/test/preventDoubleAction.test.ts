@@ -64,10 +64,6 @@ describe('Prevent double action circuit', function () {
             )
             const nullifier = poseidon2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = poseidon1([
-                poseidon2([id.nullifier, id.trapdoor]),
-            ])
-            expect(publicSignals[4]).to.equal(identityCommitment.toString())
 
             const p = new PreventDoubleActionProof(publicSignals, proof)
             expect(p.epoch.toString()).to.equal(epoch.toString())
@@ -87,9 +83,6 @@ describe('Prevent double action circuit', function () {
                 }).toString()
             )
             expect(p.nullifier.toString()).to.equal(nullifier.toString())
-            expect(p.identityCommitment.toString()).to.equal(
-                identityCommitment.toString()
-            )
         }
     })
 
@@ -134,10 +127,6 @@ describe('Prevent double action circuit', function () {
                 }).toString()
             )
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = poseidon1([
-                poseidon2([id.nullifier, id.trapdoor]),
-            ])
-            expect(publicSignals[4]).to.equal(identityCommitment.toString())
 
             const p = new PreventDoubleActionProof(publicSignals, proof)
             expect(p.epoch.toString()).to.equal(epoch.toString())
@@ -150,9 +139,6 @@ describe('Prevent double action circuit', function () {
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal('0')
             expect(p.nullifier.toString()).to.equal(nullifier.toString())
-            expect(p.identityCommitment.toString()).to.equal(
-                identityCommitment.toString()
-            )
         }
     })
 
@@ -196,11 +182,7 @@ describe('Prevent double action circuit', function () {
             )
             const nullifier = poseidon2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = poseidon1([
-                poseidon2([id.nullifier, id.trapdoor]),
-            ])
-            expect(publicSignals[4]).to.equal(identityCommitment.toString())
-            expect(publicSignals[5].toString()).to.equal(sigData.toString())
+            expect(publicSignals[4].toString()).to.equal(sigData.toString())
 
             const p = new PreventDoubleActionProof(publicSignals, proof)
             expect(p.epoch.toString()).to.equal(epoch.toString())
@@ -220,9 +202,6 @@ describe('Prevent double action circuit', function () {
                 }).toString()
             )
             expect(p.nullifier.toString()).to.equal(nullifier.toString())
-            expect(p.identityCommitment.toString()).to.equal(
-                identityCommitment.toString()
-            )
         }
     })
 
@@ -259,11 +238,7 @@ describe('Prevent double action circuit', function () {
             expect(publicSignals[1]).to.equal(tree.root.toString())
             const nullifier = poseidon2([id.nullifier, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
-            const identityCommitment = poseidon1([
-                poseidon2([id.nullifier, id.trapdoor]),
-            ])
-            expect(publicSignals[4]).to.equal(identityCommitment.toString())
-            expect(publicSignals[5].toString()).to.equal(sigData.toString())
+            expect(publicSignals[4].toString()).to.equal(sigData.toString())
 
             const p = new PreventDoubleActionProof(publicSignals, proof)
             expect(p.epoch.toString()).to.equal(epoch.toString())
@@ -283,11 +258,8 @@ describe('Prevent double action circuit', function () {
                 }).toString()
             )
             expect(p.nullifier.toString()).to.equal(nullifier.toString())
-            expect(p.identityCommitment.toString()).to.equal(
-                identityCommitment.toString()
-            )
 
-            publicSignals[5] = '00000'
+            publicSignals[4] = '00000'
             const valid = await defaultProver.verifyProof(
                 Circuit.preventDoubleAction,
                 publicSignals,
