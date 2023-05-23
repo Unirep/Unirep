@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { genEpochKey } from '@unirep/utils'
+import randomf from 'randomf'
 import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
