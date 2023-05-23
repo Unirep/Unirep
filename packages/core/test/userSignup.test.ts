@@ -121,13 +121,6 @@ describe('User Signup', function () {
         const data = Array(config.fieldCount)
             .fill(0)
             .map((_, i) => {
-                if (
-                    i >= config.sumFieldCount &&
-                    (i - config.sumFieldCount) % 2 ===
-                        (config.sumFieldCount + 1) % 2
-                ) {
-                    return 0
-                }
                 return i + 100
             })
 
@@ -144,7 +137,13 @@ describe('User Signup', function () {
         await userState.waitForSync()
         const _data = await userState.getData()
         for (let x = 0; x < config.fieldCount; x++) {
-            expect(_data[x].toString()).to.equal(data[x].toString())
+            if (x < config.fieldCount) {
+                expect(_data[x].toString()).to.equal(data[x].toString())
+            } else {
+                expect(_data[x].toString()).to.equal(
+                    (BigInt(data[x]) << BigInt(REPL_NONCE_BITS)).toString()
+                )
+            }
         }
         await userState.sync.stop()
     })

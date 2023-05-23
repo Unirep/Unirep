@@ -425,7 +425,7 @@ describe('Prove reputation from attester circuit', function () {
         const nonce = 0
         const minRep = 0
         const proveGraffiti = true
-        const graffiti = 124124021
+        const graffiti = BigInt(124124021) << BigInt(REPL_NONCE_BITS)
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
@@ -448,7 +448,7 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
-        const graffiti = 124914219
+        const graffiti = BigInt(124914219) << BigInt(REPL_NONCE_BITS)
         const proveGraffiti = 1
         const circuitInputs = genReputationCircuitInput({
             id,

@@ -130,8 +130,8 @@ describe('Compare large numbers', function () {
 
     it('should compare equal lower bits', async () => {
         const n = randomf(BigInt(2) ** BigInt(64))
-        const n1 = n + (randomf(BigInt(2) ** BigInt(200)) << BigInt(64))
-        const n2 = n + (randomf(BigInt(2) ** BigInt(200)) << BigInt(64))
+        const n1 = n + (randomf(BigInt(2) ** BigInt(150)) << BigInt(64))
+        const n2 = n + (randomf(BigInt(2) ** BigInt(150)) << BigInt(64))
         const { isValid, publicSignals } = await genProofAndVerify(
             'lowerComparators' as any,
             {

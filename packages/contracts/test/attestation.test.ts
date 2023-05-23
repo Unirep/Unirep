@@ -10,8 +10,13 @@ import { deployUnirep } from '../deploy'
 
 import randomf from 'randomf'
 
-const { FIELD_COUNT, EPOCH_TREE_DEPTH, SUM_FIELD_COUNT, REPL_FIELD_BITS } =
-    CircuitConfig.default
+const {
+    FIELD_COUNT,
+    EPOCH_TREE_DEPTH,
+    SUM_FIELD_COUNT,
+    REPL_FIELD_BITS,
+    REPL_NONCE_BITS,
+} = CircuitConfig.default
 
 describe('Attestations', function () {
     this.timeout(120000)
@@ -231,8 +236,8 @@ describe('Attestations', function () {
                     epochKey,
                     attester.address,
                     fieldIndex,
-                    BigInt(val) +
-                        (BigInt(attestationCount) << BigInt(REPL_FIELD_BITS))
+                    BigInt(attestationCount) +
+                        (BigInt(val) << BigInt(REPL_NONCE_BITS))
                 )
             attestationCount++
             expect(attestationCount).to.equal(
