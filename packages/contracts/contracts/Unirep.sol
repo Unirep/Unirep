@@ -117,7 +117,7 @@ contract Unirep is IUnirep, VerifySignature {
                 identityCommitment,
                 uint160(msg.sender),
                 x,
-                initialData[x]
+                initialData[x] << replNonceBits
             );
         }
         uint256 stateTreeLeaf = PoseidonT3.hash(
@@ -286,8 +286,9 @@ contract Unirep is IUnirep, VerifySignature {
             if (change >= 2 ** replFieldBits) {
                 revert OutOfRange();
             }
-            change += uint(attestationCount) << replFieldBits;
-            epkData.data[fieldIndex] = change;
+            epkData.data[fieldIndex] =
+                (change << replNonceBits) +
+                uint(attestationCount);
         }
         emit Attestation(
             epoch,

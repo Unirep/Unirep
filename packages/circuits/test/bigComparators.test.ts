@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import { genProofAndVerify } from './utils'
 import { poseidon1 } from 'poseidon-lite'
+import randomf from 'randomf'
 
 const random = () => poseidon1([smallRandom()])
 const smallRandom = () => Math.floor(Math.random() * 1000000000)
@@ -127,12 +128,14 @@ describe('Compare large numbers', function () {
         }
     })
 
-    it('should compare equal upper bits', async () => {
-        const n = random() % BigInt(2) ** BigInt(253) >> BigInt(64)
+    it('should compare equal lower bits', async () => {
+        const n = randomf(BigInt(2) ** BigInt(64))
+        const n1 = n + (randomf(BigInt(2) ** BigInt(200)) << BigInt(64))
+        const n2 = n + (randomf(BigInt(2) ** BigInt(200)) << BigInt(64))
         const { isValid, publicSignals } = await genProofAndVerify(
-            'upperComparators' as any,
+            'lowerComparators' as any,
             {
-                in: [n.toString(), n.toString()],
+                in: [n1.toString(), n2.toString()],
             }
         )
         expect(isValid).to.be.true
@@ -141,17 +144,17 @@ describe('Compare large numbers', function () {
 
     it('should compare upper bits', async () => {
         for (let x = 0; x < 20; x++) {
-            const n1 = random() % BigInt(2) ** BigInt(253)
-            const n2 = random() % BigInt(2) ** BigInt(253)
+            const n1 = randomf(BigInt(2) ** BigInt(253))
+            const n2 = randomf(BigInt(2) ** BigInt(253))
             const { isValid, publicSignals } = await genProofAndVerify(
-                'upperComparators' as any,
+                'lowerComparators' as any,
                 {
                     in: [n1.toString(), n2.toString()],
                 }
             )
-            const n1Upper = n1 >> BigInt(189)
-            const n2Upper = n2 >> BigInt(189)
-            const result = n1Upper < n2Upper ? '1' : '0'
+            const n1Lower = n1 & (BigInt(2) ** BigInt(64) - BigInt(1))
+            const n2Lower = n2 & (BigInt(2) ** BigInt(64) - BigInt(1))
+            const result = n1Lower < n2Lower ? '1' : '0'
             expect(isValid).to.be.true
             expect(publicSignals[0].toString()).to.equal(result)
         }

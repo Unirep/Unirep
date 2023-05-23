@@ -10,6 +10,7 @@ const {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     SUM_FIELD_COUNT,
     FIELD_COUNT,
+    REPL_NONCE_BITS,
 } = CircuitConfig.default
 
 export const randomData = () => [
@@ -33,7 +34,11 @@ export const combineData = (data0, data1) => {
         )
     }
     for (let x = SUM_FIELD_COUNT; x < FIELD_COUNT; x++) {
-        out.push(BigInt(data0[x]) > BigInt(data1[x]) ? data0[x] : data1[x])
+        const lower0 =
+            data0[x] & (BigInt(2) ** BigInt(REPL_NONCE_BITS) - BigInt(1))
+        const lower1 =
+            data1[x] & (BigInt(2) ** BigInt(REPL_NONCE_BITS) - BigInt(1))
+        out.push(BigInt(lower0) > BigInt(lower1) ? data0[x] : data1[x])
     }
     return out
 }

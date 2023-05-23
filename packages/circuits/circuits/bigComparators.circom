@@ -5,29 +5,26 @@ include "./modulo.circom";
 
 //~~ support comparisons of numbers up to the field size
 
-template UpperLessThan(n) {
+template LowerLessThan(n) {
     assert(n < 253);
     signal input in[2];
     signal output out;
 
-    component bits[2];
+    signal upper_values[2];
+    signal lower_values[2];
+    // to satisfy compiler
+    signal _v[2][n];
     for (var x = 0; x < 2; x++) {
-        bits[x] = Num2Bits(253);
-        bits[x].in <== in[x];
-    }
-
-    component upper_bits[2];
-    upper_bits[0] = Bits2Num(n);
-    upper_bits[1] = Bits2Num(n);
-
-    for (var x = 0; x < n; x++) {
-        upper_bits[0].in[x] <== bits[0].out[x+(253-n)];
-        upper_bits[1].in[x] <== bits[1].out[x+(253-n)];
+        upper_values[x] <-- in[x] >> n;
+        // lower_values[x] should contain the lower bits
+        lower_values[x] <== in[x] - upper_values[x] * 2**n;
+        // verify that lower_values[x] does not have more than lower bits
+        _v[x] <== Num2Bits(n)(lower_values[x]);
     }
 
     component lt = LessThan(n);
-    lt.in[0] <== upper_bits[0].out;
-    lt.in[1] <== upper_bits[1].out;
+    lt.in[0] <== lower_values[0];
+    lt.in[1] <== lower_values[1];
 
     out <== lt.out;
 }
@@ -37,25 +34,21 @@ template replFieldEqual(REPL_NONCE_BITS) {
     signal input in[2];
     signal output out;
 
-    component bits[2];
-    var n = 253 - REPL_NONCE_BITS;
+    signal upper_values[2];
+    signal lower_values[2];
+    // to satisfy compiler
+    signal _v[2][REPL_NONCE_BITS];
     for (var x = 0; x < 2; x++) {
-        bits[x] = Num2Bits(253);
-        bits[x].in <== in[x];
-    }
-
-    component repl_bits[2];
-    repl_bits[0] = Bits2Num(n);
-    repl_bits[1] = Bits2Num(n);
-
-    for (var x = 0; x < n; x++) {
-        repl_bits[0].in[x] <== bits[0].out[x];
-        repl_bits[1].in[x] <== bits[1].out[x];
+        upper_values[x] <-- in[x] >> REPL_NONCE_BITS;
+        // lower_values[x] should contain the lower bits
+        lower_values[x] <== in[x] - upper_values[x] * 2**REPL_NONCE_BITS;
+        // verify that lower_values[x] does not have more than lower bits
+        _v[x] <== Num2Bits(REPL_NONCE_BITS)(lower_values[x]);
     }
 
     component eq = IsEqual();
-    eq.in[0] <== repl_bits[0].out;
-    eq.in[1] <== repl_bits[1].out;
+    eq.in[0] <== upper_values[0];
+    eq.in[1] <== upper_values[1];
 
     out <== eq.out;
 }

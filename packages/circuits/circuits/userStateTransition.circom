@@ -181,7 +181,7 @@ template UserStateTransition(
       // then combine the replacement data
       for (var j = 0; j < REPL_FIELD_COUNT; j++) {
         var field_i = SUM_FIELD_COUNT + j;
-        index_check[i][j] = UpperLessThan(REPL_NONCE_BITS);
+        index_check[i][j] = LowerLessThan(REPL_NONCE_BITS);
         index_check[i][j].in[0] <== new_data[i][field_i];
         if (i == 0) {
           index_check[i][j].in[1] <== data[field_i];
