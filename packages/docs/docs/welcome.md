@@ -6,7 +6,7 @@ title: What is UniRep?
 
 UniRep is a zero-knowledge protocol that securely manages user data through anonymous identifiers, enabling trustless interactions and enhanced user privacy in applications. UniRep expands the notion of reputation to include various user data aspects, such as preferences, activity, alignments, and ownership.
 
-Using anonymous identifiers (epoch keys), the protocol allows for trustless engagement with applications while preserving user privacy. This approach promotes non-custodial applications that don't hold user data, reducing data breach risks and emphasizing security for both users and developers.
+Using anonymous identifiers ([**epoch keys**](protocol/epoch-key.md)), the protocol allows for trustless engagement with applications while preserving user privacy. This approach promotes non-custodial applications that don't hold user data, reducing data breach risks and emphasizing security for both users and developers.
 
 <center><img src="/img/unirep-banner.png" alt="UniRep: Private user data with &#x26; provable reputation" width="100%" /></center>
 
@@ -41,10 +41,10 @@ UniRep's key offering is providing developers with a pre-built, audited system t
 - Built by [CJ](https://github.com/CJ-Rose)
   - Craiglist reinvent: Trustlist [Repo](https://github.com/CJ-Rose/trustlist)
 - Built by UniRep team
-  - Social network with reputation touch: Unirep.social [Repo](https://github.com/unirep/unirep-social)
+  - Reputation-Infused Social Network: Unirep.social [Repo](https://github.com/unirep/unirep-social)
 
 
-### Other ideas Few for you to get started
+### Other few ideas for you to get started
 
 - Non-custodial shopping, streaming
 - Business review / recommendations
