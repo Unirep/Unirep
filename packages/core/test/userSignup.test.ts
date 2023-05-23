@@ -141,7 +141,10 @@ describe('User Signup', function () {
                 expect(_data[x].toString()).to.equal(data[x].toString())
             } else {
                 expect(_data[x].toString()).to.equal(
-                    (BigInt(data[x]) << BigInt(REPL_NONCE_BITS)).toString()
+                    (
+                        BigInt(data[x]) <<
+                        BigInt(userState.sync.settings.replNonceBits)
+                    ).toString()
                 )
             }
         }

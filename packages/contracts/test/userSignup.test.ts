@@ -349,24 +349,24 @@ describe('User Signup', function () {
                 return i + 100
             })
 
+        const expectedData = data.map((d, i) => {
+            if (i < config.sumFieldCount) {
+                return d
+            } else {
+                return BigInt(d) << BigInt(config.replNonceBits)
+            }
+        })
         const leaf = genStateTreeLeaf(
             id.secret,
             attester.address,
             contractEpoch,
-            data
+            expectedData
         )
         const identityHash = genIdentityHash(
             id.secret,
             attester.address,
             contractEpoch
         )
-        const expectedData = data.map((d, i) => {
-            if (i < SUM_FIELD_COUNT) {
-                return d
-            } else {
-                return BigInt(d) << BigInt(REPL_NONCE_BITS)
-            }
-        })
         const tx = await unirepContract
             .connect(attester)
             .manualUserSignUp(contractEpoch, id.commitment, identityHash, data)

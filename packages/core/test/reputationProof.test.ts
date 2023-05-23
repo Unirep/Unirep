@@ -340,7 +340,11 @@ describe('Reputation proof', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        expect(proof.graffiti).to.equal(graffiti.toString())
+        expect(proof.graffiti).to.equal(
+            (
+                graffiti << BigInt(userState.sync.settings.replNonceBits)
+            ).toString()
+        )
         expect(proof.proveGraffiti).to.equal('1')
         userState.sync.stop()
     })
