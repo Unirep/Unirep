@@ -72,12 +72,6 @@ describe('User state transition', function () {
             )
 
             const startData = randomData()
-            const leaf = genStateTreeLeaf(
-                users[i].secret,
-                attester.address,
-                fromEpoch,
-                startData
-            )
             const idHash = genIdentityHash(
                 users[i].secret,
                 attester.address,
@@ -88,7 +82,6 @@ describe('User state transition', function () {
                 .manualUserSignUp(
                     fromEpoch,
                     userState.commitment,
-                    leaf,
                     idHash,
                     startData
                 )

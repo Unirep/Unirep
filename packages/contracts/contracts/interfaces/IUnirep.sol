@@ -65,7 +65,6 @@ interface IUnirep {
     error InvalidTimestamp();
     error EpochKeyNotProcessed();
     error ZeroInitialData();
-    error WrongStateTreeLeaf();
 
     error InvalidSignature();
     error InvalidEpochKey();

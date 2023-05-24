@@ -94,11 +94,9 @@ contract Unirep is IUnirep, VerifySignature {
     function manualUserSignUp(
         uint48 epoch,
         uint256 identityCommitment,
-        uint256 stateTreeLeaf,
         uint256 leafIdentityHash,
         uint256[] calldata initialData
     ) public {
-        _userSignUp(epoch, identityCommitment, stateTreeLeaf);
         if (initialData.length == 0) revert ZeroInitialData();
         if (initialData.length > fieldCount) revert OutOfRange();
         uint256 initialDataHash = initialData[0];
@@ -121,10 +119,10 @@ contract Unirep is IUnirep, VerifySignature {
                 initialData[x]
             );
         }
-        uint256 expectedTreeLeaf = PoseidonT3.hash(
+        uint256 stateTreeLeaf = PoseidonT3.hash(
             [leafIdentityHash, initialDataHash]
         );
-        if (expectedTreeLeaf != stateTreeLeaf) revert WrongStateTreeLeaf();
+        _userSignUp(epoch, identityCommitment, stateTreeLeaf);
     }
 
     /**

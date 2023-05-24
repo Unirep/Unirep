@@ -131,12 +131,6 @@ describe('User Signup', function () {
                 return i + 100
             })
 
-        const leaf = genStateTreeLeaf(
-            id.secret,
-            attester.address,
-            contractEpoch,
-            data
-        )
         const idHash = genIdentityHash(
             id.secret,
             attester.address,
@@ -145,7 +139,7 @@ describe('User Signup', function () {
 
         await unirepContract
             .connect(attester)
-            .manualUserSignUp(contractEpoch, id.commitment, leaf, idHash, data)
+            .manualUserSignUp(contractEpoch, id.commitment, idHash, data)
             .then((t) => t.wait())
         await userState.waitForSync()
         const _data = await userState.getData()
