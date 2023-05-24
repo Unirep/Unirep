@@ -3,6 +3,36 @@ title: Reputation Proof Verifier Contract
 ---
 
 A contract address for a reputation proof verifier. See [IVerifier](iverifier-sol) for more info.
+```ts
+import { deployProofVerifiers } from '@unirep/contracts/deploy'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+
+let proofVerifiers = await deployProofVerifiers(accounts[0]) // deploys all proof verification contracts
+
+const r = await defaultProver.genProofAndPublicSignals(
+  Circuit.proveReputation,
+  stringifyBigInts({
+    ...circuitInputs,
+    identity_secret: id.secret,
+    state_tree_indexes: merkleProof.pathIndices,
+    state_tree_elements: merkleProof.siblings,
+    attester_id: attester.address,
+    epoch,
+    nonce,
+  })
+)
+
+const { publicSignals, proof } = new ReputationProof(
+r.publicSignals,
+r.proof
+)
+
+// fails or returns proof signals
+const signals = await proofVerifiers.reputationProof.verifyAndCheck(
+    publicSignals,
+    proof
+) 
+```
 
 ## decodeReputationControl
 

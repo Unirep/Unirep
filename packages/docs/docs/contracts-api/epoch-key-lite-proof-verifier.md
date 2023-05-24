@@ -4,6 +4,37 @@ title: Epoch Key Lite Proof Verifier Contract
 
 A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
+```ts
+import { deployProofVerifiers } from '@unirep/contracts/deploy'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+
+let proofVerifiers = await deployProofVerifiers(accounts[0]) // deploys all proof verification contracts
+
+const r = await defaultProver.genProofAndPublicSignals(
+    Circuit.epochKeyLite,
+    stringifyBigInts({
+        identity_secret: id.secret,
+        sig_data,
+        epoch,
+        nonce,
+        attester_id: attester.address,
+        reveal_nonce: false,
+    })
+)
+
+const { publicSignals, proof } = new EpochKeyLiteProof(
+    r.publicSignals,
+    r.proof
+)
+
+// fails or returns proof signals
+const signals = await proofVerifiers.epochKeyLiteProof.verifyAndCheck(
+    publicSignals,
+    proof
+) 
+
+```
+
 ## decodeEpochKeyLiteSignals
 
 Decode the public signals from an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) info named variables.

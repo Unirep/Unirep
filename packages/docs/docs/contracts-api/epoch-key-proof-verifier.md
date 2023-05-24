@@ -2,7 +2,39 @@
 title: Epoch Key Proof Verifier Contract
 ---
 
-This smart contract is dedicated to verifying epoch key proofs
+This smart contract is dedicated to verifying epoch key proofs. See [IVerifier](iverifier-sol) for more info.
+```ts
+import { deployProofVerifiers } from '@unirep/contracts/deploy'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+
+let proofVerifiers = await deployProofVerifiers(accounts[0]) // deploys all proof verification contracts
+
+const r = await defaultProver.genProofAndPublicSignals(
+    Circuit.epochKey,
+    stringifyBigInts({
+    state_tree_elements: merkleProof.siblings,
+    state_tree_indexes: merkleProof.pathIndices,
+    identity_secret: id.secret,
+    data: data,
+    sig_data: sig_data,
+    epoch,
+    nonce,
+    attester_id: attester.address,
+    reveal_nonce: reveal_noncee,
+  })
+)
+
+const { publicSignals, proof } = new EpochKeyProof(
+  r.publicSignals,
+  r.proof
+)
+
+// fails or returns proof signals
+const signals = await proofVerifiers.epochKey.verifyAndCheck(
+    publicSignals,
+    proof
+) 
+```
 
 ## decodeEpochKeySignals
 
