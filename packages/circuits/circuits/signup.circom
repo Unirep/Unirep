@@ -11,6 +11,7 @@ template Signup(FIELD_COUNT) {
 
     signal output identity_commitment;
     signal output state_tree_leaf;
+    signal output control;
 
     signal input attester_id;
     signal input epoch;
@@ -38,4 +39,5 @@ template Signup(FIELD_COUNT) {
     }
 
     state_tree_leaf <== leaf_hasher.out;
+    control <== leaf_hasher.control;
 }

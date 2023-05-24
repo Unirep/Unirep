@@ -166,6 +166,21 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
     return { isValid, proof, publicSignals }
 }
 
+const genSignupCircuitInput = (config: {
+    id: Identity
+    epoch: number
+    attesterId: number | bigint
+}) => {
+    const { id, epoch, attesterId } = Object.assign(config)
+    const circuitInputs = {
+        identity_nullifier: id.nullifier,
+        identity_trapdoor: id.trapdoor,
+        epoch,
+        attester_id: attesterId,
+    }
+    return utils.stringifyBigInts(circuitInputs)
+}
+
 const genPreventDoubleActionCircuitInput = (config: {
     id: Identity
     tree: utils.IncrementalMerkleTree
@@ -216,6 +231,7 @@ const genPreventDoubleActionCircuitInput = (config: {
 
 export {
     genEpochKeyCircuitInput,
+    genSignupCircuitInput,
     genReputationCircuitInput,
     genProofAndVerify,
     genPreventDoubleActionCircuitInput,

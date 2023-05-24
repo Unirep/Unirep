@@ -46,12 +46,14 @@ export const genStateTreeLeaf = (
     epoch: bigint | number,
     data: (bigint | string | number)[]
 ): bigint => {
+    // leaf = H(H(idSecret, attesterId, epoch), H(data))
     let hashchain = BigInt(data[0])
     for (const d of data.slice(1)) {
         hashchain = poseidon2([hashchain, d])
     }
     const field = BigInt(attesterId) + BigInt(2) ** BigInt(160) * BigInt(epoch)
-    return poseidon3([idSecret, field, hashchain])
+    let leafIdentityHash = poseidon2([idSecret, field])
+    return poseidon2([leafIdentityHash, hashchain])
 }
 
 export const genEpochTreeLeaf = (
