@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Prover } from '@unirep/circuits'
 import { IncrementalMerkleTree, MAX_EPOCH } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
@@ -32,7 +31,6 @@ export function toDecString(content: bigint | string | number) {
  */
 export class Synchronizer extends EventEmitter {
     public _db: DB
-    prover: Prover
     provider: any
     unirepContract: ethers.Contract
     private _attesterId: bigint[] = []
@@ -61,12 +59,11 @@ export class Synchronizer extends EventEmitter {
     constructor(config: {
         db?: DB
         attesterId?: bigint | bigint[]
-        prover: Prover
         provider: ethers.providers.Provider
         unirepAddress: string
     }) {
         super()
-        const { db, prover, unirepAddress, provider, attesterId } = config
+        const { db, unirepAddress, provider, attesterId } = config
 
         if (Array.isArray(attesterId)) {
             // multiple attesters
@@ -85,7 +82,6 @@ export class Synchronizer extends EventEmitter {
             provider
         )
         this.provider = provider
-        this.prover = prover
         this.settings = {
             stateTreeDepth: 0,
             epochTreeDepth: 0,

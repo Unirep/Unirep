@@ -3,7 +3,7 @@
 // @ts-ignore
 import { expect } from 'chai'
 import { ethers } from 'ethers'
-import { ZkIdentity } from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { UserState } from '../src'
@@ -121,7 +121,6 @@ export const genUnirepState = async (
         unirepAddress: address,
         provider,
         attesterId,
-        prover: defaultProver,
         db: _db,
     })
     unirep.pollRate = 150
@@ -141,7 +140,7 @@ export const genUnirepState = async (
 export const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
-    userIdentity: ZkIdentity,
+    userIdentity: Identity,
     attesterId?: bigint | bigint[],
     _db?: DB
 ) => {
@@ -151,5 +150,9 @@ export const genUserState = async (
         attesterId,
         _db
     )
-    return new UserState(synchronizer, userIdentity)
+    return new UserState({
+        synchronizer,
+        prover: defaultProver,
+        id: userIdentity,
+    })
 }
