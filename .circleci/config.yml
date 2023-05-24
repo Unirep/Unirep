@@ -61,7 +61,7 @@ step_defs:
     - run: &download_circom
           name: Download Circom
           command: |
-              sudo wget -O /usr/bin/circom https://pub-a23dfe1546714ecb83801a3fc67522ab.r2.dev/circom
+              sudo wget -O /usr/bin/circom https://github.com/iden3/circom/releases/download/v2.1.5/circom-linux-amd64
               sudo chmod +x /usr/bin/circom
               circom --version
     - run: &install_circom
