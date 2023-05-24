@@ -95,16 +95,24 @@ contract Unirep is IUnirep, VerifySignature {
         uint48 epoch,
         uint256 identityCommitment,
         uint256 stateTreeLeaf,
+        uint256 leafIdentityHash,
         uint256[] calldata initialData
     ) public {
         _userSignUp(epoch, identityCommitment, stateTreeLeaf);
+        if (initialData.length == 0) revert ZeroInitialData();
         if (initialData.length > fieldCount) revert OutOfRange();
+        uint256 initialDataHash = initialData[0];
         for (uint8 x = 0; x < initialData.length; x++) {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
             if (
                 x >= sumFieldCount &&
                 initialData[x] >= 2 ** (254 - replNonceBits)
             ) revert OutOfRange();
+            if (x != 0) {
+                initialDataHash = PoseidonT3.hash(
+                    [initialDataHash, initialData[x]]
+                );
+            }
             emit Attestation(
                 type(uint48).max,
                 identityCommitment,
@@ -113,6 +121,10 @@ contract Unirep is IUnirep, VerifySignature {
                 initialData[x]
             );
         }
+        uint256 expectedTreeLeaf = PoseidonT3.hash(
+            [leafIdentityHash, initialDataHash]
+        );
+        if (expectedTreeLeaf != stateTreeLeaf) revert WrongStateTreeLeaf();
     }
 
     /**
@@ -123,18 +135,19 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) public {
-        uint256 attesterId = publicSignals[2];
+        SignupSignals memory signals = decodeSignupSignals(publicSignals);
+        // Verify the proof
         // only allow attester to sign up users
-        if (uint256(uint160(msg.sender)) != attesterId)
+        if (uint256(uint160(msg.sender)) != signals.attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
         // Verify the proof
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
         _userSignUp(
-            uint48(publicSignals[3]),
-            publicSignals[0],
-            publicSignals[1]
+            uint48(signals.epoch),
+            signals.idCommitment,
+            signals.stateTreeLeaf
         );
     }
 
@@ -424,6 +437,14 @@ contract Unirep is IUnirep, VerifySignature {
         attester.currentEpoch = epoch;
     }
 
+    function decodeSignupControl(
+        uint256 control
+    ) public pure returns (uint256 attesterId, uint256 epoch) {
+        epoch = (control >> 160) & ((1 << 48) - 1);
+        attesterId = control & ((1 << 160) - 1);
+        return (attesterId, epoch);
+    }
+
     function decodeEpochKeyControl(
         uint256 control
     )
@@ -471,6 +492,19 @@ contract Unirep is IUnirep, VerifySignature {
             proveZeroRep,
             proveGraffiti
         );
+    }
+
+    function decodeSignupSignals(
+        uint256[] calldata publicSignals
+    ) public pure returns (SignupSignals memory) {
+        SignupSignals memory signals;
+        signals.idCommitment = publicSignals[0];
+        signals.stateTreeLeaf = publicSignals[1];
+        // now decode the control values
+        (signals.attesterId, signals.epoch) = decodeSignupControl(
+            publicSignals[2]
+        );
+        return signals;
     }
 
     function decodeEpochKeySignals(

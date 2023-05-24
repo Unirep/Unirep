@@ -8,6 +8,7 @@ import {
     genStateTreeLeaf,
     F,
     MAX_EPOCH,
+    genIdentityHash,
 } from '@unirep/utils'
 import { Circuit, SignupProof, CircuitConfig } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
@@ -353,15 +354,27 @@ describe('User Signup', function () {
             contractEpoch,
             data
         )
+        const identityHash = genIdentityHash(
+            id.secret,
+            attester.address,
+            contractEpoch
+        )
         const tx = await unirepContract
             .connect(attester)
-            .manualUserSignUp(contractEpoch, id.commitment, leaf, data)
+            .manualUserSignUp(
+                contractEpoch,
+                id.commitment,
+                leaf,
+                identityHash,
+                data
+            )
+        const leafIndex = 0
         await expect(tx)
             .to.emit(unirepContract, 'UserSignedUp')
-            .withArgs(contractEpoch, id.commitment, attester.address, 0)
+            .withArgs(contractEpoch, id.commitment, attester.address, leafIndex)
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(contractEpoch, attester.address, 0, leaf)
+            .withArgs(contractEpoch, attester.address, leafIndex, leaf)
         for (const [i, d] of Object.entries(data)) {
             await expect(tx)
                 .to.emit(unirepContract, 'Attestation')
@@ -388,9 +401,20 @@ describe('User Signup', function () {
                 return 0
             })
 
+        const identityHash = genIdentityHash(
+            id.secret,
+            attester.address,
+            contractEpoch
+        )
         const tx = unirepContract
             .connect(attester)
-            .manualUserSignUp(contractEpoch, id.commitment, 0, data)
+            .manualUserSignUp(
+                contractEpoch,
+                id.commitment,
+                0,
+                identityHash,
+                data
+            )
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
             'OutOfRange'
@@ -406,13 +430,16 @@ describe('User Signup', function () {
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
+        const leaf = 1
+        const hash = 1
 
         const tx = unirepContract
             .connect(attester)
             .manualUserSignUp(
                 contractEpoch,
                 id.commitment,
-                1,
+                leaf,
+                hash,
                 Array(config.fieldCount + 1).fill(1)
             )
         await expect(tx).to.be.revertedWithCustomError(
@@ -430,12 +457,82 @@ describe('User Signup', function () {
             attester.address
         )
 
+        const leaf = 1
+        const idHash = 1
         const tx = unirepContract
             .connect(attester)
-            .manualUserSignUp(contractEpoch, id.commitment, 1, [F])
+            .manualUserSignUp(contractEpoch, id.commitment, leaf, idHash, [F])
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
             'InvalidField'
+        )
+    })
+
+    it('should fail to sign up with zero init data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const id = new Identity()
+        const contractEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const zeroData = []
+        const leaf = 1
+        const idHash = 1
+        const tx = unirepContract
+            .connect(attester)
+            .manualUserSignUp(
+                contractEpoch,
+                id.commitment,
+                leaf,
+                idHash,
+                zeroData
+            )
+        await expect(tx).to.be.revertedWithCustomError(
+            unirepContract,
+            'ZeroInitialData'
+        )
+    })
+
+    it('should fail to sign up with wrong init data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const id = new Identity()
+        const contractEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const config = await unirepContract.config()
+        const data = Array(config.fieldCount)
+            .fill(0)
+            .map((_, i) => {
+                return i + 100
+            })
+        const wrongData = Array(config.fieldCount).fill(0)
+
+        const leaf = genStateTreeLeaf(
+            id.secret,
+            attester.address,
+            contractEpoch,
+            data
+        )
+        const identityHash = genIdentityHash(
+            id.secret,
+            attester.address,
+            contractEpoch
+        )
+        const tx = unirepContract
+            .connect(attester)
+            .manualUserSignUp(
+                contractEpoch,
+                id.commitment,
+                leaf,
+                identityHash,
+                wrongData
+            )
+        await expect(tx).to.be.revertedWithCustomError(
+            unirepContract,
+            'WrongStateTreeLeaf'
         )
     })
 })

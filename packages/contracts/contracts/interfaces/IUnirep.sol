@@ -64,6 +64,8 @@ interface IUnirep {
     error InvalidField();
     error InvalidTimestamp();
     error EpochKeyNotProcessed();
+    error ZeroInitialData();
+    error WrongStateTreeLeaf();
 
     error InvalidSignature();
     error InvalidEpochKey();
@@ -73,6 +75,13 @@ interface IUnirep {
     error InvalidProof();
     error InvalidHistoryTreeRoot(uint256 historyTreeRoot);
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
+
+    struct SignupSignals {
+        uint256 stateTreeLeaf;
+        uint256 epoch;
+        uint256 attesterId;
+        uint256 idCommitment;
+    }
 
     struct EpochKeySignals {
         uint256 revealNonce;

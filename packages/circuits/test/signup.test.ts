@@ -64,7 +64,12 @@ describe('Signup circuits', function () {
         )
         expect(data.epoch.toString()).to.equal(epoch.toString())
         expect(data.stateTreeLeaf.toString()).to.equal(
-            genStateTreeLeaf(id.secret, attesterId, epoch, Array(FIELD_COUNT).fill(0)).toString()
+            genStateTreeLeaf(
+                id.secret,
+                attesterId,
+                epoch,
+                Array(FIELD_COUNT).fill(0)
+            ).toString()
         )
         expect(data.control.toString()).to.equal(
             SignupProof.buildControl({ attesterId, epoch }).toString()

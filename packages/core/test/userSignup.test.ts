@@ -2,7 +2,11 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
-import { genStateTreeLeaf, IncrementalMerkleTree } from '@unirep/utils'
+import {
+    genIdentityHash,
+    genStateTreeLeaf,
+    IncrementalMerkleTree,
+} from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState, genUnirepState } from './utils'
@@ -133,10 +137,15 @@ describe('User Signup', function () {
             contractEpoch,
             data
         )
+        const idHash = genIdentityHash(
+            id.secret,
+            attester.address,
+            contractEpoch
+        )
 
         await unirepContract
             .connect(attester)
-            .manualUserSignUp(contractEpoch, id.commitment, leaf, data)
+            .manualUserSignUp(contractEpoch, id.commitment, leaf, idHash, data)
             .then((t) => t.wait())
         await userState.waitForSync()
         const _data = await userState.getData()
