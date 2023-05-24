@@ -10,7 +10,7 @@ import {
     tryPath,
 } from './utils'
 
-const retryAsNeeded = async (fn: any, maxRetry = 10) => {
+const retryAsNeeded = async (fn: any, maxRetry = 5) => {
     let retryCount = 0
     let backoff = 1000
     for (;;) {
@@ -39,6 +39,7 @@ export const deployUnirep = async (
     if (!deployer.provider) {
         throw new Error('Deployer must have provider')
     }
+    const config = new CircuitConfig({ ...CircuitConfig.default, ..._settings })
     const {
         EPOCH_TREE_DEPTH,
         STATE_TREE_DEPTH,
@@ -47,7 +48,7 @@ export const deployUnirep = async (
         FIELD_COUNT,
         SUM_FIELD_COUNT,
         REPL_NONCE_BITS,
-    } = { ...CircuitConfig.default, ..._settings }
+    } = config
 
     console.log(
         '-----------------------------------------------------------------'
@@ -188,15 +189,7 @@ export const deployUnirep = async (
                 )
             )
         ).deploy(
-            {
-                stateTreeDepth: STATE_TREE_DEPTH,
-                epochTreeDepth: EPOCH_TREE_DEPTH,
-                historyTreeDepth: HISTORY_TREE_DEPTH,
-                numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-                fieldCount: FIELD_COUNT,
-                sumFieldCount: SUM_FIELD_COUNT,
-                replNonceBits: REPL_NONCE_BITS,
-            },
+            config.contractConfig,
             verifiers[Circuit.signup],
             verifiers[Circuit.userStateTransition],
             verifiers[Circuit.proveReputation],

@@ -25,6 +25,18 @@ export class CircuitConfig {
         return new CircuitConfig(defaultConfig)
     }
 
+    get contractConfig() {
+        return {
+            stateTreeDepth: this.STATE_TREE_DEPTH,
+            epochTreeDepth: this.EPOCH_TREE_DEPTH,
+            historyTreeDepth: this.HISTORY_TREE_DEPTH,
+            numEpochKeyNoncePerEpoch: this.NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+            fieldCount: this.FIELD_COUNT,
+            sumFieldCount: this.SUM_FIELD_COUNT,
+            replNonceBits: this.REPL_NONCE_BITS,
+        }
+    }
+
     constructor(config: {
         STATE_TREE_DEPTH: number
         EPOCH_TREE_DEPTH: number
