@@ -162,7 +162,7 @@ await tx.wait()
 ```
 
 :::info
-See [Define epoch length](getting-started/create-unirep-app.md#define-epoch-length) for more information.
+See [Define epoch length](getting-started/create-unirep-app.mdx#define-epoch-length) for more information.
 :::
 
 The `msg.sender` will be recorded as an attester ID in `Unirep.sol`. The attester should connect to this wallet to help users sign up and send attestations to users.
@@ -461,7 +461,7 @@ function attest(
 ```
 
 :::caution
-To verify an epoch key on-chain, see [Verify epoch key on-chain](getting-started/create-unirep-app.md#verify-epoch-key-on-chain).
+To verify an epoch key on-chain, see [Verify epoch key on-chain](getting-started/create-unirep-app.mdx#verify-epoch-key-on-chain).
 :::
 
 ## ⏱️ User state transition
