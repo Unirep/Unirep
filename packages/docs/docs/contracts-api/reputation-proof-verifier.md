@@ -6,8 +6,9 @@ A contract address for a reputation proof verifier. See [IVerifier](iverifier-so
 ```ts
 import { deployProofVerifiers } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { Circuit } from '@unirep/circuits'
 
-let proofVerifiers = await deployProofVerifiers(accounts[0]) // deploys all proof verification contracts
+let proofVerifiers = await deployProofVerifier(accounts[0], Circuit.proveReputation) // deploys all proof verification contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
   Circuit.proveReputation,

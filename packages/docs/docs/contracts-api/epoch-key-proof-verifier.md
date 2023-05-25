@@ -6,8 +6,9 @@ This smart contract is dedicated to verifying epoch key proofs. See [IVerifier](
 ```ts
 import { deployProofVerifiers } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { Circuit } from '@unirep/circuits'
 
-let proofVerifiers = await deployProofVerifiers(accounts[0]) // deploys all proof verification contracts
+let proofVerifiers = await deployProofVerifier(accounts[0], Circuit.epochKey) // deploys all proof verification contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
     Circuit.epochKey,

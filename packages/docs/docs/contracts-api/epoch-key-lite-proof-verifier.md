@@ -5,10 +5,11 @@ title: Epoch Key Lite Proof Verifier Contract
 A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
 ```ts
-import { deployProofVerifiers } from '@unirep/contracts/deploy'
+import { deployProofVerifier } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { Circuit } from '@unirep/circuits'
 
-let proofVerifiers = await deployProofVerifiers(accounts[0]) // deploys all proof verification contracts
+let proofVerifiers = await deployProofVerifier(accounts[0], Circuit.epochKeyLite) // deploys all proof verification contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
     Circuit.epochKeyLite,
