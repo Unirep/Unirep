@@ -168,7 +168,7 @@ const genProofAndVerify = async (circuit: Circuit, circuitInputs: any) => {
 
 const genSignupCircuitInput = (config: {
     id: Identity
-    epoch: number
+    epoch: number | bigint
     attesterId: number | bigint
 }) => {
     const { id, epoch, attesterId } = Object.assign(config)

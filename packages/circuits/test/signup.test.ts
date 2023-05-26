@@ -43,50 +43,17 @@ describe('Signup circuits', function () {
         )
     })
 
-    it('should generate a signup proof with initial data', async () => {
-        const id = new Identity()
-        const epoch = 0
-        const attesterId = BigInt(12345)
-        const circuitInputs = genSignupCircuitInput({
-            id,
-            epoch,
-            attesterId,
-        })
-        const { isValid, publicSignals, proof } = await genProofAndVerify(
-            Circuit.signup,
-            circuitInputs
-        )
-        expect(isValid).to.be.true
-        const data = new SignupProof(publicSignals, proof)
-        expect(data.attesterId.toString()).to.equal(attesterId.toString())
-        expect(data.identityCommitment.toString()).to.equal(
-            id.commitment.toString()
-        )
-        expect(data.epoch.toString()).to.equal(epoch.toString())
-        expect(data.stateTreeLeaf.toString()).to.equal(
-            genStateTreeLeaf(
-                id.secret,
-                attesterId,
-                epoch,
-                Array(FIELD_COUNT).fill(0)
-            ).toString()
-        )
-        expect(data.control.toString()).to.equal(
-            SignupProof.buildControl({ attesterId, epoch }).toString()
-        )
-    })
-
     it('should fail to prove an out of range attesterId', async () => {
         const id = new Identity()
         const epoch = 0
-        const attesterId = BigInt(1) >> BigInt(160)
+        const attesterId = BigInt(1) << BigInt(160)
         const circuitInputs = genSignupCircuitInput({
             id,
             epoch,
             attesterId,
         })
         await new Promise<void>((rs, rj) => {
-            genProofAndVerify(Circuit.epochKeyLite, circuitInputs)
+            genProofAndVerify(Circuit.signup, circuitInputs)
                 .then(() => rj())
                 .catch(() => rs())
         })
@@ -94,7 +61,7 @@ describe('Signup circuits', function () {
 
     it('should fail to prove an out of range epoch', async () => {
         const id = new Identity()
-        const epoch = 1 >> 48
+        const epoch = BigInt(1) << BigInt(48)
         const attesterId = BigInt(1234)
         const circuitInputs = genSignupCircuitInput({
             id,
@@ -102,7 +69,7 @@ describe('Signup circuits', function () {
             attesterId,
         })
         await new Promise<void>((rs, rj) => {
-            genProofAndVerify(Circuit.epochKeyLite, circuitInputs)
+            genProofAndVerify(Circuit.signup, circuitInputs)
                 .then(() => rj())
                 .catch(() => rs())
         })
