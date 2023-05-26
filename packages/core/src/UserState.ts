@@ -53,12 +53,12 @@ export default class UserState {
         } = config
         if (!id) {
             throw new Error(
-                '@unirep/core:UserState: id must be supplied as second argument when initialized with a sync'
+                '@unirep/core:UserState: id must be supplied as an argument when initialized with a sync'
             )
         }
         if (!prover) {
             throw new Error(
-                '@unirep/core:UserState: prover must be supplied as second argument when initialized with a sync'
+                '@unirep/core:UserState: prover must be supplied as an argument when initialized with a sync'
             )
         }
         if (synchronizer) {
@@ -66,7 +66,7 @@ export default class UserState {
         } else {
             if (!provider || !unirepAddress) {
                 throw new Error(
-                    '@unirep/core:UserState: provider and Unirep address must be supplied as second argument when initialized with a sync'
+                    '@unirep/core:UserState: provider and Unirep address must be supplied as an argument when initialized with a sync'
                 )
             }
             this.sync = new Synchronizer({
