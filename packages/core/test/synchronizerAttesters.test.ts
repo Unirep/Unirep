@@ -375,6 +375,16 @@ describe('Synchronizer watch multiple attesters', function () {
             const data = await userState.getData(undefined, attesterId)
             expect(data[index].toString()).to.equal(change.toString())
         }
+
+        // gen rep proof
+        for (let i = 0; i < count; i++) {
+            const attesterId = BigInt(accounts[i].address)
+            const proof = await userState.genProveReputationProof({
+                attesterId,
+            })
+            const valid = await proof.verify()
+            expect(valid).to.be.true
+        }
         userState.sync.stop()
     })
 })
