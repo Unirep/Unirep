@@ -163,7 +163,7 @@ export default class UserState {
                 return 0
             }
             // don't include attestations that are not provable
-            const data = await this.getData(currentEpoch - 1)
+            const data = await this.getData(currentEpoch - 1, attesterId)
             const leaf = genStateTreeLeaf(
                 this.id.secret,
                 attesterId,
@@ -178,7 +178,7 @@ export default class UserState {
             if (!foundLeaf) return -1
             return foundLeaf.index
         }
-        const data = await this.getData(latestTransitionedEpoch - 1)
+        const data = await this.getData(latestTransitionedEpoch - 1, attesterId)
         const leaf = genStateTreeLeaf(
             this.id.secret,
             attesterId,
@@ -528,7 +528,7 @@ export default class UserState {
             prove_graffiti: graffiti ? 1 : 0,
             graffiti: graffiti ?? 0,
             reveal_nonce: revealNonce ?? 0,
-            attester_id: attesterId.toString(),
+            attester_id: attesterId,
             epoch,
             nonce,
             min_rep: minRep ?? 0,
