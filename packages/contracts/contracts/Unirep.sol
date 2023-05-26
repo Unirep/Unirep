@@ -41,6 +41,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable sumFieldCount;
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
+    uint256 public immutable defaultDataHash;
 
     uint48 public attestationCount = 1;
 
@@ -72,6 +73,12 @@ contract Unirep is IUnirep, VerifySignature {
         emit AttesterSignedUp(0, type(uint48).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint48).max;
         attesters[uint160(0)].startTimestamp = uint48(block.timestamp);
+
+        uint256 zeroDataHash = 0;
+        for (uint256 i = 1; i < fieldCount; i++) {
+            zeroDataHash = PoseidonT3.hash([zeroDataHash, 0]);
+        }
+        defaultDataHash = zeroDataHash;
     }
 
     function config() public view returns (Config memory) {
@@ -97,9 +104,11 @@ contract Unirep is IUnirep, VerifySignature {
         uint256 leafIdentityHash,
         uint256[] calldata initialData
     ) public {
-        if (initialData.length == 0) revert ZeroInitialData();
         if (initialData.length > fieldCount) revert OutOfRange();
-        uint256 initialDataHash = initialData[0];
+        uint256 initialDataHash = defaultDataHash;
+        if (initialData.length != 0) {
+            initialDataHash = initialData[0];
+        }
         for (uint8 x = 0; x < initialData.length; x++) {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
             if (

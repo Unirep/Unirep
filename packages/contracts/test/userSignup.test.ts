@@ -376,6 +376,45 @@ describe('User Signup', function () {
         }
     })
 
+    it('should sign up users with zero init data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+
+        const id = new Identity()
+        const contractEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const zeroData = []
+
+        const config = await unirepContract.config()
+        const leaf = genStateTreeLeaf(
+            id.secret,
+            attester.address,
+            contractEpoch,
+            Array(config.fieldCount).fill(0)
+        )
+        const identityHash = genIdentityHash(
+            id.secret,
+            attester.address,
+            contractEpoch
+        )
+        const tx = await unirepContract
+            .connect(attester)
+            .manualUserSignUp(
+                contractEpoch,
+                id.commitment,
+                identityHash,
+                zeroData
+            )
+        const leafIndex = 0
+        await expect(tx)
+            .to.emit(unirepContract, 'UserSignedUp')
+            .withArgs(contractEpoch, id.commitment, attester.address, leafIndex)
+        await expect(tx)
+            .to.emit(unirepContract, 'StateTreeLeaf')
+            .withArgs(contractEpoch, attester.address, leafIndex, leaf)
+    })
+
     it('should fail to sign up with out of range replacement data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
@@ -450,25 +489,6 @@ describe('User Signup', function () {
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
             'InvalidField'
-        )
-    })
-
-    it('should fail to sign up with zero init data', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const id = new Identity()
-        const contractEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-        const zeroData = []
-        const idHash = 1
-        const tx = unirepContract
-            .connect(attester)
-            .manualUserSignUp(contractEpoch, id.commitment, idHash, zeroData)
-        await expect(tx).to.be.revertedWithCustomError(
-            unirepContract,
-            'ZeroInitialData'
         )
     })
 })
