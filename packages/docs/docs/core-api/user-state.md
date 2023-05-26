@@ -5,18 +5,23 @@ title: User State
 The user state object is used to manage user state for an attester. The state is backed by an [anondb](https://github.com/vimwitch/anondb) instance.
 
 ```ts
-import { UserState, schema } from '@unirep/core'
+import { UserState } from '@unirep/core'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { Identity } from '@semaphore-protocol/identity'
 
+const id = new Identity()
 const state = new UserState({
   prover: defaultProver, // a circuit prover
   unirepAddress: '0xaabbccaabbccaabbccaabbccaabbccaabbccaaaa',
   provider, // an ethers.js provider
-}, identity)
+  id,
+})
 
 // or, initialize with an existing synchronizer object
-
-const state = new UserState(synchronizer, identity)
+const state = new UserState({
+  synchronizer,
+  id
+})
 ```
 
 
@@ -26,17 +31,15 @@ Can be constructed using an existing synchronizer, or by initializing a new sync
 
 ```ts
 constructor(
-  config:
-    | {
-        db?: DB
-        attesterId?: bigint | bigint[]
-        unirepAddress: string
-        prover: Prover
-        provider: ethers.providers.Provider
-        _id?: ZkIdentity
-      }
-    | Synchronizer,
-  id: ZkIdentity
+  config: {
+    synchronizer?: Synchronizer
+    db?: DB
+    attesterId?: bigint | bigint[]
+    unirepAddress?: string
+    provider?: ethers.providers.Provider
+    id: Identity
+    prover: Prover
+  }
 ) {
 ```
 

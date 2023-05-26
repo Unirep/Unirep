@@ -25,6 +25,7 @@ import { Synchronizer, toDecString } from './Synchronizer'
  * It takes user's `ZKIdentity` and checks the events that matches the user's identity.
  */
 export default class UserState {
+    prover: Prover
     public id: Identity
     public sync: Synchronizer
 
@@ -32,32 +33,51 @@ export default class UserState {
         return this.id.commitment
     }
 
-    constructor(
-        config:
-            | {
-                  db?: DB
-                  attesterId?: bigint | bigint[]
-                  unirepAddress: string
-                  prover: Prover
-                  provider: ethers.providers.Provider
-                  _id?: Identity // TODO: remove this and only accept as second arg
-              }
-            | Synchronizer,
+    constructor(config: {
+        synchronizer?: Synchronizer
+        db?: DB
+        attesterId?: bigint | bigint[]
+        unirepAddress?: string
+        provider?: ethers.providers.Provider
         id: Identity
-    ) {
-        if (config instanceof Synchronizer) {
-            if (!id) {
+        prover: Prover
+    }) {
+        const {
+            id,
+            synchronizer,
+            attesterId,
+            unirepAddress,
+            provider,
+            prover,
+            db,
+        } = config
+        if (!id) {
+            throw new Error(
+                '@unirep/core:UserState: id must be supplied as an argument when initialized with a sync'
+            )
+        }
+        if (!prover) {
+            throw new Error(
+                '@unirep/core:UserState: prover must be supplied as an argument when initialized with a sync'
+            )
+        }
+        if (synchronizer) {
+            this.sync = synchronizer
+        } else {
+            if (!provider || !unirepAddress) {
                 throw new Error(
-                    '@unirep/core:UserState: id must be supplied as second argument when initialized with a sync'
+                    '@unirep/core:UserState: provider and Unirep address must be supplied as an argument when initialized with a sync'
                 )
             }
-            this.sync = config
-            this.id = id
-        } else {
-            this.id = config._id ?? id
-            delete config._id
-            this.sync = new Synchronizer(config)
+            this.sync = new Synchronizer({
+                db,
+                attesterId,
+                provider,
+                unirepAddress,
+            })
         }
+        this.id = id
+        this.prover = prover
     }
 
     async start() {
@@ -478,7 +498,7 @@ export default class UserState {
             ),
             epoch_tree_root: epochTree.root,
         }
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts(circuitInputs)
         )
@@ -486,7 +506,7 @@ export default class UserState {
         return new UserStateTransitionProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 
@@ -539,7 +559,7 @@ export default class UserState {
             sig_data: options.data ?? 0,
         }
 
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts(circuitInputs)
         )
@@ -547,7 +567,7 @@ export default class UserState {
         return new ReputationProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 
@@ -568,14 +588,14 @@ export default class UserState {
             identity_trapdoor: this.id.trapdoor,
             attester_id: attesterId,
         }
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts(circuitInputs)
         )
         return new SignupProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 
@@ -609,14 +629,14 @@ export default class UserState {
             attester_id: attesterId,
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.epochKey,
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 
@@ -643,14 +663,14 @@ export default class UserState {
             attester_id: attesterId,
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.epochKeyLite,
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyLiteProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 }
