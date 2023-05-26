@@ -1,55 +1,52 @@
 ---
-title: Epoch Key Lite Proof Verifier Contract
+title: Epoch Key Proof Verifier Contract
 ---
 
-A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
-
+This smart contract is dedicated to verifying epoch key proofs. See [IVerifier](iverifier-sol) for more info.
 ```ts
-import { deployProofVerifier } from '@unirep/contracts/deploy'
+import { deployVerifierHelpers } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit } from '@unirep/circuits'
 
-let proofVerifiers = await deployProofVerifier(accounts[0], Circuit.epochKeyLite) // deploys all proof verification contracts
+let verifierHelpers = await deployVerifierHelper(accounts[0], Circuit.epochKey) // deploys all proof verification contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
-    Circuit.epochKeyLite,
+    Circuit.epochKey,
     stringifyBigInts({
-        identity_secret: id.secret,
-        sig_data,
-        epoch,
-        nonce,
-        attester_id: attester.address,
-        reveal_nonce: false,
-    })
+    state_tree_elements: merkleProof.siblings,
+    state_tree_indexes: merkleProof.pathIndices,
+    identity_secret: id.secret,
+    data: data,
+    sig_data: sig_data,
+    epoch,
+    nonce,
+    attester_id: attester.address,
+    reveal_nonce: reveal_noncee,
+  })
 )
 
-const { publicSignals, proof } = new EpochKeyLiteProof(
-    r.publicSignals,
-    r.proof
+const { publicSignals, proof } = new EpochKeyProof(
+  r.publicSignals,
+  r.proof
 )
 
 // fails or returns proof signals
-const signals = await proofVerifiers.epochKeyLiteProof.verifyAndCheck(
+const signals = await verifierHelpers.epochKey.verifyAndCheck(
     publicSignals,
     proof
 ) 
-
 ```
 
-## decodeEpochKeyLiteSignals
+## decodeEpochKeySignals
 
-Decode the public signals from an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) info named variables.
+Decode the public signals from an [epoch key proof](../circuits-api/circuits#epoch-key-proof) into named variables.
 
 ```sol
-function decodeEpochKeyLiteSignals(uint256[] memory publicSignals)
+function decodeEpochKeySignals(uint256[] memory publicSignals)
     public
     pure
     returns (EpochKeySignals memory)
 ```
-
-:::tip
-The `stateTreeRoot` variable in this struct is unused for epoch key lite proofs.
-:::
 
 ```sol
 struct EpochKeySignals {
@@ -63,9 +60,9 @@ struct EpochKeySignals {
 }
 ```
 
-## verifyAndCheck
+## verifyAndCheck 
 
-Verify an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
+Verify an [epoch key proof](../circuits-api/circuits#epoch-key-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
 This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
@@ -75,6 +72,7 @@ This function does not require the epoch for the proof to be the current epoch. 
 This function does not verify that the `attesterId` is the same as the caller. Thus, we recommend that to either use [verifyAndCheckCaller](#verifyandcheckcaller) or to manually verify the `attesterId`
 :::
 
+
 ```sol
 function verifyAndCheck(
     uint256[] calldata publicSignals,
@@ -83,9 +81,10 @@ function verifyAndCheck(
   view
   returns (EpochKeySignals memory) 
 ```
-## verifyAndCheckCaller
 
-Verify an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
+## verifyAndCheckCaller 
+
+Verify an [epoch key proof](../circuits-api/circuits#epoch-key-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
 
 :::caution
 This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
@@ -98,3 +97,4 @@ function verifyAndCheckCaller(
 ) public
   view
   returns (EpochKeySignals memory) 
+```

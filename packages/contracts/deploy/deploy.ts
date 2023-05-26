@@ -10,22 +10,23 @@ import {
     tryPath,
 } from './utils'
 
-const ProofVerifiers = {
-    epochKeyProof: Circuit.epochKey,
-    epochKeyLiteProof: Circuit.epochKeyLite,
-    reputationProof: Circuit.proveReputation,
+const VerifierHelpers = {
+    epochKey: Circuit.epochKey,
+    epochKeyLite: Circuit.epochKeyLite,
+    reputation: Circuit.proveReputation,
 }
 
-const createProofVerifierName = (circuit: Circuit): string => {
-    const verifierName = Object.keys(ProofVerifiers).find(
-        (key) => ProofVerifiers[key] == circuit
+const createVerifierHelperName = (circuit: Circuit): string => {
+    const verifierName = Object.keys(VerifierHelpers).find(
+        (key) => VerifierHelpers[key] == circuit
     )
 
     if (verifierName === undefined) {
         throw new Error('Invalid proof verification circuit')
     }
-
-    return createVerifierName(verifierName)
+    return `${
+        verifierName.charAt(0).toUpperCase() + verifierName.slice(1)
+    }VerifierHelper`
 }
 
 export const retryAsNeeded = async (fn: any, maxRetry = 10) => {
@@ -77,37 +78,37 @@ export const deployVerifiers = async (
     return verifiers
 }
 
-export const deployProofVerifiers = async (
+export const deployVerifierHelpers = async (
     deployer: ethers.Signer,
     prover?: Prover
 ) => {
-    let proofVerifiers = {}
+    let verifierHelpers = {}
 
-    for (const proofVerifier in ProofVerifiers) {
-        const verifierContract = await deployProofVerifier(
+    for (const verifierHelper in VerifierHelpers) {
+        const verifierContract = await deployVerifierHelper(
             deployer,
-            ProofVerifiers[proofVerifier],
+            VerifierHelpers[verifierHelper],
             prover
         )
-        proofVerifiers[proofVerifier] = verifierContract
+        verifierHelpers[verifierHelper] = verifierContract
     }
-    return proofVerifiers
+    return verifierHelpers
 }
 
-export const deployProofVerifier = async (
+export const deployVerifierHelper = async (
     deployer: ethers.Signer,
-    proofVerifier: Circuit,
+    verifierHelper: Circuit,
     prover?: Prover
 ) => {
     const verifiers = await deployVerifiers(deployer, prover)
-    const contractName = createProofVerifierName(proofVerifier)
+    const contractName = createVerifierHelperName(verifierHelper)
     console.log(`Deploying ${contractName}`)
     let artifacts
     if (prover) {
         const vkey = await prover.getVKey(contractName)
         artifacts = await compileVerifier(contractName, vkey)
     } else {
-        const verifierPath = `contracts/proofVerifiers/${contractName}.sol/${contractName}.json`
+        const verifierPath = `contracts/verifierHelpers/${contractName}.sol/${contractName}.json`
         artifacts = tryPath(verifierPath)
     }
 
@@ -115,7 +116,7 @@ export const deployProofVerifier = async (
     const _verifierFactory = new ethers.ContractFactory(abi, bytecode, deployer)
     const verifierFactory = await GlobalFactory(_verifierFactory)
     const verifierContract = await retryAsNeeded(() =>
-        verifierFactory.deploy(verifiers[proofVerifier])
+        verifierFactory.deploy(verifiers[verifierHelper])
     )
     await verifierContract.deployed()
     return verifierContract

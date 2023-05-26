@@ -2,7 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
-import { deployProofVerifiers, deployUnirep } from '@unirep/contracts/deploy'
+import { deployVerifierHelpers, deployUnirep } from '@unirep/contracts/deploy'
 import { genUnirepState, genUserState } from './utils'
 import { Identity } from '@semaphore-protocol/identity'
 import { schema } from '../src/schema'
@@ -14,12 +14,12 @@ describe('Synchronizer watch multiple attesters', function () {
     this.timeout(0)
 
     let unirepContract: Unirep
-    let proofVerifiers
+    let verifierHelpers
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        proofVerifiers = await deployProofVerifiers(accounts[0])
+        verifierHelpers = await deployVerifierHelpers(accounts[0])
     })
 
     {
@@ -331,7 +331,7 @@ describe('Synchronizer watch multiple attesters', function () {
             const attesterId = BigInt(accounts[i].address).toString()
             const { publicSignals, proof, epochKey, epoch } =
                 await userState.genEpochKeyProof({ attesterId })
-            await proofVerifiers.epochKeyProof.verifyAndCheck(
+            await verifierHelpers.epochKeyProof.verifyAndCheck(
                 publicSignals,
                 proof
             )

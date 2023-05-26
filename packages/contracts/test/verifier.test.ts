@@ -17,7 +17,7 @@ import {
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { deployProofVerifier, deployProofVerifiers } from '../deploy'
+import { deployVerifierHelper, deployVerifierHelpers } from '../deploy'
 const { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT } =
     CircuitConfig.default
 
@@ -25,14 +25,14 @@ function randomBits(bit: number) {
     return genRandomSalt() % (BigInt(2) ** BigInt(bit) - BigInt(1))
 }
 
-describe('Epoch key lite proof verifier', function () {
+describe('Epoch key lite verifier helper', function () {
     this.timeout(300000)
 
-    let epochKeyLiteProofVerifier
+    let epochKeyLiteVerifierHelper
 
     before(async () => {
         const accounts = await ethers.getSigners()
-        epochKeyLiteProofVerifier = await deployProofVerifier(
+        epochKeyLiteVerifierHelper = await deployVerifierHelper(
             accounts[0],
             Circuit.epochKeyLite
         )
@@ -77,7 +77,10 @@ describe('Epoch key lite proof verifier', function () {
                 r.publicSignals,
                 r.proof
             )
-            await epochKeyLiteProofVerifier.verifyAndCheck(publicSignals, proof)
+            await epochKeyLiteVerifierHelper.verifyAndCheck(
+                publicSignals,
+                proof
+            )
         }
     })
 
@@ -97,7 +100,7 @@ describe('Epoch key lite proof verifier', function () {
             })
 
             const decodedControl =
-                await epochKeyLiteProofVerifier.decodeEpochKeyControl(control)
+                await epochKeyLiteVerifierHelper.decodeEpochKeyControl(control)
             expect(decodedControl.epoch.toString()).to.equal(epoch.toString())
             expect(decodedControl.nonce.toString()).to.equal(nonce.toString())
             expect(decodedControl.attesterId.toString()).to.equal(
@@ -123,7 +126,7 @@ describe('Epoch key lite proof verifier', function () {
             })
 
             const decodedControl =
-                await epochKeyLiteProofVerifier.decodeEpochKeyControl(control)
+                await epochKeyLiteVerifierHelper.decodeEpochKeyControl(control)
             expect(decodedControl.epoch.toString()).to.equal(epoch.toString())
             expect(decodedControl.nonce.toString()).to.equal('0')
             expect(decodedControl.attesterId.toString()).to.equal(
@@ -168,7 +171,7 @@ describe('Epoch key lite proof verifier', function () {
             const _proof = [...proof]
             _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
             await expect(
-                epochKeyLiteProofVerifier.verifyAndCheck(publicSignals, _proof)
+                epochKeyLiteVerifierHelper.verifyAndCheck(publicSignals, _proof)
             ).to.be.reverted
         }
 
@@ -176,9 +179,9 @@ describe('Epoch key lite proof verifier', function () {
             const _publicSignals = [...publicSignals]
             _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
             await expect(
-                epochKeyLiteProofVerifier.verifyAndCheck(_publicSignals, proof)
+                epochKeyLiteVerifierHelper.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(
-                epochKeyLiteProofVerifier,
+                epochKeyLiteVerifierHelper,
                 'InvalidProof'
             )
         }
@@ -209,7 +212,7 @@ describe('Epoch key lite proof verifier', function () {
                 r.proof
             )
             await expect(
-                epochKeyLiteProofVerifier
+                epochKeyLiteVerifierHelper
                     .connect(owner)
                     .verifyAndCheckCaller(publicSignals, proof)
             ).to.not.be.reverted
@@ -232,7 +235,7 @@ describe('Epoch key lite proof verifier', function () {
                 r.proof
             )
             await expect(
-                epochKeyLiteProofVerifier
+                epochKeyLiteVerifierHelper
                     .connect(owner)
                     .verifyAndCheckCaller(publicSignals, proof)
             ).to.be.reverted
@@ -240,14 +243,14 @@ describe('Epoch key lite proof verifier', function () {
     })
 })
 
-describe('Epoch key proof verifier', function () {
+describe('Epoch key verifier helper', function () {
     this.timeout(500000)
 
-    let epochKeyProofVerifier
+    let epochKeyVerifierHelper
 
     before(async () => {
         const accounts = await ethers.getSigners()
-        epochKeyProofVerifier = await deployProofVerifier(
+        epochKeyVerifierHelper = await deployVerifierHelper(
             accounts[0],
             Circuit.epochKey
         )
@@ -319,7 +322,7 @@ describe('Epoch key proof verifier', function () {
                 r.publicSignals,
                 r.proof
             )
-            const signals = await epochKeyProofVerifier.verifyAndCheck(
+            const signals = await epochKeyVerifierHelper.verifyAndCheck(
                 publicSignals,
                 proof
             )
@@ -397,7 +400,7 @@ describe('Epoch key proof verifier', function () {
             )
             expect(v).to.be.true
             const proof = new EpochKeyProof(r.publicSignals, r.proof)
-            const signals = await epochKeyProofVerifier.decodeEpochKeySignals(
+            const signals = await epochKeyVerifierHelper.decodeEpochKeySignals(
                 proof.publicSignals
             )
             expect(signals.epochKey.toString()).to.equal(
@@ -412,7 +415,7 @@ describe('Epoch key proof verifier', function () {
             )
             expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
             expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
-            await epochKeyProofVerifier.verifyAndCheck(
+            await epochKeyVerifierHelper.verifyAndCheck(
                 proof.publicSignals,
                 proof.proof
             )
@@ -475,7 +478,7 @@ describe('Epoch key proof verifier', function () {
             r.publicSignals,
             r.proof
         )
-        const signals = await epochKeyProofVerifier.verifyAndCheck(
+        const signals = await epochKeyVerifierHelper.verifyAndCheck(
             publicSignals,
             proof
         )
@@ -553,7 +556,7 @@ describe('Epoch key proof verifier', function () {
             const _proof = [...proof].map((x) => BigInt(x))
             _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
             await expect(
-                epochKeyProofVerifier.verifyAndCheck(publicSignals, _proof)
+                epochKeyVerifierHelper.verifyAndCheck(publicSignals, _proof)
             ).to.be.reverted
         }
 
@@ -561,9 +564,9 @@ describe('Epoch key proof verifier', function () {
             const _publicSignals = [...publicSignals]
             _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
             await expect(
-                epochKeyProofVerifier.verifyAndCheck(_publicSignals, proof)
+                epochKeyVerifierHelper.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(
-                epochKeyProofVerifier,
+                epochKeyVerifierHelper,
                 'InvalidProof'
             )
         }
@@ -597,11 +600,11 @@ describe('Epoch key proof verifier', function () {
                 r.proof
             )
             await expect(
-                epochKeyProofVerifier
+                epochKeyVerifierHelper
                     .connect(owner)
                     .verifyAndCheckCaller(publicSignals, proof)
             ).to.not.be.revertedWithCustomError(
-                epochKeyProofVerifier,
+                epochKeyVerifierHelper,
                 'CallerInvalid'
             )
         }
@@ -629,18 +632,18 @@ describe('Epoch key proof verifier', function () {
                 r.proof
             )
             await expect(
-                epochKeyProofVerifier
+                epochKeyVerifierHelper
                     .connect(owner)
                     .verifyAndCheckCaller(publicSignals, proof)
             ).to.be.revertedWithCustomError(
-                epochKeyProofVerifier,
+                epochKeyVerifierHelper,
                 'CallerInvalid'
             )
         }
     })
 })
 
-describe('Reputation proof verifier', function () {
+describe('Reputation verifier helper', function () {
     this.timeout(120000)
 
     const zeroCircuitInputs = {
@@ -662,10 +665,10 @@ describe('Reputation proof verifier', function () {
         sig_data: 696969,
     }
 
-    let proofVerifiers
+    let verifierHelpers
     before(async () => {
         const accounts = await ethers.getSigners()
-        proofVerifiers = await deployProofVerifiers(accounts[0])
+        verifierHelpers = await deployVerifierHelpers(accounts[0])
     })
 
     {
@@ -727,7 +730,7 @@ describe('Reputation proof verifier', function () {
             expect(v).to.be.true
             const { publicSignals, proof, ...proofFields } =
                 new ReputationProof(r.publicSignals, r.proof)
-            const signals = await proofVerifiers.reputationProof.verifyAndCheck(
+            const signals = await verifierHelpers.reputation.verifyAndCheck(
                 publicSignals,
                 proof
             )
@@ -784,7 +787,7 @@ describe('Reputation proof verifier', function () {
                             proveZeroRep,
                         })
                         const decodedControl =
-                            await proofVerifiers.reputationProof.decodeReputationControl(
+                            await verifierHelpers.reputation.decodeReputationControl(
                                 control[1]
                             )
                         expect(decodedControl.minRep.toString()).to.equal(
@@ -863,7 +866,7 @@ describe('Reputation proof verifier', function () {
             r.publicSignals,
             r.proof
         )
-        const signals = await proofVerifiers.reputationProof.verifyAndCheck(
+        const signals = await verifierHelpers.reputation.verifyAndCheck(
             publicSignals,
             proof
         )
@@ -935,10 +938,7 @@ describe('Reputation proof verifier', function () {
             const _proof = [...proof]
             _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
             await expect(
-                proofVerifiers.epochKeyProof.verifyAndCheck(
-                    publicSignals,
-                    _proof
-                )
+                verifierHelpers.epochKey.verifyAndCheck(publicSignals, _proof)
             ).to.be.reverted
         }
 
@@ -946,12 +946,9 @@ describe('Reputation proof verifier', function () {
             const _publicSignals = [...publicSignals]
             _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
             await expect(
-                proofVerifiers.reputationProof.verifyAndCheck(
-                    _publicSignals,
-                    proof
-                )
+                verifierHelpers.reputation.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(
-                proofVerifiers.reputationProof,
+                verifierHelpers.reputation,
                 'InvalidProof'
             )
         }
@@ -982,7 +979,7 @@ describe('Reputation proof verifier', function () {
                 r.proof
             )
             await expect(
-                proofVerifiers.reputationProof
+                verifierHelpers.reputation
                     .connect(attester)
                     .verifyAndCheckCaller(publicSignals, proof)
             ).to.not.be.reverted
@@ -1007,11 +1004,11 @@ describe('Reputation proof verifier', function () {
                 r.proof
             )
             await expect(
-                proofVerifiers.reputationProof
+                verifierHelpers.reputation
                     .connect(attester)
                     .verifyAndCheckCaller(publicSignals, proof)
             ).to.be.revertedWithCustomError(
-                proofVerifiers.reputationProof,
+                verifierHelpers.reputation,
                 'CallerInvalid'
             )
         }
@@ -1039,11 +1036,11 @@ describe('Reputation proof verifier', function () {
                 r.proof
             )
             await expect(
-                proofVerifiers.epochKeyProof
+                verifierHelpers.epochKey
                     .connect(attester)
                     .verifyAndCheckCaller(publicSignals, proof)
             ).to.be.revertedWithCustomError(
-                proofVerifiers.epochKeyProof,
+                verifierHelpers.epochKey,
                 'CallerInvalid'
             )
         }
@@ -1065,11 +1062,11 @@ describe('Reputation proof verifier', function () {
                 r.proof
             )
             await expect(
-                proofVerifiers.epochKeyLiteProof
+                verifierHelpers.epochKeyLite
                     .connect(attester)
                     .verifyAndCheckCaller(publicSignals, proof)
             ).to.be.revertedWithCustomError(
-                proofVerifiers.epochKeyLiteProof,
+                verifierHelpers.epochKeyLite,
                 'CallerInvalid'
             )
         }
