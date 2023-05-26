@@ -77,8 +77,8 @@ interface IUnirep {
 
     struct SignupSignals {
         uint256 stateTreeLeaf;
-        uint256 epoch;
-        uint256 attesterId;
+        uint48 epoch;
+        uint160 attesterId;
         uint256 idCommitment;
     }
 

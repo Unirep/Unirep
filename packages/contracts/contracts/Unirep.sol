@@ -136,17 +136,13 @@ contract Unirep is IUnirep, VerifySignature {
         SignupSignals memory signals = decodeSignupSignals(publicSignals);
         // Verify the proof
         // only allow attester to sign up users
-        if (uint256(uint160(msg.sender)) != signals.attesterId)
+        if (uint160(msg.sender) != signals.attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
         // Verify the proof
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
-        _userSignUp(
-            uint48(signals.epoch),
-            signals.idCommitment,
-            signals.stateTreeLeaf
-        );
+        _userSignUp(signals.epoch, signals.idCommitment, signals.stateTreeLeaf);
     }
 
     function _userSignUp(
@@ -437,9 +433,9 @@ contract Unirep is IUnirep, VerifySignature {
 
     function decodeSignupControl(
         uint256 control
-    ) public pure returns (uint256 attesterId, uint256 epoch) {
-        epoch = (control >> 160) & ((1 << 48) - 1);
-        attesterId = control & ((1 << 160) - 1);
+    ) public pure returns (uint160 attesterId, uint48 epoch) {
+        epoch = uint48((control >> 160) & ((1 << 48) - 1));
+        attesterId = uint160(control & ((1 << 160) - 1));
         return (attesterId, epoch);
     }
 
