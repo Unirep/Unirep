@@ -43,3 +43,11 @@ The attester id for the proof.
 ```ts
 this.attesterId
 ```
+
+## control
+
+The control field used for the proof. This field contains many signals binary encoded into a single 256 bit value. This value is automatically decoded into the other properties on this class.
+
+```ts
+this.control
+```

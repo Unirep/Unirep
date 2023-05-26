@@ -10,7 +10,8 @@ Each attester has an epoch tree and a state tree that is overwritten each epoch.
 
 * The state tree stores the updated user state after a user signs up and after a [user state transition](user-state-transition.md) is performed.
 * This is an **incremental merkle tree**, with its leaves storing users' `identitySecret`s and starting data, e.g.
-  * a state tree leaf: `hash(identitySecret, attesterId + (epoch << 160), H(data))`
+  * a state tree leaf: `H(H(identitySecret, attesterId + (epoch << 160)), H(data))`
+  * The hashchain of data is computed by: `hashchain = H(hashchain, data[i])`
   * The default state tree leaf is `0`
 
 :::info
