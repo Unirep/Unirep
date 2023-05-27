@@ -33,8 +33,13 @@ Please call [`attesterSignUp()`](unirep-sol#attestersignup)
 
 ## 0xd7aa5847
 - `AttesterInvalid()`<br/>
-The givein attester address is not a valid `uint160` type data. <br/>
+The given attester address is not a valid `uint160` type data. <br/>
 Please check if the attester address is correctly assigned while generating proofs.
+
+## 0xa78d09b9
+- `CallerInvalid()`<br/>
+The caller address is not the same as the attester address in a proof verification contract. <br />
+Please verify the caller address.
 
 ## 0xdc215c0a
 - `NullifierAlreadyUsed(uint256 nullilier)`<br/>
