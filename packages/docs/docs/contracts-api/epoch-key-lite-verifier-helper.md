@@ -1,15 +1,15 @@
 ---
-title: Epoch Key Lite Proof Verifier Contract
+title: Epoch Key Lite Verifier Helper Contract
 ---
 
-A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for an epoch key lite verifier helper. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
 ```ts
 import { deployVerifierHelper } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit } from '@unirep/circuits'
 
-let epochKeyLiteVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.epochKeyLite) // deploys all proof verification contracts
+let epochKeyLiteVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.epochKeyLite) // deploys all verifier helper contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
     Circuit.epochKeyLite,

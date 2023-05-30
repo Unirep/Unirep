@@ -1,8 +1,8 @@
 ---
-title: Base Proof Verifier Contract
+title: Base Verifier Helper Contract
 ---
 
-This is a basic proof verification contract. It contains signals and error codes used across proof verification contracts.
+This is a basic verifier helper contract. It contains signals and error codes used across verifier helper contracts.
 
 ## decodeEpochKeyControl
 

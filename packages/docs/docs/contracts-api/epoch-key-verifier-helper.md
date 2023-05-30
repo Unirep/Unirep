@@ -1,5 +1,5 @@
 ---
-title: Epoch Key Proof Verifier Contract
+title: Epoch Key Verifier Helper Contract
 ---
 
 This smart contract is dedicated to verifying epoch key proofs. See [IVerifier](iverifier-sol) for more info.
@@ -8,7 +8,7 @@ import { deployVerifierHelpers } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit } from '@unirep/circuits'
 
-let verifierHelpers = await deployVerifierHelper(accounts[0], Circuit.epochKey) // deploys all proof verification contracts
+let verifierHelpers = await deployVerifierHelper(accounts[0], Circuit.epochKey) // deploys all verifier helper contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
     Circuit.epochKey,

@@ -1,14 +1,14 @@
 ---
-title: Reputation Proof Verifier Contract 
+title: Reputation Verifier Helper Contract 
 ---
 
-A contract address for a reputation proof verifier. See [IVerifier](iverifier-sol) for more info.
+A contract address for a reputation verifier helper. See [IVerifier](iverifier-sol) for more info.
 ```ts
 import { deployVerifierHelpers } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit } from '@unirep/circuits'
 
-let verifierHelpers = await deployVerifierHelper(accounts[0], Circuit.proveReputation) // deploys all proof verification contracts
+let verifierHelpers = await deployVerifierHelper(accounts[0], Circuit.proveReputation) // deploys all verifier helper contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
   Circuit.proveReputation,

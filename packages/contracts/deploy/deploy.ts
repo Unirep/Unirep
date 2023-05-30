@@ -22,7 +22,7 @@ const createVerifierHelperName = (circuit: Circuit): string => {
     )
 
     if (verifierName === undefined) {
-        throw new Error('Invalid proof verification circuit')
+        throw new Error('Invalid verifier helper circuit')
     }
     return `${
         verifierName.charAt(0).toUpperCase() + verifierName.slice(1)

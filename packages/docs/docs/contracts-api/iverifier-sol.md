@@ -2,7 +2,7 @@
 title: IVerifier
 ---
 
-This is an interface for a generic zk proof verifier. This is the interface UniRep uses for the verifiers stored as contract variables.
+This is an interface for a generic zk verifier helper. This is the interface UniRep uses for the verifiers stored as contract variables.
 
 ## verifyProof
 
