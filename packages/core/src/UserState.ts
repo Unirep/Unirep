@@ -25,12 +25,24 @@ import { Synchronizer, toDecString } from './Synchronizer'
  * It takes user's `ZKIdentity` and checks the events that matches the user's identity.
  */
 export default class UserState {
-    prover: Prover
-    public id: Identity
-    public sync: Synchronizer
+    private _prover: Prover
+    private _id: Identity
+    private _sync: Synchronizer
 
     get commitment() {
         return this.id.commitment
+    }
+
+    get id() {
+        return this._id
+    }
+
+    get sync() {
+        return this._sync
+    }
+
+    get prover() {
+        return this._prover
     }
 
     constructor(config: {
@@ -62,22 +74,22 @@ export default class UserState {
             )
         }
         if (synchronizer) {
-            this.sync = synchronizer
+            this._sync = synchronizer
         } else {
             if (!provider || !unirepAddress) {
                 throw new Error(
                     '@unirep/core:UserState: provider and Unirep address must be supplied as an argument when initialized with a sync'
                 )
             }
-            this.sync = new Synchronizer({
+            this._sync = new Synchronizer({
                 db,
                 attesterId,
                 provider,
                 unirepAddress,
             })
         }
-        this.id = id
-        this.prover = prover
+        this._id = id
+        this._prover = prover
     }
 
     async start() {
@@ -101,7 +113,7 @@ export default class UserState {
     ): Promise<boolean> {
         this._checkSync()
         this.sync.checkAttesterId(attesterId)
-        const signup = await this.sync._db.findOne('UserSignUp', {
+        const signup = await this.sync.db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
                 attesterId: toDecString(attesterId),
@@ -130,7 +142,7 @@ export default class UserState {
             ].map((v) =>
                 genEpochKey(this.id.secret, attesterId, x, v).toString()
             )
-            const n = await this.sync._db.findOne('Nullifier', {
+            const n = await this.sync.db.findOne('Nullifier', {
                 where: {
                     nullifier: nullifiers,
                 },
@@ -141,7 +153,7 @@ export default class UserState {
             }
         }
         if (latestTransitionedEpoch === 0) {
-            const signup = await this.sync._db.findOne('UserSignUp', {
+            const signup = await this.sync.db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
                     attesterId,
@@ -170,7 +182,7 @@ export default class UserState {
         )
         if (latestTransitionedEpoch !== currentEpoch) return -1
         if (latestTransitionedEpoch === 0) {
-            const signup = await this.sync._db.findOne('UserSignUp', {
+            const signup = await this.sync.db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
                     attesterId: attesterId,
@@ -190,7 +202,7 @@ export default class UserState {
                 signup.epoch,
                 data
             )
-            const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
+            const foundLeaf = await this.sync.db.findOne('StateTreeLeaf', {
                 where: {
                     hash: leaf.toString(),
                 },
@@ -205,7 +217,7 @@ export default class UserState {
             latestTransitionedEpoch,
             data
         )
-        const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
+        const foundLeaf = await this.sync.db.findOne('StateTreeLeaf', {
             where: {
                 epoch: currentEpoch,
                 hash: leaf.toString(),
@@ -246,7 +258,7 @@ export default class UserState {
         const orClauses = [] as any[]
         const toEpoch =
             _toEpoch ?? (await this.latestTransitionedEpoch(attesterId))
-        const signup = await this.sync._db.findOne('UserSignUp', {
+        const signup = await this.sync.db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
                 attesterId,
@@ -266,7 +278,7 @@ export default class UserState {
                 )
             )
         }
-        const sortedNullifiers = await this.sync._db.findMany('Nullifier', {
+        const sortedNullifiers = await this.sync.db.findMany('Nullifier', {
             where: {
                 attesterId,
                 nullifier: allNullifiers,
@@ -297,7 +309,7 @@ export default class UserState {
                     break
                 }
             }
-            const signedup = await this.sync._db.findOne('UserSignUp', {
+            const signedup = await this.sync.db.findOne('UserSignUp', {
                 where: {
                     attesterId: attesterId,
                     commitment: this.commitment.toString(),
@@ -311,7 +323,7 @@ export default class UserState {
             })
         }
         if (orClauses.length === 0) return data
-        const attestations = await this.sync._db.findMany('Attestation', {
+        const attestations = await this.sync.db.findMany('Attestation', {
             where: {
                 OR: orClauses,
                 attesterId: attesterId,
@@ -348,7 +360,7 @@ export default class UserState {
         this.sync.checkAttesterId(attesterId)
         const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
         if (typeof epoch !== 'number') throw new Error('epoch must be number')
-        const attestations = await this.sync._db.findMany('Attestation', {
+        const attestations = await this.sync.db.findMany('Attestation', {
             where: {
                 epoch,
                 epochKey: epochKey.toString(),
@@ -390,7 +402,7 @@ export default class UserState {
         _attesterId: bigint | string
     ) => {
         this._checkSync()
-        const attestations = await this.sync._db.findMany('Attestation', {
+        const attestations = await this.sync.db.findMany('Attestation', {
             where: {
                 epoch,
                 attesterId: toDecString(_attesterId),
@@ -439,7 +451,7 @@ export default class UserState {
             )
         const historyTree = await this.sync.genHistoryTree(attesterId)
         const leafHash = poseidon2([stateTree.root, epochTree.root])
-        const leaf = await this.sync._db.findOne('HistoryTreeLeaf', {
+        const leaf = await this.sync.db.findOne('HistoryTreeLeaf', {
             where: {
                 attesterId,
                 leaf: leafHash.toString(),
@@ -451,7 +463,7 @@ export default class UserState {
         } else {
             // the epoch hasn't been ended onchain yet
             // add the leaf offchain to make the proof
-            const leafCount = await this.sync._db.count('HistoryTreeLeaf', {
+            const leafCount = await this.sync.db.count('HistoryTreeLeaf', {
                 attesterId,
             })
             historyTree.insert(leafHash)

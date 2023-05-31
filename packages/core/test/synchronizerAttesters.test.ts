@@ -52,7 +52,7 @@ describe('Synchronizer watch multiple attesters', function () {
             unirepContract.address
         )
 
-        const seenAttestations = await sync._db.findMany('Attestation', {
+        const seenAttestations = await sync.db.findMany('Attestation', {
             where: {},
         })
         expect(seenAttestations.length).to.equal(ATTESTER_COUNT)
@@ -184,7 +184,7 @@ describe('Synchronizer watch multiple attesters', function () {
                 .then((t) => t.wait())
 
             await userState.waitForSync()
-            const userCount = await userState.sync._db.count('UserSignUp', {
+            const userCount = await userState.sync.db.count('UserSignUp', {
                 attesterId: BigInt(accounts[i].address).toString(),
                 commitment: id.commitment.toString(),
             })
@@ -226,7 +226,7 @@ describe('Synchronizer watch multiple attesters', function () {
             id,
             attesters
         )
-        const userCount = await userState.sync._db.count('UserSignUp', {
+        const userCount = await userState.sync.db.count('UserSignUp', {
             attesterId: BigInt(accounts[0].address).toString(),
             commitment: id.commitment.toString(),
         })
@@ -317,7 +317,7 @@ describe('Synchronizer watch multiple attesters', function () {
                 .then((t) => t.wait())
 
             await userState.waitForSync()
-            const userCount = await userState.sync._db.count('UserSignUp', {
+            const userCount = await userState.sync.db.count('UserSignUp', {
                 attesterId: BigInt(accounts[i].address).toString(),
                 commitment: id.commitment.toString(),
             })
@@ -340,7 +340,7 @@ describe('Synchronizer watch multiple attesters', function () {
                 .attest(epochKey, epoch, index, change)
                 .then((t) => t.wait())
             await userState.waitForSync()
-            const userCount = await userState.sync._db.count('Attestation', {
+            const userCount = await userState.sync.db.count('Attestation', {
                 attesterId,
                 epochKey: epochKey.toString(),
             })
@@ -364,7 +364,7 @@ describe('Synchronizer watch multiple attesters', function () {
                 .userStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
             await userState.waitForSync()
-            const userCount = await userState.sync._db.count('Nullifier', {
+            const userCount = await userState.sync.db.count('Nullifier', {
                 attesterId,
                 nullifier: epochKeys[0].toString(),
             })
