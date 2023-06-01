@@ -43,12 +43,36 @@ constructor(
 ) {
 ```
 
+## commitment
+
+The identity commitment of the user.
+
+```ts
+state.commitment: bigint
+```
+
+## id
+
+The identity of the user.
+
+```ts
+state.id: Identity
+```
+
 ## sync
 
 The underlying synchronizer object.
 
 ```ts
 state.sync: Synchronizer
+```
+
+## prover
+
+The prover object.
+
+```ts
+state.prover: Prover
 ```
 
 ## start

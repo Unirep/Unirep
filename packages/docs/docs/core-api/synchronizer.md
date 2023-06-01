@@ -31,6 +31,39 @@ constructor(config: {
 })
 ```
 
+## db
+
+The database object.
+
+```ts
+synchronizer.db: DB
+```
+
+## provider
+
+The provider which is connected in the synchronizer.
+
+```ts
+synchronizer.provider: ethers.providers.Provider
+```
+
+## unirepContract
+
+The unirep smart contract object which is connected in the synchronizer.
+
+```ts
+synchronizer.unirepContract: ethers.Contract
+```
+
+## settings
+
+The settings of the unirep smart contract.
+
+```ts
+synchronizer.settings: any
+```
+
+
 ## attesterId
 
 The default attester ID that is set when construction. 
