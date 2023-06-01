@@ -38,7 +38,7 @@ Please check if the attester address is correctly assigned while generating proo
 
 ## 0xa78d09b9
 - `CallerInvalid()`<br/>
-The caller address is not the same as the attester address in a proof verification contract. <br />
+The caller address is not the same as the attester address in a verifier helper contract. <br />
 Please verify the caller address.
 
 ## 0xdc215c0a

@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 import {IVerifier} from '../interfaces/IVerifier.sol';
-import {BaseProofVerifier} from './BaseProofVerifier.sol';
+import {BaseVerifierHelper} from './BaseVerifierHelper.sol';
 
-contract EpochKeyLiteProofVerifier is BaseProofVerifier {
-    constructor(IVerifier _verifier) BaseProofVerifier(_verifier) {}
+contract EpochKeyLiteVerifierHelper is BaseVerifierHelper {
+    constructor(IVerifier _verifier) BaseVerifierHelper(_verifier) {}
 
     function decodeEpochKeyLiteSignals(
         uint256[] calldata publicSignals

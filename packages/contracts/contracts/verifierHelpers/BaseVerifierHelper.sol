@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {IVerifier} from '../interfaces/IVerifier.sol';
 
-contract BaseProofVerifier {
+contract BaseVerifierHelper {
     IVerifier verifier;
 
     uint256 public constant SNARK_SCALAR_FIELD =
