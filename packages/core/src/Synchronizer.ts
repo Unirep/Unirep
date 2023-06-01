@@ -1,7 +1,6 @@
 import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
-import { Prover } from '@unirep/circuits'
 import { IncrementalMerkleTree, MAX_EPOCH } from '@unirep/utils'
 import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
@@ -31,12 +30,11 @@ export function toDecString(content: bigint | string | number) {
  * the synchronizer will verify the events and then save the states.
  */
 export class Synchronizer extends EventEmitter {
-    public _db: DB
-    prover: Prover
-    provider: any
-    unirepContract: ethers.Contract
+    private _db: DB
+    private _provider: ethers.providers.Provider
+    private _unirepContract: ethers.Contract
     private _attesterId: bigint[] = []
-    public settings: any
+    private _settings: any
     private _attesterSettings: { [key: string]: AttesterSetting } = {}
     protected defaultStateTreeLeaf: bigint = BigInt(0)
     protected defaultEpochTreeLeaf: bigint = BigInt(0)
@@ -61,12 +59,11 @@ export class Synchronizer extends EventEmitter {
     constructor(config: {
         db?: DB
         attesterId?: bigint | bigint[]
-        prover: Prover
         provider: ethers.providers.Provider
         unirepAddress: string
     }) {
         super()
-        const { db, prover, unirepAddress, provider, attesterId } = config
+        const { db, unirepAddress, provider, attesterId } = config
 
         if (Array.isArray(attesterId)) {
             // multiple attesters
@@ -79,14 +76,13 @@ export class Synchronizer extends EventEmitter {
         }
 
         this._db = db ?? new MemoryConnector(constructSchema(schema))
-        this.unirepContract = new ethers.Contract(
+        this._unirepContract = new ethers.Contract(
             unirepAddress,
             UNIREP_ABI,
             provider
         )
-        this.provider = provider
-        this.prover = prover
-        this.settings = {
+        this._provider = provider
+        this._settings = {
             stateTreeDepth: 0,
             epochTreeDepth: 0,
             historyTreeDepth: 0,
@@ -172,6 +168,22 @@ export class Synchronizer extends EventEmitter {
             },
             {}
         )
+    }
+
+    get db(): DB {
+        return this._db
+    }
+
+    get provider(): ethers.providers.Provider {
+        return this._provider
+    }
+
+    get unirepContract(): ethers.Contract {
+        return this._unirepContract
+    }
+
+    get settings() {
+        return this._settings
     }
 
     get attesterId() {

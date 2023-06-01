@@ -5,11 +5,9 @@ title: Synchronizer
 Used to retrieve and manage state information for a UniRep attester. Each instance is backed by an [anondb](https://github.com/vimwitch/anondb) instance.
 
 ```ts
-import { Synchronizer, schema } from '@unirep/core'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { Synchronizer } from '@unirep/core'
 
 const state = new Synchronizer({
-  prover: defaultProver, // a circuit prover
   unirepAddress: '0xaabbccaabbccaabbccaabbccaabbccaabbccaaaa',
   provider, // an ethers.js provider
 })
@@ -28,11 +26,43 @@ state.stop()
 constructor(config: {
     db?: DB
     attesterId?: bigint | bigint[]
-    prover: Prover
     provider: ethers.providers.Provider
     unirepAddress: string
 })
 ```
+
+## db
+
+The database object.
+
+```ts
+synchronizer.db: DB
+```
+
+## provider
+
+The provider which is connected in the synchronizer.
+
+```ts
+synchronizer.provider: ethers.providers.Provider
+```
+
+## unirepContract
+
+The unirep smart contract object which is connected in the synchronizer.
+
+```ts
+synchronizer.unirepContract: ethers.Contract
+```
+
+## settings
+
+The settings of the unirep smart contract.
+
+```ts
+synchronizer.settings: any
+```
+
 
 ## attesterId
 

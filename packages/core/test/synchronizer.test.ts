@@ -52,7 +52,7 @@ describe('Synchronizer process events', function () {
                 new Identity(),
                 BigInt(attester.address)
             )
-            await compareDB((state.sync as any)._db, (synchronizer as any)._db)
+            await compareDB(state.sync.db, synchronizer.db)
             state.sync.stop()
             synchronizer.stop()
 
@@ -67,10 +67,7 @@ describe('Synchronizer process events', function () {
         const signUpEvent = new Promise((rs, rj) =>
             synchronizer.once(AttesterSignedUp, (event) => rs(event))
         )
-        const attesterCount = await (synchronizer as any)._db.count(
-            'Attester',
-            {}
-        )
+        const attesterCount = await synchronizer.db.count('Attester', {})
 
         const accounts = await ethers.getSigners()
         const attester = accounts[2]
@@ -86,7 +83,7 @@ describe('Synchronizer process events', function () {
         await signUpEvent
         const attesterId = BigInt(attester.address).toString()
         await synchronizer.waitForSync()
-        const docs = await (synchronizer as any)._db.findMany('Attester', {
+        const docs = await synchronizer.db.findMany('Attester', {
             where: {
                 _id: attesterId,
             },
@@ -94,10 +91,7 @@ describe('Synchronizer process events', function () {
         expect(docs.length).to.equal(1)
         expect(docs[0].epochLength).to.equal(epochLength)
         expect(docs[0].startTimestamp).to.equal(timestamp)
-        const finalUserCount = await (synchronizer as any)._db.count(
-            'Attester',
-            {}
-        )
+        const finalUserCount = await synchronizer.db.count('Attester', {})
         expect(finalUserCount).to.equal(attesterCount + 1)
     })
 
@@ -114,10 +108,7 @@ describe('Synchronizer process events', function () {
         const stateLeafEvent = new Promise((rs, rj) =>
             synchronizer.once(StateTreeLeaf, (event) => rs(event))
         )
-        const userCount = await (synchronizer as any)._db.count(
-            'UserSignUp',
-            {}
-        )
+        const userCount = await synchronizer.db.count('UserSignUp', {})
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
@@ -140,7 +131,7 @@ describe('Synchronizer process events', function () {
         const tree = await synchronizer.genStateTree(epoch)
         await signUpEvent
         await stateLeafEvent
-        const docs = await (synchronizer as any)._db.findMany('UserSignUp', {
+        const docs = await synchronizer.db.findMany('UserSignUp', {
             where: {
                 commitment: id.commitment.toString(),
             },
@@ -148,10 +139,7 @@ describe('Synchronizer process events', function () {
         expect(docs.length).to.equal(1)
         expect(docs[0].epoch).to.equal(epoch)
         expect(docs[0].attesterId).to.equal(attesterId)
-        const finalUserCount = await (synchronizer as any)._db.count(
-            'UserSignUp',
-            {}
-        )
+        const finalUserCount = await synchronizer.db.count('UserSignUp', {})
         expect(finalUserCount).to.equal(userCount + 1)
         // now look for a new GSTLeaf
         const contractEpoch =
@@ -164,20 +152,14 @@ describe('Synchronizer process events', function () {
             contractEpoch,
             Array(synchronizer.settings.fieldCount).fill(0)
         )
-        const storedLeaves = await (synchronizer as any)._db.findMany(
-            'StateTreeLeaf',
-            {
-                where: {
-                    hash: leaf.toString(),
-                },
-            }
-        )
-        const leafIndex = await (synchronizer as any)._db.count(
-            'StateTreeLeaf',
-            {
-                epoch: Number(epoch),
-            }
-        )
+        const storedLeaves = await synchronizer.db.findMany('StateTreeLeaf', {
+            where: {
+                hash: leaf.toString(),
+            },
+        })
+        const leafIndex = await synchronizer.db.count('StateTreeLeaf', {
+            epoch: Number(epoch),
+        })
         expect(storedLeaves.length).to.equal(1)
         expect(storedLeaves[0].epoch).to.equal(epoch)
         expect(storedLeaves[0].index).to.equal(leafIndex - 1)
@@ -203,10 +185,7 @@ describe('Synchronizer process events', function () {
         const epochTreeLeafEvent = new Promise((rs, rj) =>
             synchronizer.once(EpochTreeLeaf, (event) => rs(event))
         )
-        const attestCount = await (synchronizer as any)._db.count(
-            'Attestation',
-            {}
-        )
+        const attestCount = await synchronizer.db.count('Attestation', {})
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const attesterId = BigInt(attester.address)
@@ -261,7 +240,7 @@ describe('Synchronizer process events', function () {
         await synchronizer.waitForSync()
         await attestationEvent
         await epochTreeLeafEvent
-        const docs = await (synchronizer as any)._db.findMany('Attestation', {
+        const docs = await synchronizer.db.findMany('Attestation', {
             where: {
                 epochKey: epk.toString(),
             },
@@ -269,10 +248,7 @@ describe('Synchronizer process events', function () {
         expect(docs.length).to.equal(1)
         expect(docs[0].epoch).to.equal(epoch)
         expect(docs[0].attesterId).to.equal(attesterId.toString())
-        const finalAttestCount = await (synchronizer as any)._db.count(
-            'Attestation',
-            {}
-        )
+        const finalAttestCount = await synchronizer.db.count('Attestation', {})
         expect(finalAttestCount).to.equal(attestCount + 1)
         userState.sync.stop()
     })

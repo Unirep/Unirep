@@ -2,7 +2,7 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
-import { deployUnirep } from '@unirep/contracts/deploy'
+import { deployVerifierHelpers, deployUnirep } from '@unirep/contracts/deploy'
 import { genUnirepState, genUserState } from './utils'
 import { Identity } from '@semaphore-protocol/identity'
 import { schema } from '../src/schema'
@@ -14,10 +14,12 @@ describe('Synchronizer watch multiple attesters', function () {
     this.timeout(0)
 
     let unirepContract: Unirep
+    let verifierHelpers
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        verifierHelpers = await deployVerifierHelpers(accounts[0])
     })
 
     {
@@ -50,7 +52,7 @@ describe('Synchronizer watch multiple attesters', function () {
             unirepContract.address
         )
 
-        const seenAttestations = await sync._db.findMany('Attestation', {
+        const seenAttestations = await sync.db.findMany('Attestation', {
             where: {},
         })
         expect(seenAttestations.length).to.equal(ATTESTER_COUNT)
@@ -182,7 +184,7 @@ describe('Synchronizer watch multiple attesters', function () {
                 .then((t) => t.wait())
 
             await userState.waitForSync()
-            const userCount = await userState.sync._db.count('UserSignUp', {
+            const userCount = await userState.sync.db.count('UserSignUp', {
                 attesterId: BigInt(accounts[i].address).toString(),
                 commitment: id.commitment.toString(),
             })
@@ -224,7 +226,7 @@ describe('Synchronizer watch multiple attesters', function () {
             id,
             attesters
         )
-        const userCount = await userState.sync._db.count('UserSignUp', {
+        const userCount = await userState.sync.db.count('UserSignUp', {
             attesterId: BigInt(accounts[0].address).toString(),
             commitment: id.commitment.toString(),
         })
@@ -315,7 +317,7 @@ describe('Synchronizer watch multiple attesters', function () {
                 .then((t) => t.wait())
 
             await userState.waitForSync()
-            const userCount = await userState.sync._db.count('UserSignUp', {
+            const userCount = await userState.sync.db.count('UserSignUp', {
                 attesterId: BigInt(accounts[i].address).toString(),
                 commitment: id.commitment.toString(),
             })
@@ -329,15 +331,13 @@ describe('Synchronizer watch multiple attesters', function () {
             const attesterId = BigInt(accounts[i].address).toString()
             const { publicSignals, proof, epochKey, epoch } =
                 await userState.genEpochKeyProof({ attesterId })
-            await unirepContract
-                .verifyEpochKeyProof(publicSignals, proof)
-                .then((t) => t.wait())
+            await verifierHelpers.epochKey.verifyAndCheck(publicSignals, proof)
             await unirepContract
                 .connect(accounts[i])
                 .attest(epochKey, epoch, index, change)
                 .then((t) => t.wait())
             await userState.waitForSync()
-            const userCount = await userState.sync._db.count('Attestation', {
+            const userCount = await userState.sync.db.count('Attestation', {
                 attesterId,
                 epochKey: epochKey.toString(),
             })
@@ -361,7 +361,7 @@ describe('Synchronizer watch multiple attesters', function () {
                 .userStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
             await userState.waitForSync()
-            const userCount = await userState.sync._db.count('Nullifier', {
+            const userCount = await userState.sync.db.count('Nullifier', {
                 attesterId,
                 nullifier: epochKeys[0].toString(),
             })
@@ -374,6 +374,16 @@ describe('Synchronizer watch multiple attesters', function () {
             const attesterId = BigInt(accounts[i].address)
             const data = await userState.getData(undefined, attesterId)
             expect(data[index].toString()).to.equal(change.toString())
+        }
+
+        // gen rep proof
+        for (let i = 0; i < count; i++) {
+            const attesterId = BigInt(accounts[i].address)
+            const proof = await userState.genProveReputationProof({
+                attesterId,
+            })
+            const valid = await proof.verify()
+            expect(valid).to.be.true
         }
         userState.sync.stop()
     })

@@ -118,6 +118,26 @@ const sidebars = {
                     label: 'Error codes',
                     id: 'contracts-api/errors',
                 },
+                {
+                    type: 'doc',
+                    label: 'BaseVerifierHelper.sol',
+                    id: 'contracts-api/base-verifier-helper',
+                },
+                {
+                    type: 'doc',
+                    label: 'ReputationVerifierHelper.sol',
+                    id: 'contracts-api/reputation-verifier-helper',
+                },
+                {
+                    type: 'doc',
+                    label: 'EpochKeyVerifierHelper.sol',
+                    id: 'contracts-api/epoch-key-verifier-helper',
+                },
+                {
+                    type: 'doc',
+                    label: 'EpochKeyLiteVerifierHelper.sol',
+                    id: 'contracts-api/epoch-key-lite-verifier-helper',
+                },
             ],
         },
         {

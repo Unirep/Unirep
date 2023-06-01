@@ -25,39 +25,71 @@ import { Synchronizer, toDecString } from './Synchronizer'
  * It takes user's `ZKIdentity` and checks the events that matches the user's identity.
  */
 export default class UserState {
-    public id: Identity
-    public sync: Synchronizer
+    private _prover: Prover
+    private _id: Identity
+    private _sync: Synchronizer
 
     get commitment() {
         return this.id.commitment
     }
 
-    constructor(
-        config:
-            | {
-                  db?: DB
-                  attesterId?: bigint | bigint[]
-                  unirepAddress: string
-                  prover: Prover
-                  provider: ethers.providers.Provider
-                  _id?: Identity // TODO: remove this and only accept as second arg
-              }
-            | Synchronizer,
+    get id() {
+        return this._id
+    }
+
+    get sync() {
+        return this._sync
+    }
+
+    get prover() {
+        return this._prover
+    }
+
+    constructor(config: {
+        synchronizer?: Synchronizer
+        db?: DB
+        attesterId?: bigint | bigint[]
+        unirepAddress?: string
+        provider?: ethers.providers.Provider
         id: Identity
-    ) {
-        if (config instanceof Synchronizer) {
-            if (!id) {
+        prover: Prover
+    }) {
+        const {
+            id,
+            synchronizer,
+            attesterId,
+            unirepAddress,
+            provider,
+            prover,
+            db,
+        } = config
+        if (!id) {
+            throw new Error(
+                '@unirep/core:UserState: id must be supplied as an argument when initialized with a sync'
+            )
+        }
+        if (!prover) {
+            throw new Error(
+                '@unirep/core:UserState: prover must be supplied as an argument when initialized with a sync'
+            )
+        }
+        if (synchronizer) {
+            this._sync = synchronizer
+        } else {
+            if (!provider || !unirepAddress) {
                 throw new Error(
-                    '@unirep/core:UserState: id must be supplied as second argument when initialized with a sync'
+                    '@unirep/core:UserState: provider and Unirep address must be supplied as an argument when initialized with a sync'
                 )
             }
-            this.sync = config
-            this.id = id
-        } else {
-            this.id = config._id ?? id
-            delete config._id
-            this.sync = new Synchronizer(config)
+            this._sync = new Synchronizer({
+                db,
+                attesterId,
+                provider,
+                unirepAddress,
+            })
         }
+        this._id = id
+        this._prover = prover
     }
 
     async start() {
@@ -81,7 +113,7 @@ export default class UserState {
     ): Promise<boolean> {
         this._checkSync()
         this.sync.checkAttesterId(attesterId)
-        const signup = await this.sync._db.findOne('UserSignUp', {
+        const signup = await this.sync.db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
                 attesterId: toDecString(attesterId),
@@ -110,7 +142,7 @@ export default class UserState {
             ].map((v) =>
                 genEpochKey(this.id.secret, attesterId, x, v).toString()
             )
-            const n = await this.sync._db.findOne('Nullifier', {
+            const n = await this.sync.db.findOne('Nullifier', {
                 where: {
                     nullifier: nullifiers,
                 },
@@ -121,7 +153,7 @@ export default class UserState {
             }
         }
         if (latestTransitionedEpoch === 0) {
-            const signup = await this.sync._db.findOne('UserSignUp', {
+            const signup = await this.sync.db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
                     attesterId,
@@ -150,7 +182,7 @@ export default class UserState {
         )
         if (latestTransitionedEpoch !== currentEpoch) return -1
         if (latestTransitionedEpoch === 0) {
-            const signup = await this.sync._db.findOne('UserSignUp', {
+            const signup = await this.sync.db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
                     attesterId: attesterId,
@@ -163,14 +195,14 @@ export default class UserState {
                 return 0
             }
             // don't include attestations that are not provable
-            const data = await this.getData(currentEpoch - 1)
+            const data = await this.getData(currentEpoch - 1, attesterId)
             const leaf = genStateTreeLeaf(
                 this.id.secret,
                 attesterId,
                 signup.epoch,
                 data
             )
-            const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
+            const foundLeaf = await this.sync.db.findOne('StateTreeLeaf', {
                 where: {
                     hash: leaf.toString(),
                 },
@@ -178,14 +210,14 @@ export default class UserState {
             if (!foundLeaf) return -1
             return foundLeaf.index
         }
-        const data = await this.getData(latestTransitionedEpoch - 1)
+        const data = await this.getData(latestTransitionedEpoch - 1, attesterId)
         const leaf = genStateTreeLeaf(
             this.id.secret,
             attesterId,
             latestTransitionedEpoch,
             data
         )
-        const foundLeaf = await this.sync._db.findOne('StateTreeLeaf', {
+        const foundLeaf = await this.sync.db.findOne('StateTreeLeaf', {
             where: {
                 epoch: currentEpoch,
                 hash: leaf.toString(),
@@ -226,7 +258,7 @@ export default class UserState {
         const orClauses = [] as any[]
         const toEpoch =
             _toEpoch ?? (await this.latestTransitionedEpoch(attesterId))
-        const signup = await this.sync._db.findOne('UserSignUp', {
+        const signup = await this.sync.db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
                 attesterId,
@@ -246,7 +278,7 @@ export default class UserState {
                 )
             )
         }
-        const sortedNullifiers = await this.sync._db.findMany('Nullifier', {
+        const sortedNullifiers = await this.sync.db.findMany('Nullifier', {
             where: {
                 attesterId,
                 nullifier: allNullifiers,
@@ -277,7 +309,7 @@ export default class UserState {
                     break
                 }
             }
-            const signedup = await this.sync._db.findOne('UserSignUp', {
+            const signedup = await this.sync.db.findOne('UserSignUp', {
                 where: {
                     attesterId: attesterId,
                     commitment: this.commitment.toString(),
@@ -291,7 +323,7 @@ export default class UserState {
             })
         }
         if (orClauses.length === 0) return data
-        const attestations = await this.sync._db.findMany('Attestation', {
+        const attestations = await this.sync.db.findMany('Attestation', {
             where: {
                 OR: orClauses,
                 attesterId: attesterId,
@@ -328,7 +360,7 @@ export default class UserState {
         this.sync.checkAttesterId(attesterId)
         const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
         if (typeof epoch !== 'number') throw new Error('epoch must be number')
-        const attestations = await this.sync._db.findMany('Attestation', {
+        const attestations = await this.sync.db.findMany('Attestation', {
             where: {
                 epoch,
                 epochKey: epochKey.toString(),
@@ -370,7 +402,7 @@ export default class UserState {
         _attesterId: bigint | string
     ) => {
         this._checkSync()
-        const attestations = await this.sync._db.findMany('Attestation', {
+        const attestations = await this.sync.db.findMany('Attestation', {
             where: {
                 epoch,
                 attesterId: toDecString(_attesterId),
@@ -419,7 +451,7 @@ export default class UserState {
             )
         const historyTree = await this.sync.genHistoryTree(attesterId)
         const leafHash = poseidon2([stateTree.root, epochTree.root])
-        const leaf = await this.sync._db.findOne('HistoryTreeLeaf', {
+        const leaf = await this.sync.db.findOne('HistoryTreeLeaf', {
             where: {
                 attesterId,
                 leaf: leafHash.toString(),
@@ -431,7 +463,7 @@ export default class UserState {
         } else {
             // the epoch hasn't been ended onchain yet
             // add the leaf offchain to make the proof
-            const leafCount = await this.sync._db.count('HistoryTreeLeaf', {
+            const leafCount = await this.sync.db.count('HistoryTreeLeaf', {
                 attesterId,
             })
             historyTree.insert(leafHash)
@@ -478,7 +510,7 @@ export default class UserState {
             ),
             epoch_tree_root: epochTree.root,
         }
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts(circuitInputs)
         )
@@ -486,7 +518,7 @@ export default class UserState {
         return new UserStateTransitionProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 
@@ -528,7 +560,7 @@ export default class UserState {
             prove_graffiti: graffiti ? 1 : 0,
             graffiti: graffiti ?? 0,
             reveal_nonce: revealNonce ?? 0,
-            attester_id: attesterId.toString(),
+            attester_id: attesterId,
             epoch,
             nonce,
             min_rep: minRep ?? 0,
@@ -539,7 +571,7 @@ export default class UserState {
             sig_data: options.data ?? 0,
         }
 
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.proveReputation,
             stringifyBigInts(circuitInputs)
         )
@@ -547,7 +579,7 @@ export default class UserState {
         return new ReputationProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 
@@ -568,14 +600,14 @@ export default class UserState {
             identity_trapdoor: this.id.trapdoor,
             attester_id: attesterId,
         }
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts(circuitInputs)
         )
         return new SignupProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 
@@ -609,14 +641,14 @@ export default class UserState {
             attester_id: attesterId,
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.epochKey,
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 
@@ -643,14 +675,14 @@ export default class UserState {
             attester_id: attesterId,
             reveal_nonce: options.revealNonce ? 1 : 0,
         }
-        const results = await this.sync.prover.genProofAndPublicSignals(
+        const results = await this.prover.genProofAndPublicSignals(
             Circuit.epochKeyLite,
             stringifyBigInts(circuitInputs)
         )
         return new EpochKeyLiteProof(
             results.publicSignals,
             results.proof,
-            this.sync.prover
+            this.prover
         )
     }
 }
