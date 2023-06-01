@@ -38,6 +38,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable sumFieldCount;
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
+    uint256 public immutable defaultDataHash;
 
     uint48 public attestationCount = 1;
 
@@ -63,6 +64,12 @@ contract Unirep is IUnirep, VerifySignature {
         emit AttesterSignedUp(0, type(uint48).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint48).max;
         attesters[uint160(0)].startTimestamp = uint48(block.timestamp);
+
+        uint256 zeroDataHash = 0;
+        for (uint256 i = 1; i < fieldCount; i++) {
+            zeroDataHash = PoseidonT3.hash([zeroDataHash, 0]);
+        }
+        defaultDataHash = zeroDataHash;
     }
 
     function config() public view returns (Config memory) {
@@ -85,17 +92,25 @@ contract Unirep is IUnirep, VerifySignature {
     function manualUserSignUp(
         uint48 epoch,
         uint256 identityCommitment,
-        uint256 stateTreeLeaf,
+        uint256 leafIdentityHash,
         uint256[] calldata initialData
     ) public {
-        _userSignUp(epoch, identityCommitment, stateTreeLeaf);
         if (initialData.length > fieldCount) revert OutOfRange();
+        uint256 initialDataHash = defaultDataHash;
+        if (initialData.length != 0) {
+            initialDataHash = initialData[0];
+        }
         for (uint8 x = 0; x < initialData.length; x++) {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
             if (
                 x >= sumFieldCount &&
                 initialData[x] >= 2 ** (254 - replNonceBits)
             ) revert OutOfRange();
+            if (x != 0) {
+                initialDataHash = PoseidonT3.hash(
+                    [initialDataHash, initialData[x]]
+                );
+            }
             emit Attestation(
                 type(uint48).max,
                 identityCommitment,
@@ -104,6 +119,10 @@ contract Unirep is IUnirep, VerifySignature {
                 initialData[x]
             );
         }
+        uint256 stateTreeLeaf = PoseidonT3.hash(
+            [leafIdentityHash, initialDataHash]
+        );
+        _userSignUp(epoch, identityCommitment, stateTreeLeaf);
     }
 
     /**
@@ -114,19 +133,16 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) public {
-        uint256 attesterId = publicSignals[2];
+        SignupSignals memory signals = decodeSignupSignals(publicSignals);
+        // Verify the proof
         // only allow attester to sign up users
-        if (uint256(uint160(msg.sender)) != attesterId)
+        if (uint160(msg.sender) != signals.attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
         // Verify the proof
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
-        _userSignUp(
-            uint48(publicSignals[3]),
-            publicSignals[0],
-            publicSignals[1]
-        );
+        _userSignUp(signals.epoch, signals.idCommitment, signals.stateTreeLeaf);
     }
 
     function _userSignUp(
@@ -413,6 +429,27 @@ contract Unirep is IUnirep, VerifySignature {
         emit EpochEnded(epoch - 1, attesterId);
 
         attester.currentEpoch = epoch;
+    }
+
+    function decodeSignupControl(
+        uint256 control
+    ) public pure returns (uint160 attesterId, uint48 epoch) {
+        epoch = uint48((control >> 160) & ((1 << 48) - 1));
+        attesterId = uint160(control & ((1 << 160) - 1));
+        return (attesterId, epoch);
+    }
+
+    function decodeSignupSignals(
+        uint256[] calldata publicSignals
+    ) public pure returns (SignupSignals memory) {
+        SignupSignals memory signals;
+        signals.idCommitment = publicSignals[0];
+        signals.stateTreeLeaf = publicSignals[1];
+        // now decode the control values
+        (signals.attesterId, signals.epoch) = decodeSignupControl(
+            publicSignals[2]
+        );
+        return signals;
     }
 
     function attesterStartTimestamp(

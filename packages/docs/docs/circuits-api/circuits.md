@@ -22,17 +22,26 @@ import { Circuit } from '@unirep/circuits'
 
 ## Signup Proof
 
-The signup proof outputs a state tree leaf and an identity commitment for the user. The state tree leaf will have zero values for positive and negative reputation.
+The signup proof outputs a state tree leaf and an identity commitment for the user. The state tree leaf will have zero values for all data fields.
+
+Control field:
+- 48 bits `epoch`
+- 160 bits `attester_id`
 
 Inputs:
-- `attester_id` (public)
-- `epoch` (public)
+- `attester_id`
+- `epoch`
 - `identity_nullifier`
 - `identity_trapdoor`
 
 Outputs:
 - `identity_commitment`
 - `state_tree_leaf`
+- `control`
+
+:::info
+Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+:::
 
 ## Epoch Key Proof
 
@@ -42,7 +51,7 @@ The `nonce` used to calculate the epoch key may optionally be revealed. This can
 
 Control field:
 - 8 bits `nonce`
-- 64 bits `epoch`
+- 48 bits `epoch`
 - 160 bits `attester_id`
 - 1 bit `reveal_nonce`
 
@@ -80,7 +89,7 @@ Instead this proof is more useful for proving control of keys from past epochs.
 
 Control field:
 - 8 bits `nonce`
-- 64 bits `epoch`
+- 48 bits `epoch`
 - 160 bits `attester_id`
 - 1 bit `reveal_nonce`
 
@@ -114,7 +123,7 @@ The `nonce` used to calculate the epoch key may optionally be revealed. This can
 
 Control field 0:
 - 8 bits `nonce`
-- 64 bits `epoch`
+- 48 bits `epoch`
 - 160 bits `attester_id`
 - 1 bit `reveal_nonce`
 

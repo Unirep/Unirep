@@ -75,6 +75,13 @@ interface IUnirep {
     error InvalidHistoryTreeRoot(uint256 historyTreeRoot);
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
 
+    struct SignupSignals {
+        uint256 stateTreeLeaf;
+        uint48 epoch;
+        uint160 attesterId;
+        uint256 idCommitment;
+    }
+
     struct EpochKeySignals {
         uint256 revealNonce;
         uint256 stateTreeRoot;
