@@ -48,6 +48,7 @@ export class Synchronizer extends EventEmitter {
     public blockRate: number = 100000
 
     private setupComplete = false
+    private setupPromise
 
     private lock = new AsyncLock()
 
@@ -232,6 +233,17 @@ export class Synchronizer extends EventEmitter {
     }
 
     async setup() {
+        if (!this.setupPromise) {
+            this.setupPromise = this._setup().catch((err) => {
+                this.setupPromise = undefined
+                this.setupComplete = false
+                throw err
+            })
+        }
+        return this.setupPromise
+    }
+
+    async _setup() {
         if (this.setupComplete) return
         const config = await this.unirepContract.config()
         this.settings.stateTreeDepth = config.stateTreeDepth
