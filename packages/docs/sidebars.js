@@ -105,6 +105,11 @@ const sidebars = {
             items: [
                 {
                     type: 'doc',
+                    label: 'Deploy',
+                    id: 'contracts-api/deploy',
+                },
+                {
+                    type: 'doc',
                     label: 'Unirep.sol',
                     id: 'contracts-api/unirep-sol',
                 },
@@ -112,6 +117,11 @@ const sidebars = {
                     type: 'doc',
                     label: 'IVerifier.sol',
                     id: 'contracts-api/iverifier-sol',
+                },
+                {
+                    type: 'doc',
+                    label: 'Helpers',
+                    id: 'contracts-api/helpers',
                 },
                 {
                     type: 'doc',
