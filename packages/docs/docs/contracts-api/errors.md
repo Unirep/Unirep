@@ -60,10 +60,6 @@ Please send the transaction through the attester.
 - `InvalidField()`<br />
     An attestation was made to a field that was either out of range, or not capable of receiving attestations.
 
-## 0xb7d09497
-- `InvalidTimestamp`<br/>
-    If a user is [signed up by an attester manually](unirep-sol.md#manualusersignup), the [timestamp field](../protocol/data.md) should be `0`.
-
 ## 0x8baa579f
 - `InvalidSignature()`<br/>
 The signature does not match the attester ID. <br/>
@@ -88,15 +84,6 @@ Please make sure the signature is signed through the correct attester.
     The proof is verified invalid through on-chain verifiers. <br/>
     Please verify it with the off-chain [prover](../circuits-api/prover.md). <br/>
     If it is valid off-chain but invalid through on-chain verifiers, please check the if the proving keys match the ones on-chain.
-
-## 0xf1b8a45e
-- `InvalidStateTreeRoot(uint256 stateTreeRoot)`<br/>
-    The [state tree](../protocol/trees.md#state-tree) root of given epoch does not exist in the current Unirep contract. <br/>
-    There are several reasons:
-    1. The user does not sign up successfully
-    2. The user does not perform user state transition successfully
-    3. `userSignUp` transaction or `userStateTransition` transaction is pending
-    4. Epoch and state tree root does not match
 
 ## 0xd542f669
 - `InvalidHistoryTreeRoot(uint256 historyTreeRoot)`<br/>
