@@ -9,29 +9,22 @@ import { deployVerifierHelper } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit } from '@unirep/circuits'
 
-let epochKeyLiteVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.epochKeyLite) // deploys all verifier helper contracts
+let epochKeyLiteVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.epochKeyLite) // deploys epoch key lite verifier helper contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
-    Circuit.epochKeyLite,
-    stringifyBigInts({
-        identity_secret: id.secret,
-        sig_data,
-        epoch,
-        nonce,
-        attester_id: attester.address,
-        reveal_nonce: false,
-    })
+  Circuit.epochKeyLite,
+  CircuitInputs // see @unirep/circuits to know the whole circuit inputs
 )
 
 const { publicSignals, proof } = new EpochKeyLiteProof(
-    r.publicSignals,
-    r.proof
+  r.publicSignals,
+  r.proof
 )
 
 // fails or returns proof signals
 const signals = await epochKeyLiteVerifierHelper.verifyAndCheck(
-    publicSignals,
-    proof
+  publicSignals,
+  proof
 ) 
 
 ```
