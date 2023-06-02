@@ -133,7 +133,7 @@ const unirepContract = getUnirepContract(address, provider)
 ```
 
 :::info
-See [Testnet Deployment](testnet-deployment.md) to see the currently deployed `Unirep.sol` contract.
+See [Testnet Deployment](../testnet-deployment.mdx) to see the currently deployed `Unirep.sol` contract.
 :::
 
 **The following actions are initiated by either an attester or a user.**<br/>
@@ -142,8 +142,8 @@ Read the section [users and attesters](protocol/users-and-attesters.md) to learn
 ## 🤖 Attester sign up
 
 The app builder must sign up with `Unirep.sol` as an attester. There are two ways to sign up:
-1. [Attester signs up with a wallet](#1-attester-sign-up-with-a-wallet)
-2. [Attester signs up with a smart contract](#2-attester-sign-up-with-a-smart-contract)
+1. [Attester signs up with a wallet](#1-attester-sign-up-with-a-wallet-)
+2. [Attester signs up with a smart contract](#2-attester-sign-up-with-a-smart-contract-)
 
 ### 1. Attester sign up with a wallet 👛
 
@@ -217,13 +217,14 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Identity } from "@semaphore-protocol/identity"
 
 // semaphore Identity
-const identity = new Identity()
+const id = new Identity()
 // generate user state
 const userState = new UserState({
   prover: defaultProver, // a circuit prover
   unirepAddress: unirepContract.address,
   provider, // an ethers.js provider
-}, identity)
+  id,
+})
 
 // start and sync
 await userState.start()
@@ -244,13 +245,14 @@ const { defaultProver } = require('@unirep/circuits/provers/defaultProver')
 const { Identity } = require("@semaphore-protocol/identity")
 
 // semaphore Identity
-const identity = new Identity()
+const id = new Identity()
 // generate user state
 const userState = new UserState({
   prover: defaultProver, // a circuit prover
   unirepAddress: unirepContract.address,
   provider, // an ethers.js provider
-}, identity)
+  id,
+})
 
 // start and sync
 await userState.start()
@@ -461,7 +463,7 @@ function attest(
 ```
 
 :::caution
-To verify an epoch key on-chain, see [Verify epoch key on-chain](getting-started/create-unirep-app.mdx#verify-epoch-key-on-chain).
+To verify an epoch key on-chain, see [Verify epoch key on-chain](./create-unirep-app.mdx#verify-epoch-key).
 :::
 
 ## ⏱️ User state transition
@@ -577,6 +579,10 @@ See [`reputationProof`](circuits-api/circuits.md#prove-reputation-proof) for mor
 
 ### Other users and attesters verify the proof
 
+:::info
+See [`ReputationVerifierHelper`](contracts-api/reputation-verifier-helper.md) to learn how to deploy and use the `repVerifier`.
+:::
+
 ```mdx-code-block
 <Tabs
     defaultValue="typescript"
@@ -611,7 +617,7 @@ function verifyProof(
     uint[] memory publicSignals,
     uint[8] memory proof
 ) public {
-    unirep.verifyReputationProof(
+    repVerifier.verifyAndCheckCaller(
         publicSignals,
         proof
     );
@@ -622,9 +628,5 @@ function verifyProof(
   </TabItem>
 </Tabs>
 ```
-
-:::info
-See [`verifyReputationProof`](contracts-api/unirep-sol.md#verifyreputationproof) for more information.
-:::
 
 Now, start building your own application with UniRep. 🚀

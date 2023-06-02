@@ -122,7 +122,7 @@ Displays the user's total [data](protocol/data.md), including data changed in th
 This is updated upon each data change request.
 
 **Provable Data**<br/>
-Displays only [provable data](#provable-data) that the user can currently prove ownership of. Any change made to the user's data since their last [user state transition](protocol/user-state-transition.md) is not included here. This is updated **after** UST is performed.
+Displays only provable data that the user can currently prove ownership of. Any change made to the user's data since their last [user state transition](protocol/user-state-transition.md) is not included here. This is updated **after** UST is performed.
 
 ### Request Data
 
@@ -369,22 +369,46 @@ An [epoch key proof](circuits-api/circuits.md#epoch-key-proof) is submitted when
 
 For example, `UnirepApp.sol` can be modified by adding the epoch key proof:
 
+:::info
+See [`EpochKeyVerifierHelper`](contracts-api/epoch-key-verifier-helper.md) to learn how to deploy a verifier and its APIs.
+:::
+
+1. Import the `EpochKeyVerifierHelper` from [`@unirep/contracts`](https://www.npmjs.com/package/@unirep/contracts).
+
+```sol
+import { EpochKeyVerifierHelper } from '@unirep/contracts/verifierHelpers/EpochKeyVerifierHelper.sol';
+```
+
+2. Sepcify the address of the deployed verifier.
+
+```sol
+// add a public verifier
+EpochKeyVerifierHelper public epkVerifier;
+constructor(
+    // ...
+    // pass the verifier address while construction
+    EpochKeyVerifierHelper _epkVerifier
+){
+    // ...
+    // set the public verifier to this address
+    epkVerifier = _epkVerifier;
+}
+```
+
+3. Pass the `publicSignals` and `proof` to verify it in the function.
+
 ```sol
 function submitAttestation(
     uint[] memory publicSignals,
     uint[8] memory proof
 ) public {
-    // verify epoch key proof
-    unirep.verifyEpochKeyProof(publicSignals, proof);
+    // verify epoch key proof and check if the caller matches the attester ID in the proof
+    epkVerifier.verifyAndCheckCaller(publicSignals, proof);
 }
 ```
 
-:::info
-See [`verifyEpochKeyProof`](contracts-api/unirep-sol.md#verifyepochkeyproof)
-:::
-
 But how can we tell which signal is the epoch key?<br/>
-`Unirep.sol` provides [`decodeEpochKeySignals`](contracts-api/unirep-sol.md#decodeepochkeysignals) to fix this problem.
+`EpochKeyVerifierHelper.sol` provides [`decodeEpochKeySignals`](contracts-api/epoch-key-verifier-helper.md#decodeepochkeysignals) to fix this problem.
 
 We can complete the `submitAttestation` function with `decodeEpochKeySignals`.
 
@@ -395,29 +419,38 @@ function submitAttestation(
    uint[] memory publicSignals,
    uint[8] memory proof
 ) public {
-   // verify epoch key proof
-   unirep.verifyEpochKeyProof(publicSignals, proof);
-   // decode epoch key signals
-   Unirep.EpochKeySignals memory signals = unirep.decodeEpochKeySignals(publicSignals);
-   // check if the epoch key receives data or not
-   require(epochKeyReceivedValue[signals.epochKey] == false);
-   // compute attester ID: the address of the smart contract
-   uint160 attesterId = uint160(address(this));
-   // get current epoch from unirep
-   uint48 targetEpoch = unirep.attesterCurrentEpoch(attesterId);
-   // fix field index
-   uint fieldIndex = 0;
-   // fix data value
-   uint val = 1;
-   // call unirep attest function
-   unirep.attest(
-      signals.epochKey,
-      targetEpoch,
-      fieldIndex,
-      val
-   );
-   // mark the epoch key has received data
-   epochKeyReceivedValue[signals.epochKey] = true;
+    // verify epoch key proof
+    epkVerifier.verifyAndCheckCaller(publicSignals, proof);
+    // decode epoch key signals
+    EpochKeyVerifierHelper.EpochKeySignals memory signals = epkVerifier
+            .decodeEpochKeySignals(publicSignals);
+    // check if the epoch key receives data or not
+    require(epochKeyReceivedValue[signals.epochKey] == false);
+    // compute attester ID: the address of the smart contract
+    uint160 attesterId = uint160(address(this));
+    // get current epoch from unirep
+    uint48 targetEpoch = unirep.attesterCurrentEpoch(attesterId);
+    // verify the state tree root in current epoch
+    require(
+        unirep.attesterStateTreeRootExists(
+            attesterId,
+            targetEpoch,
+            signals.stateTreeRoot
+        )
+    );
+    // fix field index
+    uint fieldIndex = 0;
+    // fix data value
+    uint val = 1;
+    // call unirep attest function
+    unirep.attest(
+        signals.epochKey,
+        targetEpoch,
+        fieldIndex,
+        val
+    );
+    // mark the epoch key has received data
+    epochKeyReceivedValue[signals.epochKey] = true;
 }
 ```
 
