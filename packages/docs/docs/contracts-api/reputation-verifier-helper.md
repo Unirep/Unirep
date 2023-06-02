@@ -4,34 +4,26 @@ title: Reputation Verifier Helper Contract
 
 A contract address for a reputation verifier helper. See [IVerifier](iverifier-sol) for more info.
 ```ts
-import { deployVerifierHelpers } from '@unirep/contracts/deploy'
+import { deployVerifierHelper } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit } from '@unirep/circuits'
 
-let verifierHelpers = await deployVerifierHelper(accounts[0], Circuit.proveReputation) // deploys all verifier helper contracts
+let reputationVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.proveReputation) // deploys reputation verifier helper contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
   Circuit.proveReputation,
-  stringifyBigInts({
-    ...circuitInputs,
-    identity_secret: id.secret,
-    state_tree_indexes: merkleProof.pathIndices,
-    state_tree_elements: merkleProof.siblings,
-    attester_id: attester.address,
-    epoch,
-    nonce,
-  })
+  CircuitInputs // see @unirep/circuits to know the whole circuit inputs
 )
 
 const { publicSignals, proof } = new ReputationProof(
-r.publicSignals,
-r.proof
+  r.publicSignals,
+  r.proof
 )
 
 // fails or returns proof signals
-const signals = await verifierHelpers.reputationProof.verifyAndCheck(
-    publicSignals,
-    proof
+const signals = await reputationVerifierHelper.verifyAndCheck(
+  publicSignals,
+  proof
 ) 
 ```
 

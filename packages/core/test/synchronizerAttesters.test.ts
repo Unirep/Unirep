@@ -2,11 +2,12 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
-import { deployVerifierHelpers, deployUnirep } from '@unirep/contracts/deploy'
+import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
 import { genUnirepState, genUserState } from './utils'
 import { Identity } from '@semaphore-protocol/identity'
 import { schema } from '../src/schema'
 import { SQLiteConnector } from 'anondb/node'
+import { Circuit } from '@unirep/circuits'
 
 const ATTESTER_COUNT = 5
 
@@ -14,12 +15,15 @@ describe('Synchronizer watch multiple attesters', function () {
     this.timeout(0)
 
     let unirepContract: Unirep
-    let verifierHelpers
+    let epkVerifierHelper
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        verifierHelpers = await deployVerifierHelpers(accounts[0])
+        epkVerifierHelper = await deployVerifierHelper(
+            accounts[0],
+            Circuit.epochKey
+        )
     })
 
     {
@@ -331,7 +335,7 @@ describe('Synchronizer watch multiple attesters', function () {
             const attesterId = BigInt(accounts[i].address).toString()
             const { publicSignals, proof, epochKey, epoch } =
                 await userState.genEpochKeyProof({ attesterId })
-            await verifierHelpers.epochKey.verifyAndCheck(publicSignals, proof)
+            await epkVerifierHelper.verifyAndCheck(publicSignals, proof)
             await unirepContract
                 .connect(accounts[i])
                 .attest(epochKey, epoch, index, change)
