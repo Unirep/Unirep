@@ -6,6 +6,8 @@ import randomf from 'randomf'
 const random = () => poseidon1([smallRandom()])
 const smallRandom = () => Math.floor(Math.random() * 1000000000)
 
+const NONCE_BITS = BigInt(64)
+
 describe('Compare large numbers', function () {
     this.timeout(30000)
     it('should compare small numbers', async () => {
@@ -129,9 +131,10 @@ describe('Compare large numbers', function () {
     })
 
     it('should compare equal lower bits', async () => {
-        const n = randomf(BigInt(2) ** BigInt(64))
-        const n1 = n + (randomf(BigInt(2) ** BigInt(150)) << BigInt(64))
-        const n2 = n + (randomf(BigInt(2) ** BigInt(150)) << BigInt(64))
+        const FIELD_BITS = BigInt(253) - NONCE_BITS
+        const n = randomf(BigInt(2) ** NONCE_BITS)
+        const n1 = n + (randomf(BigInt(2) ** FIELD_BITS) << NONCE_BITS)
+        const n2 = n + (randomf(BigInt(2) ** FIELD_BITS) << NONCE_BITS)
         {
             const { isValid, publicSignals } = await genProofAndVerify(
                 'lowerComparators' as any,
@@ -164,8 +167,8 @@ describe('Compare large numbers', function () {
                     in: [n1.toString(), n2.toString()],
                 }
             )
-            const n1Lower = n1 & (BigInt(2) ** BigInt(64) - BigInt(1))
-            const n2Lower = n2 & (BigInt(2) ** BigInt(64) - BigInt(1))
+            const n1Lower = n1 & (BigInt(2) ** NONCE_BITS - BigInt(1))
+            const n2Lower = n2 & (BigInt(2) ** NONCE_BITS - BigInt(1))
             const result = n1Lower < n2Lower ? '1' : '0'
             expect(isValid).to.be.true
             expect(publicSignals[0].toString()).to.equal(result)
