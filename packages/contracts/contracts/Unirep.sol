@@ -61,7 +61,7 @@ contract Unirep is IUnirep, VerifySignature {
         signupVerifier = _signupVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
 
-        emit AttesterSignedUp(0, type(uint48).max, block.timestamp);
+        emit AttesterSignedUp(0, type(uint48).max, uint48(block.timestamp));
         attesters[uint160(0)].epochLength = type(uint48).max;
         attesters[uint160(0)].startTimestamp = uint48(block.timestamp);
 
@@ -159,7 +159,7 @@ contract Unirep is IUnirep, VerifySignature {
             revert UserAlreadySignedUp(identityCommitment);
         attester.identityCommitments[identityCommitment] = true;
 
-        uint256 currentEpoch = attester.currentEpoch;
+        uint48 currentEpoch = attester.currentEpoch;
         if (currentEpoch != epoch) revert EpochNotMatch();
 
         emit UserSignedUp(
@@ -471,25 +471,25 @@ contract Unirep is IUnirep, VerifySignature {
 
     function attesterEpochRemainingTime(
         uint160 attesterId
-    ) public view returns (uint256) {
-        uint256 timestamp = attesters[attesterId].startTimestamp;
-        uint256 epochLength = attesters[attesterId].epochLength;
+    ) public view returns (uint48) {
+        uint48 timestamp = attesters[attesterId].startTimestamp;
+        uint48 epochLength = attesters[attesterId].epochLength;
         if (timestamp == 0) revert AttesterNotSignUp(attesterId);
-        uint256 _currentEpoch = (block.timestamp - timestamp) / epochLength;
-        return
-            (timestamp + (_currentEpoch + 1) * epochLength) - block.timestamp;
+        uint48 blockTimestamp = uint48(block.timestamp);
+        uint48 _currentEpoch = (blockTimestamp - timestamp) / epochLength;
+        return timestamp + (_currentEpoch + 1) * epochLength - blockTimestamp;
     }
 
     function attesterEpochLength(
         uint160 attesterId
-    ) public view returns (uint256) {
+    ) public view returns (uint48) {
         AttesterData storage attester = attesters[attesterId];
         return attester.epochLength;
     }
 
     function attesterStateTreeRootExists(
         uint160 attesterId,
-        uint256 epoch,
+        uint48 epoch,
         uint256 root
     ) public view returns (bool) {
         AttesterData storage attester = attesters[attesterId];
@@ -526,7 +526,7 @@ contract Unirep is IUnirep, VerifySignature {
 
     function attesterEpochRoot(
         uint160 attesterId,
-        uint256 epoch
+        uint48 epoch
     ) public view returns (uint256) {
         AttesterData storage attester = attesters[attesterId];
         if (epoch == attesterCurrentEpoch(attesterId)) {
