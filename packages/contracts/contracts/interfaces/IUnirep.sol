@@ -58,6 +58,7 @@ interface IUnirep {
     error AttesterAlreadySignUp(uint160 attester);
     error AttesterNotSignUp(uint160 attester);
     error AttesterInvalid();
+    error CallerInvalid();
     error NullifierAlreadyUsed(uint256 nullilier);
     error AttesterIdNotMatch(uint160 attesterId);
     error OutOfRange();
@@ -73,6 +74,13 @@ interface IUnirep {
     error InvalidProof();
     error InvalidHistoryTreeRoot(uint256 historyTreeRoot);
     error InvalidStateTreeRoot(uint256 stateTreeRoot);
+
+    struct SignupSignals {
+        uint256 stateTreeLeaf;
+        uint48 epoch;
+        uint160 attesterId;
+        uint256 idCommitment;
+    }
 
     struct EpochKeySignals {
         uint256 revealNonce;
@@ -102,9 +110,10 @@ interface IUnirep {
 
     struct EpochKeyData {
         uint256 leaf;
-        uint256[30] data;
         uint40 leafIndex;
         uint48 epoch;
+        // use a constant because compile time variables are not supported
+        uint256[128] data;
     }
 
     struct AttesterData {

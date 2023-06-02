@@ -48,6 +48,8 @@ template StateTreeLeaf(FIELD_COUNT) {
   signal input epoch;
 
   signal output out;
+  signal output control;
+  signal output data_hash;
 
   component hasher[FIELD_COUNT-1];
 
@@ -61,10 +63,16 @@ template StateTreeLeaf(FIELD_COUNT) {
     hasher[x].inputs[1] <== data[x+1];
   }
 
-  component final_hasher = Poseidon(3);
-  final_hasher.inputs[0] <== identity_secret;
-  final_hasher.inputs[1] <== attester_id + 2**160*epoch;
-  final_hasher.inputs[2] <== hasher[FIELD_COUNT-2].out;
+  control <== attester_id + 2**160*epoch;
+  data_hash <== hasher[FIELD_COUNT-2].out;
+
+  component leaf_identity_hash = Poseidon(2);
+  leaf_identity_hash.inputs[0] <== identity_secret;
+  leaf_identity_hash.inputs[1] <== control;
+
+  component final_hasher = Poseidon(2);
+  final_hasher.inputs[0] <== leaf_identity_hash.out;
+  final_hasher.inputs[1] <== data_hash;
 
   out <== final_hasher.out;
 }

@@ -11,8 +11,7 @@ export class PreventDoubleActionProof extends BaseProof {
         stateTreeRoot: 1,
         control: 2,
         nullifier: 3,
-        identityCommitment: 4,
-        sigData: 5,
+        sigData: 4,
     }
     public revealNonce: bigint
     public attesterId: bigint
@@ -23,7 +22,6 @@ export class PreventDoubleActionProof extends BaseProof {
     public control: bigint
     public sigData: bigint
     public nullifier: bigint
-    public identityCommitment: bigint
 
     /**
      * @param _publicSignals The public signals of the prevent double action proof that can be verified by the prover
@@ -41,8 +39,6 @@ export class PreventDoubleActionProof extends BaseProof {
         this.control = this.publicSignals[this.idx.control]
         this.sigData = this.publicSignals[this.idx.sigData]
         this.nullifier = this.publicSignals[this.idx.nullifier]
-        this.identityCommitment =
-            this.publicSignals[this.idx.identityCommitment]
         this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
         this.attesterId =
             (BigInt(this.control) >> BigInt(72)) &

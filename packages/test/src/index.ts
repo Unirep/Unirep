@@ -15,15 +15,13 @@ export async function bootstrapUnirep(
     const synchronizer = new Synchronizer({
         unirepAddress: unirepContract.address,
         provider,
-        prover: defaultProver,
     })
     return synchronizer
 }
 
 export async function bootstrapAttester(
     synchronizer: Synchronizer,
-    epochLength: number = 300,
-    provider?: any // ethers provider
+    epochLength: number = 300
 ) {
     const { unirepContract } = synchronizer.unirepContract
     const attester = ethers.Wallet.createRandom()
@@ -41,13 +39,18 @@ export async function bootstrapAttester(
 // users
 export async function bootstrapUsers(
     synchronizer: Synchronizer,
-    userCount = 5
+    userCount = 5,
+    prover: Prover = defaultProver
 ) {
     const { unirepContract } = synchronizer.unirepContract
     // synchronizer should be authed to send transactions
     const ids = [] as Identity[]
     for (let x = 0; x < userCount; x++) {
-        const userState = new UserState(synchronizer, new Identity())
+        const userState = new UserState({
+            synchronizer,
+            id: new Identity(),
+            prover,
+        })
         ids.push(userState.id)
         const r = await userState.genUserSignUpProof()
         await unirepContract
@@ -61,13 +64,18 @@ export async function bootstrapUsers(
 export async function bootstrapAttestations(
     synchronizer: Synchronizer,
     account: any,
-    attestationCount = 10
+    attestationCount = 10,
+    prover: Prover = defaultProver
 ) {
     const { unirepContract } = synchronizer
     const epoch = synchronizer.calcCurrentEpoch()
     const ids = [] as Identity[]
     for (let i = 0; i < attestationCount; i++) {
-        const userState = new UserState(synchronizer, new Identity())
+        const userState = new UserState({
+            synchronizer,
+            id: new Identity(),
+            prover,
+        })
         ids.push(userState.id)
         const r = await userState.genUserSignUpProof()
         await unirepContract

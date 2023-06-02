@@ -1,4 +1,5 @@
 import { Identity } from '@semaphore-protocol/identity'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { UserState, Synchronizer } from '../src'
 
 export async function bootstrapUsers(
@@ -10,7 +11,11 @@ export async function bootstrapUsers(
     const epoch = await synchronizer.loadCurrentEpoch()
     // synchronizer should be authed to send transactions
     for (let x = 0; x < userCount; x++) {
-        const userState = new UserState(synchronizer, new Identity())
+        const userState = new UserState({
+            synchronizer,
+            id: new Identity(),
+            prover: defaultProver,
+        })
         const r = await userState.genUserSignUpProof({ epoch })
         await unirepContract
             .connect(account)
@@ -29,7 +34,11 @@ export async function bootstrapAttestations(
     const { unirepContract } = synchronizer
     const epoch = await synchronizer.loadCurrentEpoch()
     for (let i = 0; i < userCount; i++) {
-        const userState = new UserState(synchronizer, new Identity())
+        const userState = new UserState({
+            synchronizer,
+            id: new Identity(),
+            prover: defaultProver,
+        })
         const r = await userState.genUserSignUpProof({ epoch })
         await unirepContract
             .connect(account)

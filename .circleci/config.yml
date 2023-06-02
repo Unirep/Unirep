@@ -58,6 +58,12 @@ step_defs:
     - run: &check_version
           name: Check Node version
           command: node -v | grep v16
+    - run: &download_circom
+          name: Download Circom
+          command: |
+              sudo wget -O /usr/bin/circom https://github.com/iden3/circom/releases/download/v2.1.5/circom-linux-amd64
+              sudo chmod +x /usr/bin/circom
+              circom --version
     - run: &install_circom
           name: Install Circom
           command: |
@@ -82,7 +88,7 @@ jobs:
                   at: ~/project
             - run: *node_version
             - run: *check_version
-            - run: *install_circom
+            - run: *download_circom
             - run:
                   name: Install Packages
                   command: yarn

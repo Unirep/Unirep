@@ -9,7 +9,7 @@ const katex = require('rehype-katex')
 /** @type {import('@docusaurus/types').Config} */
 const config = {
     title: 'UniRep Docs',
-    tagline: 'Universal Reputation',
+    tagline: 'Universal Reputation - Private user data & Provable reputation',
     url: 'https://developer.unirep.io',
     baseUrl: '/',
     onBrokenLinks: 'throw',
@@ -110,7 +110,7 @@ const config = {
                         title: 'Docs',
                         items: [
                             {
-                                label: 'Welcome',
+                                label: 'Introduction',
                                 to: '/docs/welcome',
                             },
                         ],

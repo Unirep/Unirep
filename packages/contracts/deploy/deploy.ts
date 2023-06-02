@@ -10,9 +10,26 @@ import {
     tryPath,
 } from './utils'
 
-const DEPLOY_DELAY = +(process.env.DEPLOY_DELAY ?? 1500)
+const VerifierHelpers = {
+    epochKey: Circuit.epochKey,
+    epochKeyLite: Circuit.epochKeyLite,
+    reputation: Circuit.proveReputation,
+}
 
-const retryAsNeeded = async (fn: any, maxRetry = 10) => {
+const createVerifierHelperName = (circuit: Circuit): string => {
+    const verifierName = Object.keys(VerifierHelpers).find(
+        (key) => VerifierHelpers[key] == circuit
+    )
+
+    if (verifierName === undefined) {
+        throw new Error('Invalid verifier helper circuit')
+    }
+    return `${
+        verifierName.charAt(0).toUpperCase() + verifierName.slice(1)
+    }VerifierHelper`
+}
+
+export const retryAsNeeded = async (fn: any, maxRetry = 10) => {
     let retryCount = 0
     let backoff = 1000
     for (;;) {
@@ -25,6 +42,84 @@ const retryAsNeeded = async (fn: any, maxRetry = 10) => {
             await new Promise((r) => setTimeout(r, backoff))
         }
     }
+}
+
+export const deployVerifiers = async (
+    deployer: ethers.Signer,
+    prover?: Prover
+): Promise<{ [circuit: string]: Promise<Prover> }> => {
+    let verifiers = {}
+    for (const circuit in Circuit) {
+        const contractName = createVerifierName(circuit)
+
+        console.log(`Deploying ${contractName}`)
+        let artifacts
+        if (prover) {
+            const vkey = await prover.getVKey(circuit)
+            artifacts = await compileVerifier(contractName, vkey)
+        } else {
+            const verifierPath = `contracts/verifiers/${contractName}.sol/${contractName}.json`
+            artifacts = tryPath(verifierPath)
+        }
+
+        const { bytecode, abi } = artifacts
+        const _verifierFactory = new ethers.ContractFactory(
+            abi,
+            bytecode,
+            deployer
+        )
+        const verifierFactory = await GlobalFactory(_verifierFactory)
+        const verifierContract = await retryAsNeeded(() =>
+            verifierFactory.deploy()
+        )
+        await verifierContract.deployed()
+        verifiers[circuit] = verifierContract.address
+    }
+    return verifiers
+}
+
+export const deployVerifierHelpers = async (
+    deployer: ethers.Signer,
+    prover?: Prover
+) => {
+    let verifierHelpers = {}
+
+    for (const verifierHelper in VerifierHelpers) {
+        const verifierContract = await deployVerifierHelper(
+            deployer,
+            VerifierHelpers[verifierHelper],
+            prover
+        )
+        verifierHelpers[verifierHelper] = verifierContract
+    }
+    return verifierHelpers
+}
+
+export const deployVerifierHelper = async (
+    deployer: ethers.Signer,
+    verifierHelper: Circuit,
+    prover?: Prover
+) => {
+    const verifiers = await deployVerifiers(deployer, prover)
+    const contractName = createVerifierHelperName(verifierHelper)
+    console.log(`Deploying ${contractName}`)
+    let artifacts
+    if (prover) {
+        const vkey = await prover.getVKey(contractName)
+        artifacts = await compileVerifier(contractName, vkey)
+    } else {
+        const verifierPath = `contracts/verifierHelpers/${contractName}.sol/${contractName}.json`
+        artifacts = tryPath(verifierPath)
+    }
+
+    const { bytecode, abi } = artifacts
+    const _verifierFactory = new ethers.ContractFactory(abi, bytecode, deployer)
+    const verifierFactory = await GlobalFactory(_verifierFactory)
+    const verifierContract = await retryAsNeeded(() =>
+        verifierFactory.deploy(verifiers[verifierHelper])
+    )
+    await verifierContract.deployed()
+    return verifierContract
 }
 
 /**
@@ -41,6 +136,7 @@ export const deployUnirep = async (
     if (!deployer.provider) {
         throw new Error('Deployer must have provider')
     }
+    const config = new CircuitConfig({ ...CircuitConfig.default, ..._settings })
     const {
         EPOCH_TREE_DEPTH,
         STATE_TREE_DEPTH,
@@ -49,7 +145,7 @@ export const deployUnirep = async (
         FIELD_COUNT,
         SUM_FIELD_COUNT,
         REPL_NONCE_BITS,
-    } = { ...CircuitConfig.default, ..._settings }
+    } = config
 
     console.log(
         '-----------------------------------------------------------------'
@@ -92,7 +188,6 @@ export const deployUnirep = async (
         )
     }
 
-    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
     const incPath =
         '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
     const incArtifacts: any = tryPath(incPath)
@@ -111,8 +206,6 @@ export const deployUnirep = async (
     )
     await incrementalMerkleTreeLib.deployed()
 
-    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
-
     const reusableMerklePath =
         'contracts/libraries/ReusableMerkleTree.sol/ReusableMerkleTree.json'
     const reusableMerkleArtifacts = tryPath(reusableMerklePath)
@@ -128,8 +221,6 @@ export const deployUnirep = async (
         reusableMerkleFactory.deploy()
     )
     await reusableMerkleContract.deployed()
-
-    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
 
     const lazyMerklePath =
         'contracts/libraries/LazyMerkleTree.sol/LazyMerkleTree.json'
@@ -147,38 +238,9 @@ export const deployUnirep = async (
     )
     await lazyMerkleContract.deployed()
 
-    const verifiers = {}
-    for (const circuit in Circuit) {
-        await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
-        const contractName = createVerifierName(circuit)
-
-        console.log(`Deploying ${contractName}`)
-        let artifacts
-        if (prover) {
-            const vkey = await prover.getVKey(circuit)
-            artifacts = await compileVerifier(contractName, vkey)
-        } else {
-            const verifierPath = `contracts/verifiers/${contractName}.sol/${contractName}.json`
-            artifacts = tryPath(verifierPath)
-        }
-
-        const { bytecode, abi } = artifacts
-        const _verifierFactory = new ethers.ContractFactory(
-            abi,
-            bytecode,
-            deployer
-        )
-        const verifierFactory = await GlobalFactory(_verifierFactory)
-        const verifierContract = await retryAsNeeded(() =>
-            verifierFactory.deploy()
-        )
-        await verifierContract.deployed()
-        verifiers[circuit] = verifierContract.address
-    }
-    await new Promise((r) => setTimeout(r, DEPLOY_DELAY))
+    const verifiers = await deployVerifiers(deployer, prover)
 
     console.log('Deploying Unirep')
-
     const c: Unirep = await retryAsNeeded(async () =>
         (
             await GlobalFactory(
@@ -197,20 +259,9 @@ export const deployUnirep = async (
                 )
             )
         ).deploy(
-            {
-                stateTreeDepth: STATE_TREE_DEPTH,
-                epochTreeDepth: EPOCH_TREE_DEPTH,
-                historyTreeDepth: HISTORY_TREE_DEPTH,
-                numEpochKeyNoncePerEpoch: NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-                fieldCount: FIELD_COUNT,
-                sumFieldCount: SUM_FIELD_COUNT,
-                replNonceBits: REPL_NONCE_BITS,
-            },
+            config.contractConfig,
             verifiers[Circuit.signup],
-            verifiers[Circuit.userStateTransition],
-            verifiers[Circuit.proveReputation],
-            verifiers[Circuit.epochKey],
-            verifiers[Circuit.epochKeyLite]
+            verifiers[Circuit.userStateTransition]
         )
     )
 

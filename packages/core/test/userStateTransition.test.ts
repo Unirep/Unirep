@@ -6,14 +6,12 @@ import {
     genStateTreeLeaf,
     IncrementalMerkleTree,
     genEpochKey,
-    stringifyBigInts,
+    genIdentityHash,
 } from '@unirep/utils'
 import { poseidon1 } from 'poseidon-lite'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
 import { genUserState, genUnirepState } from './utils'
-import { Circuit } from '@unirep/circuits'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const EPOCH_LENGTH = 1000
 
@@ -74,18 +72,17 @@ describe('User state transition', function () {
             )
 
             const startData = randomData()
-            const leaf = genStateTreeLeaf(
+            const idHash = genIdentityHash(
                 users[i].secret,
                 attester.address,
-                fromEpoch,
-                startData
+                fromEpoch
             )
             await unirepContract
                 .connect(attester)
                 .manualUserSignUp(
                     fromEpoch,
                     userState.commitment,
-                    leaf,
+                    idHash,
                     startData
                 )
                 .then((t) => t.wait())

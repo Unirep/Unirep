@@ -3,19 +3,24 @@ import path from 'path'
 import https from 'https'
 import readline from 'readline'
 import fs from 'fs'
+import os from 'os'
 
+import { copyAtomic } from './copyAtomic.mjs'
 import { ptauName } from './circuits.mjs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 const outDir = path.join(__dirname, '../zksnarkBuild')
 await fs.promises.mkdir(outDir, { recursive: true })
+const buildDir = await fs.promises.mkdtemp(
+    path.join(os.tmpdir(), 'zksnarkBuild-')
+)
 const ptau = path.join(outDir, ptauName)
 
 const ptauExists = await fs.promises.stat(ptau).catch(() => false)
 if (!ptauExists) {
     // download to a temporary file and then move it into place
-    const tmp = path.join(outDir, 'ptau.download.tmp')
+    const tmp = path.join(buildDir, 'ptau.download.tmp')
     await fs.promises.unlink(tmp).catch(() => {})
     await new Promise((rs, rj) => {
         const logPercent = (p) => {
@@ -59,5 +64,5 @@ if (!ptauExists) {
             }
         )
     })
-    await fs.promises.rename(tmp, ptau)
+    await copyAtomic(tmp, path.join(outDir, ptauName))
 }

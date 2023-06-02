@@ -21,9 +21,6 @@ contract Unirep is IUnirep, VerifySignature {
     // All verifier contracts
     IVerifier public immutable signupVerifier;
     IVerifier public immutable userStateTransitionVerifier;
-    IVerifier public immutable reputationVerifier;
-    IVerifier public immutable epochKeyVerifier;
-    IVerifier public immutable epochKeyLiteVerifier;
 
     uint256 public constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
@@ -41,17 +38,17 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable sumFieldCount;
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
+    uint256 public immutable defaultDataHash;
 
     uint48 public attestationCount = 1;
 
     constructor(
         Config memory _config,
         IVerifier _signupVerifier,
-        IVerifier _userStateTransitionVerifier,
-        IVerifier _reputationVerifier,
-        IVerifier _epochKeyVerifier,
-        IVerifier _epochKeyLiteVerifier
+        IVerifier _userStateTransitionVerifier
     ) {
+        // see IUnirep.sol EpochKeyData.data
+        require(_config.fieldCount < 128, 'datasize');
         stateTreeDepth = _config.stateTreeDepth;
         epochTreeDepth = _config.epochTreeDepth;
         historyTreeDepth = _config.historyTreeDepth;
@@ -63,13 +60,16 @@ contract Unirep is IUnirep, VerifySignature {
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
         userStateTransitionVerifier = _userStateTransitionVerifier;
-        reputationVerifier = _reputationVerifier;
-        epochKeyVerifier = _epochKeyVerifier;
-        epochKeyLiteVerifier = _epochKeyLiteVerifier;
 
         emit AttesterSignedUp(0, type(uint48).max, block.timestamp);
         attesters[uint160(0)].epochLength = type(uint48).max;
         attesters[uint160(0)].startTimestamp = uint48(block.timestamp);
+
+        uint256 zeroDataHash = 0;
+        for (uint256 i = 1; i < fieldCount; i++) {
+            zeroDataHash = PoseidonT3.hash([zeroDataHash, 0]);
+        }
+        defaultDataHash = zeroDataHash;
     }
 
     function config() public view returns (Config memory) {
@@ -92,17 +92,25 @@ contract Unirep is IUnirep, VerifySignature {
     function manualUserSignUp(
         uint48 epoch,
         uint256 identityCommitment,
-        uint256 stateTreeLeaf,
+        uint256 leafIdentityHash,
         uint256[] calldata initialData
     ) public {
-        _userSignUp(epoch, identityCommitment, stateTreeLeaf);
         if (initialData.length > fieldCount) revert OutOfRange();
+        uint256 initialDataHash = defaultDataHash;
+        if (initialData.length != 0) {
+            initialDataHash = initialData[0];
+        }
         for (uint8 x = 0; x < initialData.length; x++) {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
             if (
                 x >= sumFieldCount &&
                 initialData[x] >= 2 ** (254 - replNonceBits)
             ) revert OutOfRange();
+            if (x != 0) {
+                initialDataHash = PoseidonT3.hash(
+                    [initialDataHash, initialData[x]]
+                );
+            }
             emit Attestation(
                 type(uint48).max,
                 identityCommitment,
@@ -111,6 +119,10 @@ contract Unirep is IUnirep, VerifySignature {
                 initialData[x]
             );
         }
+        uint256 stateTreeLeaf = PoseidonT3.hash(
+            [leafIdentityHash, initialDataHash]
+        );
+        _userSignUp(epoch, identityCommitment, stateTreeLeaf);
     }
 
     /**
@@ -121,19 +133,16 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) public {
-        uint256 attesterId = publicSignals[2];
+        SignupSignals memory signals = decodeSignupSignals(publicSignals);
+        // Verify the proof
         // only allow attester to sign up users
-        if (uint256(uint160(msg.sender)) != attesterId)
+        if (uint160(msg.sender) != signals.attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
         // Verify the proof
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
-        _userSignUp(
-            uint48(publicSignals[3]),
-            publicSignals[0],
-            publicSignals[1]
-        );
+        _userSignUp(signals.epoch, signals.idCommitment, signals.stateTreeLeaf);
     }
 
     function _userSignUp(
@@ -422,170 +431,25 @@ contract Unirep is IUnirep, VerifySignature {
         attester.currentEpoch = epoch;
     }
 
-    function decodeEpochKeyControl(
+    function decodeSignupControl(
         uint256 control
-    )
-        public
-        pure
-        returns (
-            uint256 revealNonce,
-            uint256 attesterId,
-            uint256 epoch,
-            uint256 nonce
-        )
-    {
-        revealNonce = (control >> 232) & 1;
-        attesterId = (control >> 72) & ((1 << 160) - 1);
-        epoch = (control >> 8) & ((1 << 64) - 1);
-        nonce = control & ((1 << 8) - 1);
-        return (revealNonce, attesterId, epoch, nonce);
+    ) public pure returns (uint160 attesterId, uint48 epoch) {
+        epoch = uint48((control >> 160) & ((1 << 48) - 1));
+        attesterId = uint160(control & ((1 << 160) - 1));
+        return (attesterId, epoch);
     }
 
-    function decodeReputationControl(
-        uint256 control
-    )
-        public
-        pure
-        returns (
-            uint256 minRep,
-            uint256 maxRep,
-            uint256 proveMinRep,
-            uint256 proveMaxRep,
-            uint256 proveZeroRep,
-            uint256 proveGraffiti
-        )
-    {
-        minRep = control & ((1 << 64) - 1);
-        maxRep = (control >> 64) & ((1 << 64) - 1);
-        proveMinRep = (control >> 128) & 1;
-        proveMaxRep = (control >> 129) & 1;
-        proveZeroRep = (control >> 130) & 1;
-        proveGraffiti = (control >> 131) & 1;
-        return (
-            minRep,
-            maxRep,
-            proveMinRep,
-            proveMaxRep,
-            proveZeroRep,
-            proveGraffiti
-        );
-    }
-
-    function decodeEpochKeySignals(
+    function decodeSignupSignals(
         uint256[] calldata publicSignals
-    ) public pure returns (EpochKeySignals memory) {
-        EpochKeySignals memory signals;
-        signals.epochKey = publicSignals[0];
-        signals.stateTreeRoot = publicSignals[1];
-        signals.data = publicSignals[3];
+    ) public pure returns (SignupSignals memory) {
+        SignupSignals memory signals;
+        signals.idCommitment = publicSignals[0];
+        signals.stateTreeLeaf = publicSignals[1];
         // now decode the control values
-        (
-            signals.revealNonce,
-            signals.attesterId,
-            signals.epoch,
-            signals.nonce
-        ) = decodeEpochKeyControl(publicSignals[2]);
-        return signals;
-    }
-
-    function verifyEpochKeyProof(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) public {
-        EpochKeySignals memory signals = decodeEpochKeySignals(publicSignals);
-        bool valid = epochKeyVerifier.verifyProof(publicSignals, proof);
-        // short circuit if the proof is invalid
-        if (!valid) revert InvalidProof();
-        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
-        _updateEpochIfNeeded(signals.attesterId);
-        AttesterData storage attester = attesters[uint160(signals.attesterId)];
-        // epoch check
-        if (signals.epoch > attester.currentEpoch)
-            revert InvalidEpoch(signals.epoch);
-        // state tree root check
-        if (!attester.stateTreeRoots[signals.epoch][signals.stateTreeRoot])
-            revert InvalidStateTreeRoot(signals.stateTreeRoot);
-    }
-
-    function decodeEpochKeyLiteSignals(
-        uint256[] calldata publicSignals
-    ) public pure returns (EpochKeySignals memory) {
-        EpochKeySignals memory signals;
-        signals.epochKey = publicSignals[1];
-        signals.data = publicSignals[2];
-        // now decode the control values
-        (
-            signals.revealNonce,
-            signals.attesterId,
-            signals.epoch,
-            signals.nonce
-        ) = decodeEpochKeyControl(publicSignals[0]);
-        return signals;
-    }
-
-    function verifyEpochKeyLiteProof(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) public {
-        EpochKeySignals memory signals = decodeEpochKeyLiteSignals(
-            publicSignals
+        (signals.attesterId, signals.epoch) = decodeSignupControl(
+            publicSignals[2]
         );
-        bool valid = epochKeyLiteVerifier.verifyProof(publicSignals, proof);
-        // short circuit if the proof is invalid
-        if (!valid) revert InvalidProof();
-        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
-        _updateEpochIfNeeded(signals.attesterId);
-        AttesterData storage attester = attesters[uint160(signals.attesterId)];
-        // epoch check
-        if (signals.epoch > attester.currentEpoch)
-            revert InvalidEpoch(signals.epoch);
-    }
-
-    function decodeReputationSignals(
-        uint256[] calldata publicSignals
-    ) public pure returns (ReputationSignals memory) {
-        ReputationSignals memory signals;
-        signals.epochKey = publicSignals[0];
-        signals.stateTreeRoot = publicSignals[1];
-        signals.graffiti = publicSignals[4];
-        // now decode the control values
-        (
-            signals.revealNonce,
-            signals.attesterId,
-            signals.epoch,
-            signals.nonce
-        ) = decodeEpochKeyControl(publicSignals[2]);
-
-        (
-            signals.minRep,
-            signals.maxRep,
-            signals.proveMinRep,
-            signals.proveMaxRep,
-            signals.proveZeroRep,
-            signals.proveGraffiti
-        ) = decodeReputationControl(publicSignals[3]);
         return signals;
-    }
-
-    function verifyReputationProof(
-        uint256[] calldata publicSignals,
-        uint256[8] calldata proof
-    ) public {
-        bool valid = reputationVerifier.verifyProof(publicSignals, proof);
-        if (!valid) revert InvalidProof();
-        ReputationSignals memory signals = decodeReputationSignals(
-            publicSignals
-        );
-        if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
-        if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
-        _updateEpochIfNeeded(signals.attesterId);
-        AttesterData storage attester = attesters[uint160(signals.attesterId)];
-        // epoch check
-        if (signals.epoch > attester.currentEpoch)
-            revert InvalidEpoch(signals.epoch);
-        // state tree root check
-        if (!attester.stateTreeRoots[signals.epoch][signals.stateTreeRoot])
-            revert InvalidStateTreeRoot(signals.stateTreeRoot);
     }
 
     function attesterStartTimestamp(

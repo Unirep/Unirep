@@ -6,8 +6,8 @@ Please check if your PR fulfills the following requirements:
 
 - [ ] Tests for the changes have been added (for bug fixes / features)
 - [ ] Docs have been reviewed and added / updated if needed (for bug fixes / features)
-- [ ] Build (`yarn build`) was run locally and any changes were pushed
-- [ ] Lint (`yarn lint --check`) has passed locally and any fixes were made for failures
+- [ ] Build (`yarn build`) was run locally in root directory and any changes were pushed
+- [ ] Lint (`yarn lint:fix`) was run locally in root directory and any changes were pushed
 
 ## Pull request type
 

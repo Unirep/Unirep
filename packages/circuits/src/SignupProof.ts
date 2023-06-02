@@ -9,14 +9,14 @@ export class SignupProof extends BaseProof {
     readonly idx = {
         identityCommitment: 0,
         stateTreeLeaf: 1,
-        attesterId: 2,
-        epoch: 3,
+        control: 2,
     }
 
     public identityCommitment: bigint
     public stateTreeLeaf: bigint
     public attesterId: bigint
     public epoch: bigint
+    public control: bigint
 
     /**
      * @param _publicSignals The public signals of the user sign up proof that can be verified by the prover
@@ -32,8 +32,18 @@ export class SignupProof extends BaseProof {
         this.identityCommitment =
             this.publicSignals[this.idx.identityCommitment]
         this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]
-        this.attesterId = this.publicSignals[this.idx.attesterId]
-        this.epoch = this.publicSignals[this.idx.epoch]
+        this.control = this.publicSignals[this.idx.control]
+        this.epoch =
+            (BigInt(this.control) >> BigInt(160)) &
+            ((BigInt(1) << BigInt(48)) - BigInt(1))
+        this.attesterId =
+            BigInt(this.control) & ((BigInt(1) << BigInt(160)) - BigInt(1))
         this.circuit = Circuit.signup
+    }
+
+    static buildControl({ attesterId, epoch }: any) {
+        let control = BigInt(attesterId)
+        control += BigInt(epoch) << BigInt(160)
+        return control
     }
 }

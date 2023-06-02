@@ -3,7 +3,7 @@
 // @ts-ignore
 import { expect } from 'chai'
 import { ethers } from 'ethers'
-import { ZkIdentity } from '@unirep/utils'
+import { Identity } from '@semaphore-protocol/identity'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { UserState } from '../src'
@@ -109,20 +109,19 @@ export const compareAttestations = (attestDB: any, attestObj: any) => {
  * representation as a UnirepState object.
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
- * @param _db An optional DB object
+ * @param db An optional DB object
  */
 export const genUnirepState = async (
     provider: ethers.providers.Provider,
     address: string,
     attesterId?: bigint | bigint[],
-    _db?: DB
+    db?: DB
 ) => {
     const unirep = new Synchronizer({
         unirepAddress: address,
         provider,
         attesterId,
-        prover: defaultProver,
-        db: _db,
+        db,
     })
     unirep.pollRate = 150
     await unirep.start()
@@ -136,20 +135,19 @@ export const genUnirepState = async (
  * @param provider An Ethereum provider
  * @param address The address of the Unirep contract
  * @param userIdentity The semaphore identity of the user
- * @param _db An optional DB object
+ * @param db An optional DB object
  */
 export const genUserState = async (
     provider: ethers.providers.Provider,
     address: string,
-    userIdentity: ZkIdentity,
+    userIdentity: Identity,
     attesterId?: bigint | bigint[],
-    _db?: DB
+    db?: DB
 ) => {
-    const synchronizer = await genUnirepState(
-        provider,
-        address,
-        attesterId,
-        _db
-    )
-    return new UserState(synchronizer, userIdentity)
+    const synchronizer = await genUnirepState(provider, address, attesterId, db)
+    return new UserState({
+        synchronizer,
+        prover: defaultProver,
+        id: userIdentity,
+    })
 }

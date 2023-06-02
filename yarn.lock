@@ -4560,6 +4560,7 @@ __metadata:
     "@semaphore-protocol/identity": ^3.5.0
     "@unirep/utils": 2.0.0-beta-3
     mocha: ^10.0.0
+    node-fetch: ^2.6.7
     snarkjs: ^0.5.0
     typescript: ^4.7.3
   languageName: unknown
@@ -4579,7 +4580,6 @@ __metadata:
     "@typechain/ethers-v5": ^10.1.0
     "@typechain/hardhat": ^6.1.0
     "@unirep/circuits": 2.0.0-beta-3
-    "@unirep/test": 1.0.0
     "@unirep/utils": 2.0.0-beta-3
     "@zk-kit/incremental-merkle-tree.sol": ^1.4.0
     big-integer: ^1.6.51
@@ -4634,7 +4634,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@unirep/test@1.0.0, @unirep/test@workspace:packages/test":
+"@unirep/test@workspace:packages/test":
   version: 0.0.0-use.local
   resolution: "@unirep/test@workspace:packages/test"
   dependencies:

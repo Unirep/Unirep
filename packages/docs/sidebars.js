@@ -19,7 +19,7 @@ const sidebars = {
     apiSidebar: [
         {
             type: 'doc',
-            label: '👏 Welcome',
+            label: '👋  Introduction',
             id: 'welcome',
         },
         {
@@ -108,6 +108,11 @@ const sidebars = {
                     label: 'schema',
                     id: 'core-api/schema',
                 },
+                {
+                    type: 'doc',
+                    label: 'Data Schema',
+                    id: 'core-api/data-schema',
+                },
             ],
         },
         {
@@ -128,6 +133,26 @@ const sidebars = {
                     type: 'doc',
                     label: 'Error codes',
                     id: 'contracts-api/errors',
+                },
+                {
+                    type: 'doc',
+                    label: 'BaseVerifierHelper.sol',
+                    id: 'contracts-api/base-verifier-helper',
+                },
+                {
+                    type: 'doc',
+                    label: 'ReputationVerifierHelper.sol',
+                    id: 'contracts-api/reputation-verifier-helper',
+                },
+                {
+                    type: 'doc',
+                    label: 'EpochKeyVerifierHelper.sol',
+                    id: 'contracts-api/epoch-key-verifier-helper',
+                },
+                {
+                    type: 'doc',
+                    label: 'EpochKeyLiteVerifierHelper.sol',
+                    id: 'contracts-api/epoch-key-lite-verifier-helper',
                 },
             ],
         },
@@ -152,8 +177,8 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'networkProver',
-                    id: 'circuits-api/network-prover',
+                    label: 'webProver',
+                    id: 'circuits-api/web-prover',
                 },
                 {
                     type: 'doc',

@@ -17,61 +17,31 @@ import {
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH } from '../src'
-import { deployUnirep } from '../deploy'
+import { deployVerifierHelper, deployVerifierHelpers } from '../deploy'
 const { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT } =
     CircuitConfig.default
-
-const signupUser = async (id, unirepContract, attesterId, account) => {
-    const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
-    const r = await defaultProver.genProofAndPublicSignals(
-        Circuit.signup,
-        stringifyBigInts({
-            epoch: epoch.toString(),
-            identity_nullifier: id.nullifier,
-            identity_trapdoor: id.trapdoor,
-            attester_id: attesterId,
-        })
-    )
-    const { publicSignals, proof } = new SignupProof(
-        r.publicSignals,
-        r.proof,
-        defaultProver
-    )
-    const leafIndex = await unirepContract.attesterStateTreeLeafCount(
-        attesterId
-    )
-    await unirepContract
-        .connect(account)
-        .userSignUp(publicSignals, proof)
-        .then((t) => t.wait())
-    return { leaf: publicSignals[1], index: leafIndex.toNumber(), epoch }
-}
 
 function randomBits(bit: number) {
     return genRandomSalt() % (BigInt(2) ** BigInt(bit) - BigInt(1))
 }
 
-describe('Epoch key lite proof verifier', function () {
+describe('Epoch key lite verifier helper', function () {
     this.timeout(300000)
 
-    let unirepContract
+    let epochKeyLiteVerifierHelper
 
     before(async () => {
         const accounts = await ethers.getSigners()
-        unirepContract = await deployUnirep(accounts[0])
+        epochKeyLiteVerifierHelper = await deployVerifierHelper(
+            accounts[0],
+            Circuit.epochKeyLite
+        )
     })
 
     {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
-            const accounts = await ethers.getSigners()
-            const attester = accounts[1]
-            await unirepContract
-                .connect(attester)
-                .attesterSignUp(EPOCH_LENGTH)
-                .then((t) => t.wait())
         })
 
         afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
@@ -81,10 +51,9 @@ describe('Epoch key lite proof verifier', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new Identity()
-        const attesterId = attester.address
-        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
-
+        const epoch = 0
         const sig_data = 0
+
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.epochKeyLite,
@@ -94,7 +63,7 @@ describe('Epoch key lite proof verifier', function () {
                     epoch,
                     nonce,
                     attester_id: attester.address,
-                    reveal_nonce: 0,
+                    reveal_nonce: false,
                 })
             )
 
@@ -108,19 +77,20 @@ describe('Epoch key lite proof verifier', function () {
                 r.publicSignals,
                 r.proof
             )
-            await unirepContract
-                .verifyEpochKeyLiteProof(publicSignals, proof)
-                .then((t) => t.wait())
+            await epochKeyLiteVerifierHelper.verifyAndCheck(
+                publicSignals,
+                proof
+            )
         }
     })
 
     it('should decode public signals', async () => {
         // should reveal nonce
         {
-            const epoch = randomBits(64)
+            const epoch = randomBits(48)
             const nonce = randomBits(8)
             const attesterId = randomBits(160)
-            const revealNonce = 1
+            const revealNonce = true
 
             const control = EpochKeyLiteProof.buildControl({
                 attesterId,
@@ -129,9 +99,8 @@ describe('Epoch key lite proof verifier', function () {
                 revealNonce,
             })
 
-            const decodedControl = await unirepContract.decodeEpochKeyControl(
-                control
-            )
+            const decodedControl =
+                await epochKeyLiteVerifierHelper.decodeEpochKeyControl(control)
             expect(decodedControl.epoch.toString()).to.equal(epoch.toString())
             expect(decodedControl.nonce.toString()).to.equal(nonce.toString())
             expect(decodedControl.attesterId.toString()).to.equal(
@@ -144,10 +113,10 @@ describe('Epoch key lite proof verifier', function () {
 
         // should not reveal nonce
         {
-            const epoch = randomBits(64)
+            const epoch = randomBits(48)
             const nonce = randomBits(8)
             const attesterId = randomBits(160)
-            const revealNonce = 0
+            const revealNonce = false
 
             const control = EpochKeyLiteProof.buildControl({
                 attesterId,
@@ -156,52 +125,15 @@ describe('Epoch key lite proof verifier', function () {
                 revealNonce,
             })
 
-            const decodedControl = await unirepContract.decodeEpochKeyControl(
-                control
-            )
+            const decodedControl =
+                await epochKeyLiteVerifierHelper.decodeEpochKeyControl(control)
             expect(decodedControl.epoch.toString()).to.equal(epoch.toString())
             expect(decodedControl.nonce.toString()).to.equal('0')
             expect(decodedControl.attesterId.toString()).to.equal(
                 attesterId.toString()
             )
-            expect(decodedControl.revealNonce.toString()).to.equal('0')
+            expect(decodedControl.revealNonce.toString()).to.equal('false')
         }
-    })
-
-    it('should fail to verify an epoch key lite proof with invalid epoch', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new Identity()
-        const attesterId = attester.address
-
-        const data = 0
-        const invalidEpoch = 3333
-        const nonce = 0
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochKeyLite,
-            stringifyBigInts({
-                identity_secret: id.secret,
-                sig_data: data,
-                epoch: invalidEpoch,
-                nonce,
-                attester_id: attester.address,
-                reveal_nonce: 0,
-            })
-        )
-
-        const v = await defaultProver.verifyProof(
-            Circuit.epochKeyLite,
-            r.publicSignals,
-            r.proof
-        )
-        expect(v).to.be.true
-        const { publicSignals, proof } = new EpochKeyLiteProof(
-            r.publicSignals,
-            r.proof
-        )
-        await expect(
-            unirepContract.verifyEpochKeyLiteProof(publicSignals, proof)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpoch')
     })
 
     it('should fail to verify an epoch key lite proof with invalid proof', async () => {
@@ -209,7 +141,8 @@ describe('Epoch key lite proof verifier', function () {
         const attester = accounts[1]
         const id = new Identity()
         const attesterId = attester.address
-        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
+
+        const epoch = 0
         const data = 0
         const nonce = 0
         const r = await defaultProver.genProofAndPublicSignals(
@@ -220,7 +153,7 @@ describe('Epoch key lite proof verifier', function () {
                 epoch,
                 nonce,
                 attester_id: attester.address,
-                reveal_nonce: 0,
+                reveal_nonce: false,
             })
         )
 
@@ -238,7 +171,7 @@ describe('Epoch key lite proof verifier', function () {
             const _proof = [...proof]
             _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
             await expect(
-                unirepContract.verifyEpochKeyLiteProof(publicSignals, _proof)
+                epochKeyLiteVerifierHelper.verifyAndCheck(publicSignals, _proof)
             ).to.be.reverted
         }
 
@@ -246,20 +179,81 @@ describe('Epoch key lite proof verifier', function () {
             const _publicSignals = [...publicSignals]
             _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
             await expect(
-                unirepContract.verifyEpochKeyLiteProof(_publicSignals, proof)
-            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+                epochKeyLiteVerifierHelper.verifyAndCheck(_publicSignals, proof)
+            ).to.be.revertedWithCustomError(
+                epochKeyLiteVerifierHelper,
+                'InvalidProof'
+            )
+        }
+    })
+
+    it('verify that msg.sender is the same as attesterId', async () => {
+        const accounts = await ethers.getSigners()
+        const owner = accounts[0]
+        const id = new Identity()
+        const epoch = 0
+        const sig_data = 0
+        const nonce = 0
+        {
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.epochKeyLite,
+                stringifyBigInts({
+                    identity_secret: id.secret,
+                    sig_data,
+                    epoch,
+                    nonce,
+                    attester_id: owner.address,
+                    reveal_nonce: false,
+                })
+            )
+
+            const { publicSignals, proof } = new EpochKeyLiteProof(
+                r.publicSignals,
+                r.proof
+            )
+            await expect(
+                epochKeyLiteVerifierHelper
+                    .connect(owner)
+                    .verifyAndCheckCaller(publicSignals, proof)
+            ).to.not.be.reverted
+        }
+        {
+            const randomAddress = BigInt(10)
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.epochKeyLite,
+                stringifyBigInts({
+                    identity_secret: id.secret,
+                    sig_data,
+                    epoch,
+                    nonce,
+                    attester_id: randomAddress,
+                    reveal_nonce: false,
+                })
+            )
+            const { publicSignals, proof } = new EpochKeyLiteProof(
+                r.publicSignals,
+                r.proof
+            )
+            await expect(
+                epochKeyLiteVerifierHelper
+                    .connect(owner)
+                    .verifyAndCheckCaller(publicSignals, proof)
+            ).to.be.reverted
         }
     })
 })
 
-describe('Epoch key proof verifier', function () {
+describe('Epoch key verifier helper', function () {
     this.timeout(500000)
 
-    let unirepContract
+    let epochKeyVerifierHelper
 
     before(async () => {
         const accounts = await ethers.getSigners()
-        unirepContract = await deployUnirep(accounts[0])
+        epochKeyVerifierHelper = await deployVerifierHelper(
+            accounts[0],
+            Circuit.epochKey
+        )
     })
 
     {
@@ -267,11 +261,6 @@ describe('Epoch key proof verifier', function () {
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
             const accounts = await ethers.getSigners()
-            const attester = accounts[1]
-            await unirepContract
-                .connect(attester)
-                .attesterSignUp(EPOCH_LENGTH)
-                .then((t) => t.wait())
         })
 
         afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
@@ -280,14 +269,28 @@ describe('Epoch key proof verifier', function () {
     it('should verify an epoch key proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const attesterId = attester.address
         const id = new Identity()
+        const epoch = 0
+
         // sign up a user
-        const { leaf, index, epoch } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch: epoch.toString(),
+                identity_nullifier: id.nullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: attester.address,
+            })
         )
+        const { publicSignals, proof } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
+        const leaf = publicSignals[1]
+        const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
@@ -305,7 +308,7 @@ describe('Epoch key proof verifier', function () {
                     epoch,
                     nonce,
                     attester_id: attester.address,
-                    reveal_nonce: 0,
+                    reveal_nonce: false,
                 })
             )
 
@@ -315,13 +318,32 @@ describe('Epoch key proof verifier', function () {
                 r.proof
             )
             expect(v).to.be.true
-            const { publicSignals, proof } = new EpochKeyProof(
+            const { publicSignals, proof, ...proofFields } = new EpochKeyProof(
                 r.publicSignals,
                 r.proof
             )
-            await unirepContract
-                .verifyEpochKeyProof(publicSignals, proof)
-                .then((t) => t.wait())
+            const signals = await epochKeyVerifierHelper.verifyAndCheck(
+                publicSignals,
+                proof
+            )
+            expect(signals.epochKey.toString()).to.equal(
+                proofFields.epochKey.toString()
+            )
+            expect(signals.stateTreeRoot.toString()).to.equal(
+                proofFields.stateTreeRoot.toString()
+            )
+            expect(signals.data.toString()).to.equal(
+                proofFields.data.toString()
+            )
+            expect(signals.attesterId.toString()).to.equal(
+                proofFields.attesterId.toString()
+            )
+            expect(signals.epoch.toString()).to.equal(
+                proofFields.epoch.toString()
+            )
+            expect(signals.nonce.toString()).to.equal(
+                proofFields.nonce.toString()
+            )
         }
     })
 
@@ -329,13 +351,27 @@ describe('Epoch key proof verifier', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new Identity()
+        const epoch = 0
+
         // sign up a user
-        const { leaf, index, epoch } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch: epoch.toString(),
+                identity_nullifier: id.nullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: attester.address,
+            })
         )
+        const { publicSignals, proof } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
+        const leaf = publicSignals[1]
+        const index = 0
+
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
@@ -353,7 +389,7 @@ describe('Epoch key proof verifier', function () {
                     epoch,
                     nonce,
                     attester_id: attester.address,
-                    reveal_nonce: 0,
+                    reveal_nonce: false,
                 })
             )
 
@@ -364,7 +400,7 @@ describe('Epoch key proof verifier', function () {
             )
             expect(v).to.be.true
             const proof = new EpochKeyProof(r.publicSignals, r.proof)
-            const signals = await unirepContract.decodeEpochKeySignals(
+            const signals = await epochKeyVerifierHelper.decodeEpochKeySignals(
                 proof.publicSignals
             )
             expect(signals.epochKey.toString()).to.equal(
@@ -379,9 +415,10 @@ describe('Epoch key proof verifier', function () {
             )
             expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
             expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
-            await unirepContract
-                .verifyEpochKeyProof(proof.publicSignals, proof.proof)
-                .then((t) => t.wait())
+            await epochKeyVerifierHelper.verifyAndCheck(
+                proof.publicSignals,
+                proof.proof
+            )
         }
     })
 
@@ -389,15 +426,28 @@ describe('Epoch key proof verifier', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new Identity()
-        // sign up a user
-        const { leaf, index } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
+        const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
+
+        {
+            const epoch = 0
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.signup,
+                stringifyBigInts({
+                    epoch: epoch.toString(),
+                    identity_nullifier: id.nullifier,
+                    identity_trapdoor: id.trapdoor,
+                    attester_id: attester.address,
+                })
+            )
+            const { publicSignals, proof } = new SignupProof(
+                r.publicSignals,
+                r.proof,
+                defaultProver
+            )
+            const leaf = publicSignals[1]
+            stateTree.insert(leaf)
+        }
 
         const merkleProof = stateTree.createProof(index)
         const data = 0
@@ -414,7 +464,7 @@ describe('Epoch key proof verifier', function () {
                 epoch: invalidEpoch,
                 nonce,
                 attester_id: attester.address,
-                reveal_nonce: 0,
+                reveal_nonce: false,
             })
         )
 
@@ -424,28 +474,55 @@ describe('Epoch key proof verifier', function () {
             r.proof
         )
         expect(v).to.be.true
-        const { publicSignals, proof } = new EpochKeyProof(
+        const { publicSignals, proof, ...proofFields } = new EpochKeyProof(
             r.publicSignals,
             r.proof
         )
-        await expect(
-            unirepContract.verifyEpochKeyProof(publicSignals, proof)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpoch')
+        const signals = await epochKeyVerifierHelper.verifyAndCheck(
+            publicSignals,
+            proof
+        )
+        expect(signals.epochKey.toString()).to.equal(
+            proofFields.epochKey.toString()
+        )
+        expect(signals.stateTreeRoot.toString()).to.equal(
+            proofFields.stateTreeRoot.toString()
+        )
+        expect(signals.data.toString()).to.equal(proofFields.data.toString())
+        expect(signals.attesterId.toString()).to.equal(
+            proofFields.attesterId.toString()
+        )
+        expect(signals.epoch.toString()).to.equal(proofFields.epoch.toString())
+        expect(signals.nonce.toString()).to.equal(proofFields.nonce.toString())
     })
 
     it('should fail to verify an epoch key proof with invalid proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new Identity()
-        // sign up a user
-        const { leaf, index, epoch } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
+        const epoch = 0
+        const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
+
+        {
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.signup,
+                stringifyBigInts({
+                    epoch: epoch.toString(),
+                    identity_nullifier: id.nullifier,
+                    identity_trapdoor: id.trapdoor,
+                    attester_id: attester.address,
+                })
+            )
+            const { publicSignals, proof } = new SignupProof(
+                r.publicSignals,
+                r.proof,
+                defaultProver
+            )
+
+            const leaf = publicSignals[1]
+            stateTree.insert(leaf)
+        }
 
         const merkleProof = stateTree.createProof(index)
         const data = 0
@@ -461,7 +538,7 @@ describe('Epoch key proof verifier', function () {
                 epoch,
                 nonce,
                 attester_id: attester.address,
-                reveal_nonce: 0,
+                reveal_nonce: false,
             })
         )
 
@@ -476,10 +553,10 @@ describe('Epoch key proof verifier', function () {
             r.proof
         )
         {
-            const _proof = [...proof]
+            const _proof = [...proof].map((x) => BigInt(x))
             _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
             await expect(
-                unirepContract.verifyEpochKeyProof(publicSignals, _proof)
+                epochKeyVerifierHelper.verifyAndCheck(publicSignals, _proof)
             ).to.be.reverted
         }
 
@@ -487,57 +564,86 @@ describe('Epoch key proof verifier', function () {
             const _publicSignals = [...publicSignals]
             _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
             await expect(
-                unirepContract.verifyEpochKeyProof(_publicSignals, proof)
-            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+                epochKeyVerifierHelper.verifyAndCheck(_publicSignals, proof)
+            ).to.be.revertedWithCustomError(
+                epochKeyVerifierHelper,
+                'InvalidProof'
+            )
         }
     })
 
-    it('should fail to verify an epoch key proof with bad state tree root', async () => {
+    it('verify that msg.sender is the same as attesterId', async () => {
         const accounts = await ethers.getSigners()
-        const attester = accounts[1]
+        const owner = accounts[0]
         const id = new Identity()
-        // sign up a user
-        const { epoch } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
+        const epoch = 0
+        {
+            const data = 0
+            const nonce = 0
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.epochKey,
+                stringifyBigInts({
+                    state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
+                    state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
+                    identity_secret: id.secret,
+                    data: Array(FIELD_COUNT).fill(0),
+                    sig_data: data,
+                    epoch,
+                    nonce,
+                    attester_id: owner.address,
+                    reveal_nonce: false,
+                })
+            )
 
-        const data = 0
-        const nonce = 0
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.epochKey,
-            stringifyBigInts({
-                state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
-                state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
-                identity_secret: id.secret,
-                data: Array(FIELD_COUNT).fill(0),
-                sig_data: data,
-                epoch,
-                nonce,
-                attester_id: attester.address,
-                reveal_nonce: 0,
-            })
-        )
+            const { publicSignals, proof } = new EpochKeyProof(
+                r.publicSignals,
+                r.proof
+            )
+            await expect(
+                epochKeyVerifierHelper
+                    .connect(owner)
+                    .verifyAndCheckCaller(publicSignals, proof)
+            ).to.not.be.revertedWithCustomError(
+                epochKeyVerifierHelper,
+                'CallerInvalid'
+            )
+        }
+        {
+            const data = 0
+            const nonce = 0
+            const randomAddress = BigInt(10)
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.epochKey,
+                stringifyBigInts({
+                    state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
+                    state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
+                    identity_secret: id.secret,
+                    data: Array(FIELD_COUNT).fill(0),
+                    sig_data: data,
+                    epoch,
+                    nonce,
+                    attester_id: randomAddress,
+                    reveal_nonce: false,
+                })
+            )
 
-        const v = await defaultProver.verifyProof(
-            Circuit.epochKey,
-            r.publicSignals,
-            r.proof
-        )
-        expect(v).to.be.true
-        const { publicSignals, proof } = new EpochKeyProof(
-            r.publicSignals,
-            r.proof
-        )
-        await expect(
-            unirepContract.verifyEpochKeyProof(publicSignals, proof)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidStateTreeRoot')
+            const { publicSignals, proof, ...proofFields } = new EpochKeyProof(
+                r.publicSignals,
+                r.proof
+            )
+            await expect(
+                epochKeyVerifierHelper
+                    .connect(owner)
+                    .verifyAndCheckCaller(publicSignals, proof)
+            ).to.be.revertedWithCustomError(
+                epochKeyVerifierHelper,
+                'CallerInvalid'
+            )
+        }
     })
 })
 
-describe('Reputation proof verifier', function () {
+describe('Reputation verifier helper', function () {
     this.timeout(120000)
 
     const zeroCircuitInputs = {
@@ -547,7 +653,7 @@ describe('Reputation proof verifier', function () {
         data: Array(FIELD_COUNT).fill(0),
         prove_graffiti: 0,
         graffiti: 0,
-        reveal_nonce: 0,
+        reveal_nonce: false,
         attester_id: 0,
         epoch: 0,
         nonce: 0,
@@ -559,11 +665,10 @@ describe('Reputation proof verifier', function () {
         sig_data: 696969,
     }
 
-    let unirepContract
-
+    let verifierHelpers
     before(async () => {
         const accounts = await ethers.getSigners()
-        unirepContract = await deployUnirep(accounts[0])
+        verifierHelpers = await deployVerifierHelpers(accounts[0])
     })
 
     {
@@ -571,11 +676,6 @@ describe('Reputation proof verifier', function () {
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
             const accounts = await ethers.getSigners()
-            const attester = accounts[1]
-            await unirepContract
-                .connect(attester)
-                .attesterSignUp(EPOCH_LENGTH)
-                .then((t) => t.wait())
         })
 
         afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
@@ -585,13 +685,26 @@ describe('Reputation proof verifier', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new Identity()
-        // sign up a user
-        const { leaf, index, epoch } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
+        const epoch = 0
+
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                epoch: epoch.toString(),
+                identity_nullifier: id.nullifier,
+                identity_trapdoor: id.trapdoor,
+                attester_id: attester.address,
+            })
         )
+        const { publicSignals, proof } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+
+        const leaf = publicSignals[1]
+        const index = 0
+
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
 
@@ -615,13 +728,33 @@ describe('Reputation proof verifier', function () {
                 r.proof
             )
             expect(v).to.be.true
-            const { publicSignals, proof } = new ReputationProof(
-                r.publicSignals,
-                r.proof
+            const { publicSignals, proof, ...proofFields } =
+                new ReputationProof(r.publicSignals, r.proof)
+            const signals = await verifierHelpers.reputation.verifyAndCheck(
+                publicSignals,
+                proof
             )
-            await unirepContract
-                .verifyReputationProof(publicSignals, proof)
-                .then((t) => t.wait())
+            expect(signals.epochKey.toString()).to.equal(
+                proofFields.epochKey.toString()
+            )
+            expect(signals.stateTreeRoot.toString()).to.equal(
+                proofFields.stateTreeRoot.toString()
+            )
+            expect(signals.maxRep.toString()).to.equal(
+                proofFields.maxRep.toString()
+            )
+            expect(signals.minRep.toString()).to.equal(
+                proofFields.minRep.toString()
+            )
+            expect(signals.attesterId.toString()).to.equal(
+                proofFields.attesterId.toString()
+            )
+            expect(signals.epoch.toString()).to.equal(
+                proofFields.epoch.toString()
+            )
+            expect(signals.nonce.toString()).to.equal(
+                proofFields.nonce.toString()
+            )
         }
     })
 
@@ -629,7 +762,7 @@ describe('Reputation proof verifier', function () {
         const epoch = randomBits(64)
         const nonce = randomBits(8)
         const attesterId = randomBits(160)
-        const revealNonce = 0
+        const revealNonce = false
 
         for (let proveMinRep = 0; proveMinRep < 2; proveMinRep++) {
             for (let proveMaxRep = 0; proveMaxRep < 2; proveMaxRep++) {
@@ -654,7 +787,7 @@ describe('Reputation proof verifier', function () {
                             proveZeroRep,
                         })
                         const decodedControl =
-                            await unirepContract.decodeReputationControl(
+                            await verifierHelpers.reputation.decodeReputationControl(
                                 control[1]
                             )
                         expect(decodedControl.minRep.toString()).to.equal(
@@ -663,18 +796,18 @@ describe('Reputation proof verifier', function () {
                         expect(decodedControl.maxRep.toString()).to.equal(
                             maxRep.toString()
                         )
-                        expect(decodedControl.proveMinRep.toString()).to.equal(
-                            proveMinRep.toString()
+                        expect(decodedControl.proveMinRep).to.equal(
+                            Boolean(proveMinRep)
                         )
-                        expect(decodedControl.proveMaxRep.toString()).to.equal(
-                            proveMaxRep.toString()
+                        expect(decodedControl.proveMaxRep).to.equal(
+                            Boolean(proveMaxRep)
                         )
-                        expect(decodedControl.proveZeroRep.toString()).to.equal(
-                            proveZeroRep.toString()
+                        expect(decodedControl.proveZeroRep).to.equal(
+                            Boolean(proveZeroRep)
                         )
-                        expect(
-                            decodedControl.proveGraffiti.toString()
-                        ).to.equal(proveGraffiti.toString())
+                        expect(decodedControl.proveGraffiti).to.equal(
+                            Boolean(proveGraffiti)
+                        )
                     }
                 }
             }
@@ -685,15 +818,29 @@ describe('Reputation proof verifier', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new Identity()
-        // sign up a user
-        const { leaf, index } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
+        const epoch = 0
+        const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
+
+        {
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.signup,
+                stringifyBigInts({
+                    epoch: epoch.toString(),
+                    identity_nullifier: id.nullifier,
+                    identity_trapdoor: id.trapdoor,
+                    attester_id: attester.address,
+                })
+            )
+            const { publicSignals, proof } = new SignupProof(
+                r.publicSignals,
+                r.proof,
+                defaultProver
+            )
+
+            const leaf = publicSignals[1]
+            stateTree.insert(leaf)
+        }
 
         const invalidEpoch = 3333
         const merkleProof = stateTree.createProof(index)
@@ -715,28 +862,60 @@ describe('Reputation proof verifier', function () {
             r.proof
         )
         expect(v).to.be.true
-        const { publicSignals, proof } = new ReputationProof(
+        const { publicSignals, proof, ...proofFields } = new ReputationProof(
             r.publicSignals,
             r.proof
         )
-        await expect(
-            unirepContract.verifyReputationProof(publicSignals, proof)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidEpoch')
+        const signals = await verifierHelpers.reputation.verifyAndCheck(
+            publicSignals,
+            proof
+        )
+        expect(signals.epochKey.toString()).to.equal(
+            proofFields.epochKey.toString()
+        )
+        expect(signals.stateTreeRoot.toString()).to.equal(
+            proofFields.stateTreeRoot.toString()
+        )
+        expect(signals.maxRep.toString()).to.equal(
+            proofFields.maxRep.toString()
+        )
+        expect(signals.minRep.toString()).to.equal(
+            proofFields.minRep.toString()
+        )
+        expect(signals.attesterId.toString()).to.equal(
+            proofFields.attesterId.toString()
+        )
+        expect(signals.epoch.toString()).to.equal(proofFields.epoch.toString())
+        expect(signals.nonce.toString()).to.equal(proofFields.nonce.toString())
     })
 
     it('should fail to verify a reputation proof with invalid proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const id = new Identity()
-        // sign up a user
-        const { leaf, index, epoch } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
+        const epoch = 0
+        const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
+
+        {
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.signup,
+                stringifyBigInts({
+                    epoch: epoch.toString(),
+                    identity_nullifier: id.nullifier,
+                    identity_trapdoor: id.trapdoor,
+                    attester_id: attester.address,
+                })
+            )
+            const { publicSignals, proof } = new SignupProof(
+                r.publicSignals,
+                r.proof,
+                defaultProver
+            )
+
+            const leaf = publicSignals[1]
+            stateTree.insert(leaf)
+        }
 
         const merkleProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
@@ -759,7 +938,7 @@ describe('Reputation proof verifier', function () {
             const _proof = [...proof]
             _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
             await expect(
-                unirepContract.verifyEpochKeyProof(publicSignals, _proof)
+                verifierHelpers.epochKey.verifyAndCheck(publicSignals, _proof)
             ).to.be.reverted
         }
 
@@ -767,47 +946,129 @@ describe('Reputation proof verifier', function () {
             const _publicSignals = [...publicSignals]
             _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
             await expect(
-                unirepContract.verifyReputationProof(_publicSignals, proof)
-            ).to.be.revertedWithCustomError(unirepContract, 'InvalidProof')
+                verifierHelpers.reputation.verifyAndCheck(_publicSignals, proof)
+            ).to.be.revertedWithCustomError(
+                verifierHelpers.reputation,
+                'InvalidProof'
+            )
         }
     })
 
-    it('should fail to verify a reputation proof with invalid state tree', async () => {
+    it('verify that caller is the same as attesterId', async () => {
         const accounts = await ethers.getSigners()
-        const attester = accounts[1]
+        const attester = accounts[0]
         const id = new Identity()
-        // sign up a user
-        const { epoch } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
+        const epoch = 0
 
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.proveReputation,
-            stringifyBigInts({
-                ...zeroCircuitInputs,
-                identity_secret: id.secret,
-                state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
-                state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
-                attester_id: attester.address,
-                epoch,
-            })
-        )
+        {
+            const nonce = 0
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.proveReputation,
+                stringifyBigInts({
+                    ...zeroCircuitInputs,
+                    identity_secret: id.secret,
+                    state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
+                    state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
+                    attester_id: attester.address,
+                    epoch,
+                    nonce,
+                })
+            )
+            const { publicSignals, proof } = new ReputationProof(
+                r.publicSignals,
+                r.proof
+            )
+            await expect(
+                verifierHelpers.reputation
+                    .connect(attester)
+                    .verifyAndCheckCaller(publicSignals, proof)
+            ).to.not.be.reverted
+        }
+        {
+            const nonce = 0
+            const randomAddress = randomBits(160)
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.proveReputation,
+                stringifyBigInts({
+                    ...zeroCircuitInputs,
+                    identity_secret: id.secret,
+                    state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
+                    state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
+                    attester_id: randomAddress,
+                    epoch,
+                    nonce,
+                })
+            )
+            const { publicSignals, proof } = new ReputationProof(
+                r.publicSignals,
+                r.proof
+            )
+            await expect(
+                verifierHelpers.reputation
+                    .connect(attester)
+                    .verifyAndCheckCaller(publicSignals, proof)
+            ).to.be.revertedWithCustomError(
+                verifierHelpers.reputation,
+                'CallerInvalid'
+            )
+        }
+        {
+            const data = 0
+            const nonce = 0
+            const randomAddress = randomBits(160)
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.epochKey,
+                stringifyBigInts({
+                    state_tree_elements: new Array(STATE_TREE_DEPTH).fill(0),
+                    state_tree_indexes: new Array(STATE_TREE_DEPTH).fill(0),
+                    identity_secret: id.secret,
+                    data: Array(FIELD_COUNT).fill(0),
+                    sig_data: data,
+                    epoch: 0,
+                    nonce,
+                    attester_id: randomAddress,
+                    reveal_nonce: false,
+                })
+            )
 
-        const v = await defaultProver.verifyProof(
-            Circuit.proveReputation,
-            r.publicSignals,
-            r.proof
-        )
-        expect(v).to.be.true
-        const { publicSignals, proof } = new ReputationProof(
-            r.publicSignals,
-            r.proof
-        )
-        await expect(
-            unirepContract.verifyReputationProof(publicSignals, proof)
-        ).to.be.revertedWithCustomError(unirepContract, 'InvalidStateTreeRoot')
+            const { publicSignals, proof, ...proofFields } = new EpochKeyProof(
+                r.publicSignals,
+                r.proof
+            )
+            await expect(
+                verifierHelpers.epochKey
+                    .connect(attester)
+                    .verifyAndCheckCaller(publicSignals, proof)
+            ).to.be.revertedWithCustomError(
+                verifierHelpers.epochKey,
+                'CallerInvalid'
+            )
+        }
+        {
+            const randomAddress = randomBits(160)
+            const r = await defaultProver.genProofAndPublicSignals(
+                Circuit.epochKeyLite,
+                stringifyBigInts({
+                    identity_secret: id.secret,
+                    sig_data: 0,
+                    epoch,
+                    nonce: 0,
+                    attester_id: randomAddress,
+                    reveal_nonce: false,
+                })
+            )
+            const { publicSignals, proof } = new EpochKeyLiteProof(
+                r.publicSignals,
+                r.proof
+            )
+            await expect(
+                verifierHelpers.epochKeyLite
+                    .connect(attester)
+                    .verifyAndCheckCaller(publicSignals, proof)
+            ).to.be.revertedWithCustomError(
+                verifierHelpers.epochKeyLite,
+                'CallerInvalid'
+            )
+        }
     })
 })
