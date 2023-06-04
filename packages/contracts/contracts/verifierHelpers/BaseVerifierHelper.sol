@@ -52,10 +52,16 @@ contract BaseVerifierHelper {
             uint8 nonce
         )
     {
-        revealNonce = ((control >> 232) & 1) != 0;
-        attesterId = uint160((control >> 72) & ((1 << 160) - 1));
-        epoch = uint48((control >> 8) & ((1 << 64) - 1));
-        nonce = uint8(control & ((1 << 8) - 1));
+        uint8 attesterIdBits = 160;
+        uint8 epochBits = 48;
+        uint8 nonceBits = 8;
+        revealNonce =
+            ((control >> (attesterIdBits + epochBits + nonceBits)) & 1) != 0;
+        attesterId = uint160(
+            (control >> (epochBits + nonceBits)) & ((1 << attesterIdBits) - 1)
+        );
+        epoch = uint48((control >> nonceBits) & ((1 << epochBits) - 1));
+        nonce = uint8(control & ((1 << nonceBits) - 1));
         return (revealNonce, attesterId, epoch, nonce);
     }
 

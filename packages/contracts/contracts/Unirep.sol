@@ -107,19 +107,17 @@ contract Unirep is IUnirep, VerifySignature {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
             if (x >= sumFieldCount && initialData[x] >= 2 ** replFieldBits)
                 revert OutOfRange();
+            uint256 data = initialData[x] <<
+                (x >= sumFieldCount ? replNonceBits : 0);
             if (x != 0) {
-                initialDataHash = PoseidonT3.hash(
-                    [initialDataHash, initialData[x]]
-                );
+                initialDataHash = PoseidonT3.hash([initialDataHash, data]);
             }
             emit Attestation(
                 type(uint48).max,
                 identityCommitment,
                 uint160(msg.sender),
                 x,
-                x >= sumFieldCount
-                    ? initialData[x] << replNonceBits
-                    : initialData[x]
+                data
             );
         }
         uint256 stateTreeLeaf = PoseidonT3.hash(
