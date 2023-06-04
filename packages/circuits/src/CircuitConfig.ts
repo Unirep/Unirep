@@ -42,6 +42,16 @@ export class CircuitConfig {
         return 253 - this.REPL_NONCE_BITS
     }
 
+    static get EPOCH_BITS() {
+        return BigInt(48)
+    }
+    static get NONCE_BITS() {
+        return BigInt(8)
+    }
+    static get ATTESTER_ID_BITS() {
+        return BigInt(160)
+    }
+
     constructor(
         _config: {
             STATE_TREE_DEPTH?: number

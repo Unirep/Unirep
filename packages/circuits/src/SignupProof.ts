@@ -1,6 +1,9 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
+import { CircuitConfig } from './CircuitConfig'
+
+const { ATTESTER_ID_BITS, EPOCH_BITS } = CircuitConfig
 
 /**
  * The sign up proof structure that helps to query the public signals
@@ -34,10 +37,10 @@ export class SignupProof extends BaseProof {
         this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]
         this.control = this.publicSignals[this.idx.control]
         this.epoch =
-            (BigInt(this.control) >> BigInt(160)) &
-            ((BigInt(1) << BigInt(48)) - BigInt(1))
+            (BigInt(this.control) >> ATTESTER_ID_BITS) &
+            ((BigInt(1) << EPOCH_BITS) - BigInt(1))
         this.attesterId =
-            BigInt(this.control) & ((BigInt(1) << BigInt(160)) - BigInt(1))
+            BigInt(this.control) & ((BigInt(1) << ATTESTER_ID_BITS) - BigInt(1))
         this.circuit = Circuit.signup
     }
 

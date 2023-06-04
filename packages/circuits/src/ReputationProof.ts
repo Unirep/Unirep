@@ -1,6 +1,9 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
+import { CircuitConfig } from './CircuitConfig'
+
+const { ATTESTER_ID_BITS, NONCE_BITS, EPOCH_BITS } = CircuitConfig
 
 /**
  * The reputation proof structure that helps to query the public signals
@@ -46,15 +49,18 @@ export class ReputationProof extends BaseProof {
         this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]
         this.control0 = this.publicSignals[this.idx.control0]
         this.control1 = this.publicSignals[this.idx.control1]
-        this.revealNonce = (BigInt(this.control0) >> BigInt(232)) & BigInt(1)
+        this.revealNonce =
+            (BigInt(this.control0) >>
+                (ATTESTER_ID_BITS + NONCE_BITS + EPOCH_BITS)) &
+            BigInt(1)
         this.attesterId =
-            (BigInt(this.control0) >> BigInt(72)) &
-            ((BigInt(1) << BigInt(160)) - BigInt(1))
+            (BigInt(this.control0) >> (EPOCH_BITS + NONCE_BITS)) &
+            ((BigInt(1) << ATTESTER_ID_BITS) - BigInt(1))
         this.epoch =
-            (BigInt(this.control0) >> BigInt(8)) &
-            ((BigInt(1) << BigInt(64)) - BigInt(1))
+            (BigInt(this.control0) >> NONCE_BITS) &
+            ((BigInt(1) << EPOCH_BITS) - BigInt(1))
         this.nonce =
-            BigInt(this.control0) & ((BigInt(1) << BigInt(8)) - BigInt(1))
+            BigInt(this.control0) & ((BigInt(1) << NONCE_BITS) - BigInt(1))
         this.minRep =
             BigInt(this.control1) & ((BigInt(1) << BigInt(64)) - BigInt(1))
         this.maxRep =
@@ -82,9 +88,11 @@ export class ReputationProof extends BaseProof {
         proveZeroRep,
     }: any) {
         let control0 = BigInt(0)
-        control0 += BigInt(revealNonce ?? 0) << BigInt(232)
-        control0 += BigInt(attesterId) << BigInt(72)
-        control0 += BigInt(epoch) << BigInt(8)
+        control0 +=
+            BigInt(revealNonce ?? 0) <<
+            (ATTESTER_ID_BITS + EPOCH_BITS + NONCE_BITS)
+        control0 += BigInt(attesterId) << (EPOCH_BITS + NONCE_BITS)
+        control0 += BigInt(epoch) << NONCE_BITS
         control0 += BigInt(nonce) * BigInt(revealNonce ?? 0)
         let control1 = BigInt(0)
         control1 += BigInt(proveGraffiti ?? 0) << BigInt(131)

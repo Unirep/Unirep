@@ -1,6 +1,9 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
+import { CircuitConfig } from './CircuitConfig'
+
+const { ATTESTER_ID_BITS, NONCE_BITS, EPOCH_BITS } = CircuitConfig
 
 /**
  * The prevent double action proof structure that helps to query the public signals
@@ -39,15 +42,18 @@ export class PreventDoubleActionProof extends BaseProof {
         this.control = this.publicSignals[this.idx.control]
         this.sigData = this.publicSignals[this.idx.sigData]
         this.nullifier = this.publicSignals[this.idx.nullifier]
-        this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
+        this.revealNonce =
+            (BigInt(this.control) >>
+                (ATTESTER_ID_BITS + NONCE_BITS + EPOCH_BITS)) &
+            BigInt(1)
         this.attesterId =
-            (BigInt(this.control) >> BigInt(72)) &
-            ((BigInt(1) << BigInt(160)) - BigInt(1))
+            (BigInt(this.control) >> (EPOCH_BITS + NONCE_BITS)) &
+            ((BigInt(1) << ATTESTER_ID_BITS) - BigInt(1))
         this.epoch =
-            (BigInt(this.control) >> BigInt(8)) &
-            ((BigInt(1) << BigInt(64)) - BigInt(1))
+            (BigInt(this.control) >> NONCE_BITS) &
+            ((BigInt(1) << EPOCH_BITS) - BigInt(1))
         this.nonce =
-            BigInt(this.control) & ((BigInt(1) << BigInt(8)) - BigInt(1))
+            BigInt(this.control) & ((BigInt(1) << NONCE_BITS) - BigInt(1))
         this.circuit = Circuit.preventDoubleAction
     }
 }

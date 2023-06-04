@@ -1,6 +1,9 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
+import { CircuitConfig } from './CircuitConfig'
+
+const { ATTESTER_ID_BITS, NONCE_BITS, EPOCH_BITS } = CircuitConfig
 
 /**
  * The epoch key proof structure that helps to query the public signals
@@ -35,24 +38,29 @@ export class EpochKeyProof extends BaseProof {
         this.epochKey = this.publicSignals[this.idx.epochKey]
         this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]
         this.control = this.publicSignals[this.idx.control]
-        this.revealNonce = (BigInt(this.control) >> BigInt(232)) & BigInt(1)
+        this.revealNonce =
+            (BigInt(this.control) >>
+                (ATTESTER_ID_BITS + NONCE_BITS + EPOCH_BITS)) &
+            BigInt(1)
         this.attesterId =
-            (BigInt(this.control) >> BigInt(72)) &
-            ((BigInt(1) << BigInt(160)) - BigInt(1))
+            (BigInt(this.control) >> (EPOCH_BITS + NONCE_BITS)) &
+            ((BigInt(1) << ATTESTER_ID_BITS) - BigInt(1))
         this.epoch =
-            (BigInt(this.control) >> BigInt(8)) &
-            ((BigInt(1) << BigInt(64)) - BigInt(1))
+            (BigInt(this.control) >> NONCE_BITS) &
+            ((BigInt(1) << EPOCH_BITS) - BigInt(1))
         this.nonce =
-            BigInt(this.control) & ((BigInt(1) << BigInt(8)) - BigInt(1))
+            BigInt(this.control) & ((BigInt(1) << NONCE_BITS) - BigInt(1))
         this.data = this.publicSignals[this.idx.data]
         this.circuit = Circuit.epochKey
     }
 
     static buildControl({ attesterId, epoch, nonce, revealNonce }: any) {
         let control = BigInt(0)
-        control += BigInt(revealNonce ?? 0) << BigInt(232)
-        control += BigInt(attesterId) << BigInt(72)
-        control += BigInt(epoch) << BigInt(8)
+        control +=
+            BigInt(revealNonce ?? 0) <<
+            (ATTESTER_ID_BITS + NONCE_BITS + EPOCH_BITS)
+        control += BigInt(attesterId) << (EPOCH_BITS + NONCE_BITS)
+        control += BigInt(epoch) << NONCE_BITS
         control += BigInt(nonce) * BigInt(revealNonce ?? 0)
         return control
     }
