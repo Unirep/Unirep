@@ -23,6 +23,22 @@ const sidebars = {
             id: 'welcome',
         },
         {
+            type: 'category',
+            label: '🚀 Getting Started',
+            items: [
+                {
+                    type: 'doc',
+                    label: 'create-unirep-app',
+                    id: 'getting-started/create-unirep-app',
+                },
+                {
+                    type: 'doc',
+                    label: 'Typescript/Javascript',
+                    id: 'getting-started/ts-js',
+                },
+            ],
+        },
+        {
             type: 'doc',
             label: '🤝 Testnet Deployment',
             id: 'testnet-deployment',

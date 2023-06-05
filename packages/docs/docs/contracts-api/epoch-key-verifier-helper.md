@@ -4,25 +4,15 @@ title: Epoch Key Verifier Helper Contract
 
 This smart contract is dedicated to verifying epoch key proofs. See [IVerifier](iverifier-sol) for more info.
 ```ts
-import { deployVerifierHelpers } from '@unirep/contracts/deploy'
+import { deployVerifierHelper } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit } from '@unirep/circuits'
 
-let verifierHelpers = await deployVerifierHelper(accounts[0], Circuit.epochKey) // deploys all verifier helper contracts
+let epochKeyVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.epochKey) // deploys epoch key verifier helper contracts
 
 const r = await defaultProver.genProofAndPublicSignals(
-    Circuit.epochKey,
-    stringifyBigInts({
-    state_tree_elements: merkleProof.siblings,
-    state_tree_indexes: merkleProof.pathIndices,
-    identity_secret: id.secret,
-    data: data,
-    sig_data: sig_data,
-    epoch,
-    nonce,
-    attester_id: attester.address,
-    reveal_nonce: reveal_noncee,
-  })
+  Circuit.epochKey,
+  CircuitInputs // see @unirep/circuits to know the whole circuit inputs
 )
 
 const { publicSignals, proof } = new EpochKeyProof(
@@ -31,9 +21,9 @@ const { publicSignals, proof } = new EpochKeyProof(
 )
 
 // fails or returns proof signals
-const signals = await verifierHelpers.epochKey.verifyAndCheck(
-    publicSignals,
-    proof
+const signals = await epochKeyVerifierHelper.verifyAndCheck(
+  publicSignals,
+  proof
 ) 
 ```
 
