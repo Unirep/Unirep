@@ -67,13 +67,11 @@ describe('Attester Signup', function () {
                 await unirepContract.attesterEpochRemainingTime(
                     attester.address
                 )
-            expect(epochTimeRemaining.toNumber()).to.be.lte(
-                +attesterEpochLength
-            )
+            expect(epochTimeRemaining).to.be.lte(+attesterEpochLength)
             const epochLength = await unirepContract.attesterEpochLength(
                 attester.address
             )
-            expect(epochLength.toNumber()).to.equal(attesterEpochLength)
+            expect(epochLength).to.equal(attesterEpochLength)
 
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const stateRoot = await unirepContract.attesterStateTreeRoot(
@@ -134,11 +132,11 @@ describe('Attester Signup', function () {
         expect(currentEpoch.toString()).to.equal('0')
         const epochTimeRemaining =
             await unirepContract.attesterEpochRemainingTime(attester.address)
-        expect(epochTimeRemaining.toNumber()).to.be.lte(+EPOCH_LENGTH)
+        expect(epochTimeRemaining).to.be.lte(+EPOCH_LENGTH)
         const epochLength = await unirepContract.attesterEpochLength(
             attester.address
         )
-        expect(epochLength.toNumber()).to.equal(EPOCH_LENGTH)
+        expect(epochLength).to.equal(EPOCH_LENGTH)
 
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const stateRoot = await unirepContract.attesterStateTreeRoot(

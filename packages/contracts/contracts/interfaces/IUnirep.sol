@@ -8,19 +8,19 @@ import {LazyMerkleTree, LazyTreeData} from '../libraries/LazyMerkleTree.sol';
 interface IUnirep {
     event AttesterSignedUp(
         uint160 indexed attesterId,
-        uint256 epochLength,
-        uint256 timestamp
+        uint48 epochLength,
+        uint48 timestamp
     );
 
     event UserSignedUp(
-        uint256 indexed epoch,
+        uint48 indexed epoch,
         uint256 indexed identityCommitment,
         uint160 indexed attesterId,
         uint256 leafIndex
     );
 
     event UserStateTransitioned(
-        uint256 indexed epoch,
+        uint48 indexed epoch,
         uint160 indexed attesterId,
         uint256 indexed leafIndex,
         uint256 hashedLeaf,
@@ -28,7 +28,7 @@ interface IUnirep {
     );
 
     event Attestation(
-        uint256 indexed epoch,
+        uint48 indexed epoch,
         uint256 indexed epochKey,
         uint160 indexed attesterId,
         uint256 fieldIndex,
@@ -36,14 +36,14 @@ interface IUnirep {
     );
 
     event StateTreeLeaf(
-        uint256 indexed epoch,
+        uint48 indexed epoch,
         uint160 indexed attesterId,
         uint256 indexed index,
         uint256 leaf
     );
 
     event EpochTreeLeaf(
-        uint256 indexed epoch,
+        uint48 indexed epoch,
         uint160 indexed attesterId,
         uint256 indexed index,
         uint256 leaf
@@ -51,7 +51,7 @@ interface IUnirep {
 
     event HistoryTreeLeaf(uint160 indexed attesterId, uint256 leaf);
 
-    event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
+    event EpochEnded(uint48 indexed epoch, uint160 indexed attesterId);
 
     // error
     error UserAlreadySignedUp(uint256 identityCommitment);

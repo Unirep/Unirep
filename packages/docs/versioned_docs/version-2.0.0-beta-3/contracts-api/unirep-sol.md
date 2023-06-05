@@ -8,6 +8,14 @@ This is the core UniRep contract.
 import { Unirep } from '@unirep/contracts/Unirep.sol';
 ```
 
+## config
+
+The config that is set in UniRep.
+
+```sol
+function config() public view returns (Config memory)
+```
+
 ## userSignUp
 
 Submit a signup zk proof for a user.
@@ -18,8 +26,8 @@ Submit a signup zk proof for a user.
 
 ```sol
 function userSignUp(
-  uint[] memory publicSignals,
-  uint[8] memory proof
+  uint[] calldata publicSignals,
+  uint[8] calldata proof
 ) public
 ```
 
@@ -33,10 +41,10 @@ Sign up a new user by manually supplying an identity commitment and state tree l
 
 ```sol
 function manualUserSignUp(
-  uint64 epoch,
+  uint48 epoch,
   uint256 identityCommitment,
   uint256 stateTreeLeaf,
-  uint256[] memory initialData
+  uint256[] calldata initialData
 ) public
 ```
 
@@ -49,7 +57,7 @@ The `attesterId` is the address of the attester contract. In this case `msg.send
 :::
 
 ```sol
-function attesterSignUp(uint epochLength) public
+function attesterSignUp(uint48 epochLength) public
 ```
 
 ## attesterSignUpViaRelayer
@@ -59,7 +67,7 @@ Register an attester contract through a relayer. The signature will be recovered
 ```sol
 function attesterSignUpViaRelayer(
   address attester,
-  uint256 epochLength,
+  uint48 epochLength,
   bytes calldata signature
 ) public
 ```
@@ -78,7 +86,7 @@ Apply a change to a user data field at index `fieldIndex`. Changes will be appli
 ```sol
 function attest(
   uint epochKey,
-  uint48 targetEpoch,
+  uint48 epoch,
   uint fieldIndex,
   uint change
 ) public
@@ -90,9 +98,19 @@ Execute a user state transition using a ZK proof. This will insert a new state t
 
 ```sol
 function userStateTransition(
-  uint[] memory publicSignals,
-  uint[8] memory proof
+  uint[] calldata publicSignals,
+  uint[8] calldata proof
 ) public
+```
+
+## updateEpochIfNeeded
+
+Update the current epoch if an epoch is over.
+
+```sol
+function updateEpochIfNeeded(
+  uint160 attesterId
+) public returns (uint48 epoch)
 ```
 
 ## attesterCurrentEpoch
@@ -154,7 +172,7 @@ function decodeReputationControl(uint256 control)
 Decode the public signals from a [reputation proof](../circuits-api/circuits#prove-reputation-proof) into named variables.
 
 ```sol
-function decodeReputationSignals(uint256[] memory publicSignals)
+function decodeReputationSignals(uint256[] calldata publicSignals)
     public
     pure
     returns (ReputationSignals memory)
@@ -188,8 +206,8 @@ This function does not require the epoch for the proof to be the current epoch. 
 
 ```sol
 function verifyReputationProof(
-    uint256[] memory publicSignals,
-    uint256[8] memory proof
+    uint256[] calldata publicSignals,
+    uint256[8] calldata proof
 ) public;
 ```
 
@@ -198,7 +216,7 @@ function verifyReputationProof(
 Decode the public signals from an [epoch key proof](../circuits-api/circuits#epoch-key-proof) into named variables.
 
 ```sol
-function decodeEpochKeySignals(uint256[] memory publicSignals)
+function decodeEpochKeySignals(uint256[] calldata publicSignals)
     public
     pure
     returns (EpochKeySignals memory)
@@ -226,8 +244,8 @@ This function does not require the epoch for the proof to be the current epoch. 
 
 ```sol
 function verifyEpochKeyProof(
-    uint256[] memory publicSignals,
-    uint256[8] memory proof
+    uint256[] calldata publicSignals,
+    uint256[8] calldata proof
 ) public;
 ```
 
@@ -236,7 +254,7 @@ function verifyEpochKeyProof(
 Decode the public signals from an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) info named variables.
 
 ```sol
-function decodeEpochKeyLiteSignals(uint256[] memory publicSignals)
+function decodeEpochKeyLiteSignals(uint256[] calldata publicSignals)
     public
     pure
     returns (EpochKeySignals memory)
@@ -268,8 +286,8 @@ This function does not require the epoch for the proof to be the current epoch. 
 
 ```sol
 function verifyEpochKeyLiteProof(
-    uint256[] memory publicSignals,
-    uint256[8] memory proof
+    uint256[] calldata publicSignals,
+    uint256[8] calldata proof
 ) public;
 ```
 
@@ -473,6 +491,14 @@ How many of the data fields are combined with addition. The sum fields are the f
 function sumFieldCount() public view returns (uint8)
 ```
 
+## replNonceBits
+
+How many nonce bits are in a replacement data field.
+
+```sol
+function replNonceBits() public view returns (uint8)
+```
+
 ## Events
 
 The UniRep contract emits a number of events to help offchain observers track state.
@@ -484,7 +510,8 @@ Emitted when an attester registers with the unirep contract.
 ```sol
 event AttesterSignedUp(
   uint160 indexed attesterId,
-  uint256 indexed epochLength
+  uint256 indexed epochLength,
+  uint256 timestamp
 );
 ```
 
@@ -525,8 +552,7 @@ event Attestation(
     uint256 indexed epochKey,
     uint160 indexed attesterId,
     uint256 fieldIndex,
-    uint256 change,
-    uint256 timestamp
+    uint256 change
 );
 ```
 

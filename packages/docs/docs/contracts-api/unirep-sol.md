@@ -8,6 +8,14 @@ This is the core UniRep contract.
 import { Unirep } from '@unirep/contracts/Unirep.sol';
 ```
 
+## config
+
+The config that is set in UniRep.
+
+```sol
+function config() public view returns (Config memory)
+```
+
 ## userSignUp
 
 Submit a signup zk proof for a user.
@@ -18,14 +26,14 @@ Submit a signup zk proof for a user.
 
 ```sol
 function userSignUp(
-  uint[] memory publicSignals,
-  uint[8] memory proof
+  uint[] calldata publicSignals,
+  uint[8] calldata proof
 ) public
 ```
 
 ## manualUserSignUp
 
-Sign up a new user by manually supplying an identity commitment and state tree leaf. The `initialData` should be the values of the user data in the state tree leaf (if non-zero). This is designed to be used by applications that want custom signup proofs.
+Sign up a new user by manually supplying an identity commitment and an [identity hash](../utils-api/hashes.md#genidentityhash). The `initialData` should be the values of the user data in the state tree leaf (if non-zero). This is designed to be used by applications that want custom signup proofs.
 
 :::caution
 `msg.sender` must be the attester.
@@ -33,10 +41,10 @@ Sign up a new user by manually supplying an identity commitment and state tree l
 
 ```sol
 function manualUserSignUp(
-  uint64 epoch,
+  uint48 epoch,
   uint256 identityCommitment,
-  uint256 stateTreeLeaf,
-  uint256[] memory initialData
+  uint256 leafIdentityHash,
+  uint256[] calldata initialData
 ) public
 ```
 
@@ -49,7 +57,7 @@ The `attesterId` is the address of the attester contract. In this case `msg.send
 :::
 
 ```sol
-function attesterSignUp(uint epochLength) public
+function attesterSignUp(uint48 epochLength) public
 ```
 
 ## attesterSignUpViaRelayer
@@ -59,7 +67,7 @@ Register an attester contract through a relayer. The signature will be recovered
 ```sol
 function attesterSignUpViaRelayer(
   address attester,
-  uint256 epochLength,
+  uint48 epochLength,
   bytes calldata signature
 ) public
 ```
@@ -78,7 +86,7 @@ Apply a change to a user data field at index `fieldIndex`. Changes will be appli
 ```sol
 function attest(
   uint epochKey,
-  uint48 targetEpoch,
+  uint48 epoch,
   uint fieldIndex,
   uint change
 ) public
@@ -90,9 +98,51 @@ Execute a user state transition using a ZK proof. This will insert a new state t
 
 ```sol
 function userStateTransition(
-  uint[] memory publicSignals,
-  uint[8] memory proof
+  uint[] calldata publicSignals,
+  uint[8] calldata proof
 ) public
+```
+
+## updateEpochIfNeeded
+
+Update the current epoch if an epoch is over.
+
+```sol
+function updateEpochIfNeeded(
+  uint160 attesterId
+) public returns (uint48 epoch)
+```
+
+## decodeSignupControl
+
+Decode the control signal of [signup proof](../circuits-api/signup-proof.md)
+
+```sol
+function decodeSignupControl(
+  uint256 control
+) public pure returns (
+  uint160 attesterId, 
+  uint48 epoch
+)
+```
+
+## decodeSignupSignals
+
+Decode all public signals of [signup proof](../circuits-api/signup-proof.md)
+
+```sol
+function decodeSignupSignals(
+  uint256[] calldata publicSignals
+) public pure returns (SignupSignals memory)
+```
+
+```sol
+struct SignupSignals {
+  uint256 stateTreeLeaf;
+  uint48 epoch;
+  uint160 attesterId;
+  uint256 idCommitment;
+}
 ```
 
 ## attesterCurrentEpoch
@@ -112,7 +162,7 @@ Get the remaining time, in seconds, for the current epoch for an attester.
 ```sol
 function attesterEpochRemainingTime(
   uint160 attesterId
-) public view returns (uint)
+) public view returns (uint48)
 ```
 
 ## signupVerifier
@@ -150,7 +200,7 @@ Get the epoch length for an attester.
 function attesterEpochLength(uint160 attesterId)
   public
   view
-  returns (uint256)
+  returns (uint48)
 ```
 
 ## attesterStateTreeRootExists
@@ -158,10 +208,11 @@ function attesterEpochLength(uint160 attesterId)
 Check if a state tree root exists for an attester and epoch.
 
 ```sol
-function attesterStateTreeRootExists(uint160 attesterId, uint256 epoch, uint256 root)
-  public
-  view
-  returns (bool)
+function attesterStateTreeRootExists(
+  uint160 attesterId, 
+  uint48 epoch, 
+  uint256 root
+) public view returns (bool)
 ```
 
 ## attesterStateTreeRoot
@@ -213,7 +264,7 @@ function attesterMemberCount(uint160 attesterId)
 Get the epoch tree root for an attester for a certain epoch.
 
 ```sol
-function attesterEpochRoot(uint160 attesterId, uint256 epoch)
+function attesterEpochRoot(uint160 attesterId, uint48 epoch)
   public
   view
   returns (uint256)
@@ -267,6 +318,30 @@ How many of the data fields are combined with addition. The sum fields are the f
 function sumFieldCount() public view returns (uint8)
 ```
 
+## replNonceBits
+
+How many nonce bits are in a replacement data field.
+
+```sol
+function replNonceBits() public view returns (uint8)
+```
+
+## defaultDataHash
+
+The default data hash when a user signs up. It is used to compute a [state tree](../protocol/trees.md#state-tree) leaf
+
+```sol
+function defaultDataHash() public view returns (uint256)
+```
+
+## attestationCount
+
+The attestation nonce that is used in [replacement data field](../protocol/data.md#replacement-field).
+
+```sol
+function attestationCount() public returns (uint48)
+```
+
 ## Events
 
 The UniRep contract emits a number of events to help offchain observers track state.
@@ -277,8 +352,9 @@ Emitted when an attester registers with the unirep contract.
 
 ```sol
 event AttesterSignedUp(
-  uint160 indexed attesterId,
-  uint256 indexed epochLength
+    uint160 indexed attesterId,
+    uint48 epochLength,
+    uint48 timestamp
 );
 ```
 
@@ -288,7 +364,7 @@ Emitted when a user joins an attester.
 
 ```sol
 event UserSignedUp(
-    uint256 indexed epoch,
+    uint48 indexed epoch,
     uint256 indexed identityCommitment,
     uint160 indexed attesterId,
     uint256 leafIndex
@@ -301,7 +377,7 @@ Emitted when a user transitions to a new epoch.
 
 ```sol
 event UserStateTransitioned(
-    uint256 indexed epoch,
+    uint48 indexed epoch,
     uint160 indexed attesterId,
     uint256 indexed leafIndex,
     uint256 hashedLeaf,
@@ -315,12 +391,11 @@ Emitted when an attester makes an attestation to an epoch key.
 
 ```sol
 event Attestation(
-    uint256 indexed epoch,
+    uint48 indexed epoch,
     uint256 indexed epochKey,
     uint160 indexed attesterId,
     uint256 fieldIndex,
-    uint256 change,
-    uint256 timestamp
+    uint256 change
 );
 ```
 
@@ -330,7 +405,7 @@ Emitted when a leaf is added to a state tree.
 
 ```sol
 event StateTreeLeaf(
-    uint256 indexed epoch,
+    uint48 indexed epoch,
     uint160 indexed attesterId,
     uint256 indexed index,
     uint256 leaf
@@ -343,7 +418,7 @@ Emitted when a leaf in an epoch tree is updated.
 
 ```sol
 event EpochTreeLeaf(
-    uint256 indexed epoch,
+    uint48 indexed epoch,
     uint160 indexed attesterId,
     uint256 indexed index,
     uint256 leaf
@@ -366,5 +441,5 @@ event HistoryTreeLeaf(
 Emitted when an attester epoch ends.
 
 ```sol
-event EpochEnded(uint256 indexed epoch, uint160 indexed attesterId);
+event EpochEnded(uint48 indexed epoch, uint160 indexed attesterId);
 ```
