@@ -119,6 +119,11 @@ In this proof, we assign `data[0] = posRep`, `data[1] = negRep`, `data[SUM_FIELD
 See [data in UniRep protocol](../protocol/data.md) for more information.
 :::
 
+:::danger
+**Please avoid assigning the `min_rep = data[0] - data[1]` or `max_rep = data[1] - data[0]`.**<br/>
+The proof could allow a user to accidentally publish their overall reputation (i.e. `data[0]-data[1]`). Depending on the circumstances (such as the length of the attestation history) this could revel a user’s epoch key(s) as well.
+:::
+
 The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
 
 Control field 0:
