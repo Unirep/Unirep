@@ -35,7 +35,7 @@ class BlockQueue {
         this.promises.sort((a, b) => {
             return a.idx - b.idx
         })
-        const tmp = []
+        const tmp: any[] = []
         for (const chunk of this.promises) {
             if (chunk.r === undefined || chunk.r.length === 0) {
                 continue
