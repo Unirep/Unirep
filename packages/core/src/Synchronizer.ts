@@ -21,6 +21,46 @@ type AttesterSetting = {
     epochLength: number
 }
 
+class BlockQueue {
+    private promises: any[] = []
+    public arr: any[] = []
+    public blockEnd: Number = 0
+    private chunkToGo: number = 0
+    insert(block: Promise<any>, idx: number) {
+        block.then((r) => {
+            this.promises.push({ idx, r })
+        })
+    }
+    update() {
+        this.promises.sort((a, b) => {
+            return a.idx - b.idx
+        })
+        const tmp = []
+        for (const chunk of this.promises) {
+            if (chunk.r === undefined || chunk.r.length === 0) {
+                continue
+            }
+            if (chunk.idx != this.chunkToGo) {
+                tmp.push(chunk)
+                continue
+            }
+            this.chunkToGo += 1
+            for (const block of chunk.r) {
+                this.arr.splice(0, 0, block)
+            }
+        }
+        this.promises = tmp
+    }
+    clear() {
+        this.arr = []
+        this.chunkToGo = 0
+        if (this.promises.length > 0) {
+            const firstIdx = this.promises[0].idx
+            this.promises.forEach((x) => x - firstIdx)
+        }
+    }
+}
+
 export function toDecString(content: bigint | string | number) {
     return BigInt(content).toString()
 }
@@ -51,6 +91,7 @@ export class Synchronizer extends EventEmitter {
     private setupPromise
 
     private lock = new AsyncLock()
+    private blockQueue: BlockQueue
 
     /**
      * Maybe we can default the DB argument to an in memory implementation so
@@ -94,6 +135,8 @@ export class Synchronizer extends EventEmitter {
             replNonceBits: 0,
             replFieldBits: 0,
         }
+
+        this.blockQueue = new BlockQueue()
         this.setup().then(() => (this.setupComplete = true))
     }
 
@@ -321,6 +364,7 @@ export class Synchronizer extends EventEmitter {
      * block we'll poll many times quickly
      */
     async start() {
+        const N = 20
         await this.setup()
         ;(async () => {
             const pollId = nanoid()
@@ -329,6 +373,14 @@ export class Synchronizer extends EventEmitter {
             let backoff = minBackoff
             for (;;) {
                 // poll repeatedly until we're up to date
+                try {
+                    await this.loadBlocks(N)
+                    this.blockQueue.update()
+                } catch (err) {
+                    console.error(`--- unable to load blocks`)
+                    console.error(err)
+                    console.error(`---`)
+                }
                 try {
                     const { complete } = await this.poll()
                     if (complete) break
@@ -343,7 +395,9 @@ export class Synchronizer extends EventEmitter {
                 if (pollId != this.pollId) break
             }
             for (;;) {
+                await this.loadBlocks(N)
                 await new Promise((r) => setTimeout(r, this.pollRate))
+                this.blockQueue.update()
                 if (pollId != this.pollId) break
                 await this.poll().catch((err) => {
                     console.error(`--- unirep poll failed`)
@@ -383,15 +437,10 @@ export class Synchronizer extends EventEmitter {
                 latestCompleteBlock: 'asc',
             },
         })
-        const latestProcessed = state.latestCompleteBlock
         const latestBlock = await this.provider.getBlockNumber()
-        const blockStart = latestProcessed + 1
-        const blockEnd = Math.min(+latestBlock, blockStart + this.blockRate)
 
-        const newEvents = await this.loadNewEvents(
-            latestProcessed + 1,
-            blockEnd
-        )
+        const newEvents = this.blockQueue.arr
+        this.blockQueue.clear()
 
         // filter out the events that have already been seen
         const unprocessedEvents = newEvents.filter((e) => {
@@ -407,30 +456,79 @@ export class Synchronizer extends EventEmitter {
             }
             return e.blockNumber > state.latestProcessedBlock
         })
+        // console.log(`processing ${unprocessedEvents.length} events...`)
         await this.processEvents(unprocessedEvents)
         await this._db.update('SynchronizerState', {
             where: {
                 OR: this.attestersOrClauses,
             },
             update: {
-                latestCompleteBlock: blockEnd,
+                latestCompleteBlock: this.blockQueue.blockEnd,
             },
         })
 
         return {
-            complete: latestBlock === blockEnd,
+            complete: latestBlock === this.blockQueue.blockEnd,
         }
     }
 
+    async loadBlocks(n: number) {
+        const state = await this._db.findOne('SynchronizerState', {
+            where: {
+                OR: this.attestersOrClauses,
+            },
+            orderBy: {
+                latestCompleteBlock: 'asc',
+            },
+        })
+
+        const latestProcessed = state.latestCompleteBlock
+        const latestBlock = await this.provider.getBlockNumber()
+        const blockStart = latestProcessed + 1
+        const count = Math.ceil((latestBlock - blockStart + 1) / n)
+        this.blockQueue.blockEnd = latestBlock
+        if (count <= 0) return
+
+        const promises = Array.from(Array(count).keys()).map(async (_, i) => {
+            return this.loadNewEvents(
+                blockStart + n * i,
+                Math.min(blockStart + n * (i + 1) - 1, latestBlock),
+                i
+            )
+        })
+
+        await Promise.all(promises)
+    }
+
     // Overridden in subclasses
-    async loadNewEvents(fromBlock: number, toBlock: number) {
+    async loadNewEvents(fromBlock: number, toBlock: number, idx: number) {
         const promises = [] as any[]
+        const minBackOff = 128
+
         for (const address of Object.keys(this.contracts)) {
             const { contract } = this.contracts[address]
             const filter = this._eventFilters[address]
-            promises.push(contract.queryFilter(filter, fromBlock, toBlock))
+            let backoff = minBackOff
+            for (;;) {
+                try {
+                    const request = contract.queryFilter(
+                        filter,
+                        fromBlock,
+                        toBlock
+                    )
+                    promises.push(request)
+                    this.blockQueue.insert(request, idx)
+                    break
+                } catch (err) {
+                    console.error(`--- unable to load new events`)
+                    console.error(err)
+                    console.error(`---`)
+                    backoff *= 2
+                }
+                await new Promise((r) => setTimeout(r, backoff))
+            }
         }
-        return (await Promise.all(promises)).flat()
+        return Promise.all(promises)
     }
 
     // override this and only this
