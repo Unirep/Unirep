@@ -130,6 +130,14 @@ If no `epoch` is supplied the current epoch will be used (as determined by [`cal
 state.getEpochKeys(epoch?: number, nonce?: number, attesterId?: bigint | string): bigint | bigint[]
 ```
 
+## parseReplData
+
+This function is used to parse replacement data field to be `index` and `data`. See [replacement data field](../protocol/data.md#replacement-field)
+
+```ts
+state.parseReplData(replData: bigint): <{data: bigint, nonce: bigint}>
+```
+
 ## getData
 
 Get the data for a user up to and including the provided epoch. By default data up to and including the current epoch is returned.

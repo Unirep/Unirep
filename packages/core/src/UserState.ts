@@ -244,6 +244,17 @@ export default class UserState {
             .map((_, i) => genEpochKey(this.id.secret, attesterId, epoch, i))
     }
 
+    parseReplData(replData: bigint) {
+        const data =
+            replData / BigInt(2) ** BigInt(this.sync.settings.replNonceBits)
+        const nonce =
+            replData % BigInt(2) ** BigInt(this.sync.settings.replNonceBits)
+        return {
+            data,
+            nonce,
+        }
+    }
+
     /**
      * Get the reputation object from the attester
      * @param toEpoch The latest epoch that the reputation is accumulated
@@ -334,10 +345,15 @@ export default class UserState {
         })
         for (const a of attestations) {
             const { fieldIndex } = a
+            let currentNonce = BigInt(-1)
             if (fieldIndex < this.sync.settings.sumFieldCount) {
                 data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
             } else {
-                data[fieldIndex] = BigInt(a.change)
+                const { nonce } = this.parseReplData(BigInt(a.change))
+                if (nonce > currentNonce) {
+                    data[fieldIndex] = BigInt(a.change)
+                    currentNonce = nonce
+                }
             }
         }
         return data
@@ -372,10 +388,15 @@ export default class UserState {
         })
         for (const a of attestations) {
             const { fieldIndex } = a
+            let currentNonce = BigInt(-1)
             if (fieldIndex < this.sync.settings.sumFieldCount) {
                 data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
             } else {
-                data[fieldIndex] = BigInt(a.change)
+                const { nonce } = this.parseReplData(BigInt(a.change))
+                if (nonce > currentNonce) {
+                    data[fieldIndex] = BigInt(a.change)
+                    currentNonce = nonce
+                }
             }
         }
         return data
