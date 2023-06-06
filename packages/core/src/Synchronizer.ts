@@ -25,7 +25,6 @@ class BlockQueue {
     private promises: any[] = []
     public arr: any[] = []
     public blockEnd: Number = 0
-    private chunkToGo: number = 0
     insert(block: Promise<any>, idx: number) {
         block.then((r) => {
             this.promises.push({ idx, r })
@@ -40,11 +39,6 @@ class BlockQueue {
             if (chunk.r === undefined || chunk.r.length === 0) {
                 continue
             }
-            if (chunk.idx != this.chunkToGo) {
-                tmp.push(chunk)
-                continue
-            }
-            this.chunkToGo += 1
             for (const block of chunk.r) {
                 this.arr.splice(0, 0, block)
             }
@@ -53,7 +47,6 @@ class BlockQueue {
     }
     clear() {
         this.arr = []
-        this.chunkToGo = 0
         if (this.promises.length > 0) {
             const firstIdx = this.promises[0].idx
             this.promises.forEach((x) => x - firstIdx)
