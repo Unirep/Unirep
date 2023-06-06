@@ -192,7 +192,7 @@ export default class UserState {
                 throw new Error('@unirep/core:UserState: user is not signed up')
             }
             if (signup.epoch !== currentEpoch) {
-                return 0
+                return -1
             }
             // don't include attestations that are not provable
             const data = await this.getData(currentEpoch - 1, attesterId)
