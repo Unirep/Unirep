@@ -127,18 +127,18 @@ export const deployVerifierHelper = async (
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings
  * @param deployer A signer who will deploy the contracts
- * @param _settings The settings that the signer can define: `epochLength`, `attestingFee`, `maxUsers`, `maxAttesters`
+ * @param settings The settings that the signer can define: `epochLength`, `attestingFee`, `maxUsers`, `maxAttesters`
  * @returns The Unirep smart contract
  */
 export const deployUnirep = async (
     deployer: ethers.Signer,
-    _settings: CircuitConfig,
+    settings?: CircuitConfig,
     prover?: Prover
 ): Promise<Unirep> => {
     if (!deployer.provider) {
         throw new Error('Deployer must have provider')
     }
-    const config = new CircuitConfig({ ...CircuitConfig.default, ..._settings })
+    const config = new CircuitConfig({ ...CircuitConfig.default, ...settings })
     const {
         EPOCH_TREE_DEPTH,
         STATE_TREE_DEPTH,
@@ -148,7 +148,7 @@ export const deployUnirep = async (
         SUM_FIELD_COUNT,
         REPL_NONCE_BITS,
         REPL_FIELD_BITS,
-    } = new CircuitConfig(_settings)
+    } = new CircuitConfig(settings)
 
     console.log(
         '-----------------------------------------------------------------'
@@ -162,6 +162,7 @@ export const deployUnirep = async (
     console.log(`Total fields per user: ${FIELD_COUNT}`)
     console.log(`Sum fields per user: ${SUM_FIELD_COUNT}`)
     console.log(`Replacement field nonce bits: ${REPL_NONCE_BITS}`)
+    console.log(`Replacement field data bits: ${REPL_FIELD_BITS}`)
     console.log(
         '-----------------------------------------------------------------'
     )
