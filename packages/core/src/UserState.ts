@@ -421,7 +421,7 @@ export default class UserState {
             seenEpochKeys[epochKey] = true
             index++
         }
-        return 0
+        return -1
     }
 
     public genUserStateTransitionProof = async (
@@ -484,7 +484,17 @@ export default class UserState {
                 const hasChanges = newData.reduce((acc, obj) => {
                     return acc || obj != BigInt(0)
                 }, false)
-                const proof = epochTree.createProof(epochKeyLeafIndices[i])
+                const proof =
+                    epochKeyLeafIndices[i] !== -1
+                        ? epochTree.createProof(epochKeyLeafIndices[i])
+                        : {
+                              pathIndices: Array(
+                                  this.sync.settings.epochTreeDepth
+                              ).fill(0),
+                              siblings: Array(
+                                  this.sync.settings.epochTreeDepth
+                              ).fill(0),
+                          }
                 return { epochKey, hasChanges, newData, proof }
             })
         )
