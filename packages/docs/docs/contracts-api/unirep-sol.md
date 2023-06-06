@@ -167,7 +167,7 @@ function attesterEpochRemainingTime(
 
 ## signupVerifier
 
-A contract address for a signup proof verifier. See [IVerifier](iverifier-sol) for more info.
+A contract address for a signup proof verifier. See [IVerifier](verifiers/iverifier-sol) for more info.
 
 ```sol
 IVerifier public immutable signupVerifier;
@@ -175,7 +175,7 @@ IVerifier public immutable signupVerifier;
 
 ## userStateTransitionVerifier
 
-A contract address for a user state transition proof verifier. See [IVerifier](iverifier-sol) for more info.
+A contract address for a user state transition proof verifier. See [IVerifier](verifiers/iverifier-sol) for more info.
 
 ```sol
 IVerifier public immutable userStateTransitionVerifier;

@@ -370,7 +370,7 @@ An [epoch key proof](circuits-api/circuits.md#epoch-key-proof) is submitted when
 For example, `UnirepApp.sol` can be modified by adding the epoch key proof:
 
 :::info
-See [`EpochKeyVerifierHelper`](contracts-api/epoch-key-verifier-helper.md) to learn how to deploy a verifier and its APIs.
+See [`EpochKeyVerifierHelper`](contracts-api/verifiers/epoch-key-verifier-helper.md) to learn how to deploy a verifier and its APIs.
 :::
 
 1. Import the `EpochKeyVerifierHelper` from [`@unirep/contracts`](https://www.npmjs.com/package/@unirep/contracts).
@@ -408,7 +408,7 @@ function submitAttestation(
 ```
 
 But how can we tell which signal is the epoch key?<br/>
-`EpochKeyVerifierHelper.sol` provides [`decodeEpochKeySignals`](contracts-api/epoch-key-verifier-helper.md#decodeepochkeysignals) to fix this problem.
+`EpochKeyVerifierHelper.sol` provides [`decodeEpochKeySignals`](contracts-api/verifiers/epoch-key-verifier-helper.md#decodeepochkeysignals) to fix this problem.
 
 We can complete the `submitAttestation` function with `decodeEpochKeySignals`.
 
