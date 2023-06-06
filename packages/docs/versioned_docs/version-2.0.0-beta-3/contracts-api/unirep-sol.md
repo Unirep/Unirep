@@ -75,12 +75,17 @@ function attesterSignUpViaRelayer(
 
 ## attest
 
-Create an attestation to an epoch key. If the current epoch is not the same as `targetEpoch` the transaction will revert.
+Create an attestation to an epoch key. If the current epoch is not the same as `epoch` the transaction will revert.
 
 Apply a change to a user data field at index `fieldIndex`. Changes will be applied using either addition or replacement, depending on which field is selected.
 
 :::caution
 `msg.sender` must be the attester.
+:::
+
+:::danger
+It is expected that the attester will validate an epoch key before performing an attestation. See [`verifyEpochKeyProof`](#verifyepochkeyproof). <br/>
+If epoch keys are not verified, it is possible for attestations to be lost.
 :::
 
 ```sol
