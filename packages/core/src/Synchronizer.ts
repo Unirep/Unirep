@@ -92,6 +92,7 @@ export class Synchronizer extends EventEmitter {
             fieldCount: 0,
             sumFieldCount: 0,
             replNonceBits: 0,
+            replFieldBits: 0,
         }
         this.setup().then(() => (this.setupComplete = true))
     }
@@ -253,6 +254,7 @@ export class Synchronizer extends EventEmitter {
         this.settings.fieldCount = config.fieldCount
         this.settings.sumFieldCount = config.sumFieldCount
         this.settings.replNonceBits = config.replNonceBits
+        this.settings.replFieldBits = config.replFieldBits
 
         this.buildEventHandlers()
         await this._findStartBlock()

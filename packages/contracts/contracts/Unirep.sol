@@ -38,6 +38,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable sumFieldCount;
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
+    uint8 public immutable replFieldBits;
     uint256 public immutable defaultDataHash;
 
     uint48 public attestationCount = 1;
@@ -56,6 +57,7 @@ contract Unirep is IUnirep, VerifySignature {
         sumFieldCount = _config.sumFieldCount;
         numEpochKeyNoncePerEpoch = _config.numEpochKeyNoncePerEpoch;
         replNonceBits = _config.replNonceBits;
+        replFieldBits = _config.replFieldBits;
 
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
@@ -81,7 +83,8 @@ contract Unirep is IUnirep, VerifySignature {
                 fieldCount: fieldCount,
                 sumFieldCount: sumFieldCount,
                 numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
-                replNonceBits: replNonceBits
+                replNonceBits: replNonceBits,
+                replFieldBits: replNonceBits
             });
     }
 
@@ -102,21 +105,19 @@ contract Unirep is IUnirep, VerifySignature {
         }
         for (uint8 x = 0; x < initialData.length; x++) {
             if (initialData[x] >= SNARK_SCALAR_FIELD) revert InvalidField();
-            if (
-                x >= sumFieldCount &&
-                initialData[x] >= 2 ** (254 - replNonceBits)
-            ) revert OutOfRange();
+            if (x >= sumFieldCount && initialData[x] >= 2 ** replFieldBits)
+                revert OutOfRange();
+            uint256 data = initialData[x] <<
+                (x >= sumFieldCount ? replNonceBits : 0);
             if (x != 0) {
-                initialDataHash = PoseidonT3.hash(
-                    [initialDataHash, initialData[x]]
-                );
+                initialDataHash = PoseidonT3.hash([initialDataHash, data]);
             }
             emit Attestation(
                 type(uint48).max,
                 identityCommitment,
                 uint160(msg.sender),
                 x,
-                initialData[x]
+                data
             );
         }
         uint256 stateTreeLeaf = PoseidonT3.hash(
@@ -282,10 +283,10 @@ contract Unirep is IUnirep, VerifySignature {
             uint256 newVal = addmod(oldVal, change, SNARK_SCALAR_FIELD);
             epkData.data[fieldIndex] = newVal;
         } else {
-            if (change >= 2 ** (254 - replNonceBits)) {
+            if (change >= 2 ** replFieldBits) {
                 revert OutOfRange();
             }
-            change += (uint(attestationCount) << (254 - replNonceBits));
+            change = (change << uint(replNonceBits)) + uint(attestationCount);
             epkData.data[fieldIndex] = change;
         }
         emit Attestation(

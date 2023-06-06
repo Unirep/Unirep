@@ -10,12 +10,21 @@ const {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     SUM_FIELD_COUNT,
     FIELD_COUNT,
+    REPL_NONCE_BITS,
 } = CircuitConfig.default
 
-export const randomData = () =>
-    Array(FIELD_COUNT)
+export const randomData = () => [
+    ...Array(SUM_FIELD_COUNT)
         .fill(0)
-        .map(() => poseidon1([Math.floor(Math.random() * 199191919)]))
+        .map(() => poseidon1([Math.floor(Math.random() * 199191919)])),
+    ...Array(FIELD_COUNT - SUM_FIELD_COUNT)
+        .fill(0)
+        .map(
+            () =>
+                poseidon1([Math.floor(Math.random() * 199191919)]) %
+                BigInt(2) ** BigInt(253)
+        ),
+]
 
 export const combineData = (data0, data1) => {
     const out = [] as bigint[]
@@ -25,7 +34,11 @@ export const combineData = (data0, data1) => {
         )
     }
     for (let x = SUM_FIELD_COUNT; x < FIELD_COUNT; x++) {
-        out.push(BigInt(data0[x]) > BigInt(data1[x]) ? data0[x] : data1[x])
+        const lower0 =
+            data0[x] & (BigInt(2) ** BigInt(REPL_NONCE_BITS) - BigInt(1))
+        const lower1 =
+            data1[x] & (BigInt(2) ** BigInt(REPL_NONCE_BITS) - BigInt(1))
+        out.push(BigInt(lower0) > BigInt(lower1) ? data0[x] : data1[x])
     }
     return out
 }

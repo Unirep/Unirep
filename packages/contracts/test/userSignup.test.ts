@@ -13,10 +13,11 @@ import {
 import { Circuit, SignupProof, CircuitConfig } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH, SUM_FIELD_COUNT } from '../src'
 import { deployUnirep } from '../deploy'
 
-const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_NONCE_BITS } = CircuitConfig.default
+const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_FIELD_BITS, REPL_NONCE_BITS } =
+    CircuitConfig.default
 
 describe('User Signup', function () {
     this.timeout(300000)
@@ -348,11 +349,18 @@ describe('User Signup', function () {
                 return i + 100
             })
 
+        const expectedData = data.map((d, i) => {
+            if (i < config.sumFieldCount) {
+                return d
+            } else {
+                return BigInt(d) << BigInt(config.replNonceBits)
+            }
+        })
         const leaf = genStateTreeLeaf(
             id.secret,
             attester.address,
             contractEpoch,
-            data
+            expectedData
         )
         const identityHash = genIdentityHash(
             id.secret,
@@ -369,7 +377,7 @@ describe('User Signup', function () {
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(contractEpoch, attester.address, leafIndex, leaf)
-        for (const [i, d] of Object.entries(data)) {
+        for (const [i, d] of Object.entries(expectedData)) {
             await expect(tx)
                 .to.emit(unirepContract, 'Attestation')
                 .withArgs(MAX_EPOCH, id.commitment, attester.address, i, d)
@@ -429,7 +437,7 @@ describe('User Signup', function () {
             .fill(0)
             .map((_, i) => {
                 if (i >= config.sumFieldCount) {
-                    return BigInt(2) ** BigInt(254 - REPL_NONCE_BITS)
+                    return BigInt(2) ** BigInt(REPL_FIELD_BITS)
                 }
                 return 0
             })

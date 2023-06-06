@@ -558,7 +558,9 @@ export default class UserState {
             state_tree_elements: stateTreeProof.siblings,
             data,
             prove_graffiti: graffiti ? 1 : 0,
-            graffiti: graffiti ?? 0,
+            graffiti:
+                BigInt(graffiti ?? 0) <<
+                BigInt(this.sync.settings.replNonceBits),
             reveal_nonce: revealNonce ?? 0,
             attester_id: attesterId,
             epoch,

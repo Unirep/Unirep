@@ -1,11 +1,16 @@
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { genEpochKey } from '@unirep/utils'
+import randomf from 'randomf'
 import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
-const { SUM_FIELD_COUNT, NUM_EPOCH_KEY_NONCE_PER_EPOCH, REPL_NONCE_BITS } =
-    CircuitConfig.default
+const {
+    SUM_FIELD_COUNT,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    REPL_NONCE_BITS,
+    REPL_FIELD_BITS,
+} = CircuitConfig.default
 
 describe('Prove reputation from attester circuit', function () {
     this.timeout(300000)
@@ -421,7 +426,7 @@ describe('Prove reputation from attester circuit', function () {
         const nonce = 0
         const minRep = 0
         const proveGraffiti = true
-        const graffiti = 124124021
+        const graffiti = BigInt(124124021) << BigInt(REPL_NONCE_BITS)
         const circuitInputs = genReputationCircuitInput({
             id,
             epoch,
@@ -444,7 +449,7 @@ describe('Prove reputation from attester circuit', function () {
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
-        const graffiti = 124914219
+        const graffiti = BigInt(124914219) << BigInt(REPL_NONCE_BITS)
         const proveGraffiti = 1
         const circuitInputs = genReputationCircuitInput({
             id,
@@ -485,15 +490,16 @@ describe('Prove reputation from attester circuit', function () {
         expect(data.graffiti.toString()).to.equal(graffiti.toString())
     })
 
-    it('should prove graffiti regardless upper fields', async () => {
+    it('should prove graffiti regardless of lower bits', async () => {
         const id = new Identity()
         const epoch = 1028
         const attesterId = 10210
         const nonce = 0
-        const graffiti = 124914219
-        const graffitiWithUpperField =
-            BigInt(graffiti) + (BigInt(1) << BigInt(254 - REPL_NONCE_BITS))
-        expect(graffiti.toString()).not.equal(graffitiWithUpperField.toString())
+        const graffiti = BigInt(1284912489214) << BigInt(REPL_NONCE_BITS)
+        const graffitiWithLowerField =
+            graffiti + randomf(BigInt(2) ** BigInt(REPL_NONCE_BITS))
+
+        expect(graffiti.toString()).not.equal(graffitiWithLowerField.toString())
         const proveGraffiti = 1
         const circuitInputs = genReputationCircuitInput({
             id,
@@ -504,7 +510,7 @@ describe('Prove reputation from attester circuit', function () {
             graffiti,
             startBalance: [
                 ...Array(SUM_FIELD_COUNT).fill(0),
-                graffitiWithUpperField,
+                graffitiWithLowerField,
             ],
         })
         const { isValid, publicSignals, proof } = await genProofAndVerify(

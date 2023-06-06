@@ -8,7 +8,7 @@ import { poseidon1 } from 'poseidon-lite'
 import { EPOCH_LENGTH } from '../src'
 import { deployUnirep } from '../deploy'
 
-const { FIELD_COUNT, SUM_FIELD_COUNT, REPL_NONCE_BITS } = CircuitConfig.default
+const { FIELD_COUNT, SUM_FIELD_COUNT, REPL_FIELD_BITS } = CircuitConfig.default
 
 const EPOCH_TREE_DEPTH = 3
 
@@ -50,8 +50,8 @@ describe('Attestations max', function () {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
             const val =
-                poseidon1([Math.floor(Math.random() * 10000000000)]) >>
-                BigInt(REPL_NONCE_BITS)
+                poseidon1([Math.floor(Math.random() * 10000000000)]) %
+                BigInt(2) ** BigInt(REPL_FIELD_BITS)
             await unirepContract
                 .connect(attester)
                 .attest(epochKey, epoch, fieldIndex, val)
