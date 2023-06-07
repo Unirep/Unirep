@@ -1,61 +1,40 @@
 //@ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { deployUnirep } from '@unirep/contracts/deploy'
-import { Identity } from '@semaphore-protocol/identity'
-import { schema, UserState } from '@unirep/core'
-import { SQLiteConnector } from 'anondb/node'
-
-import { defaultProver as prover } from '@unirep/circuits/provers/defaultProver'
-
-async function genUserState(id, app) {
-    // generate a user state
-    const db = await SQLiteConnector.create(schema, ':memory:')
-    const unirepAddress = await app.unirep()
-    const attesterId = BigInt(app.address)
-    const userState = new UserState(
-        {
-            db,
-            prover,
-            unirepAddress,
-            provider: ethers.provider,
-            attesterId,
-        },
-        id
-    )
-    await userState.sync.start()
-    await userState.waitForSync()
-    return userState
-}
 
 describe('Unirep App', function () {
-    let unirep
+    let mockUnirep
     let app
     let reimburseAttestation
 
     const epochLength = 300
     let startTime = 0
-    const id = new Identity()
-    let owner
+    let user
+    let publicSignals
+    let proof = [0, 1, 2, 3, 4, 5, 6, 7]
 
     it('deployment', async function () {
-        // deploy Unirep contract
-        const [deployer] = await ethers.getSigners()
-        owner = deployer.address
-        console.log('deployer ' + deployer.address)
-        unirep = await deployUnirep(deployer)
+        const [caller] = await ethers.getSigners()
+        user = caller.address
+
+        // deploy mock mockUnirep contract
+        console.log('Deploying MockUnirep Contract')
+        const MockUnirep = await ethers.getContractFactory('MockUnirep')
+        mockUnirep = await MockUnirep.deploy()
+        await mockUnirep.deployed()
         console.log(
-            `Unirep contract with epoch length ${epochLength} is deployed to ${unirep.address}`
+            `MockUnirep contract with epoch length ${epochLength} is deployed to ${mockUnirep.address}`
         )
 
         // deploy attester contract
         console.log('Deploying ExampleAttester Contract')
         const App = await ethers.getContractFactory('ExampleAttester')
-        app = await App.deploy(unirep.address, epochLength)
+        app = await App.deploy(mockUnirep.address, epochLength)
         await app.deployed()
         console.log(
             `ExampleAttester contract with epoch length ${epochLength} is deployed to ${app.address}`
         )
+        publicSignals = [0, 1, app.address, 3]
 
         // deploy ReimburseAttestation contract
         console.log('Deploying Reimburse Attestation Contract')
@@ -63,16 +42,13 @@ describe('Unirep App', function () {
             'ReimburseAttestation'
         )
         reimburseAttestation = await ReimburseAttestation.deploy(
-            unirep.address,
+            mockUnirep.address,
             app.address
         )
         await reimburseAttestation.deployed()
         console.log(
             `ReimburseAttestation contract with epoch length ${epochLength} is deployed to ${reimburseAttestation.address}`
         )
-        startTime = (
-            await unirep.attesterStartTimestamp(app.address)
-        ).toNumber()
     })
 
     it('Should receive donation correctly', async () => {
@@ -89,38 +65,45 @@ describe('Unirep App', function () {
     })
 
     it('user sign up', async () => {
-        const userState = await genUserState(id, app)
-        const { publicSignals, proof } = await userState.genUserSignUpProof()
-        await app.addToWhitelist([owner], owner)
-        const tx = await app.userSignUp(publicSignals, proof)
-        const receipt = await tx.wait()
+        await app.addToWhitelist([user], user)
 
-        expect(receipt.status).equal(1)
-        // TODO: find something equivalent to numUserSignUPs in unirep contract
-        // const numUserSignUPs = await unirep.numUserSignUPs
-        // expect(1).equal(numUserSignUPs)
-        userState.sync.stop()
+        const userInitialBalance = await ethers.provider.getBalance(user)
+
+        const appInitialBalance = await ethers.provider.getBalance(app.address)
+
+        const tx = await app.userSignUp(publicSignals, proof)
+
+        const appFinalBalance = await ethers.provider.getBalance(app.address)
+
+        const reimbursement = appInitialBalance - appFinalBalance
+
+        expect(tx).to.emit(app, 'Reimbursed').withArgs(user, reimbursement, 0)
+
+        const userFinalBalance = await ethers.provider.getBalance(user)
+
+        console.log('userInitialBalance: ' + BigInt(userInitialBalance))
+        console.log('userFinalBalance: ' + BigInt(userFinalBalance))
+        console.log(
+            'difference between final balance and initial balance: ' +
+                (BigInt(userFinalBalance) - BigInt(userInitialBalance))
+        )
+        console.log('reimbursement: ' + BigInt(reimbursement))
+        expect(BigInt(userFinalBalance.toString())).equal(
+            BigInt(userInitialBalance) + BigInt(reimbursement)
+        )
     })
 
     it('user state transition', async () => {
-        const oldEpoch = await unirep.attesterCurrentEpoch(app.address)
-        const timestamp = Math.floor(+new Date() / 1000)
-        // const waitTime = startTime + epochLength - timestamp
-
+        const oldEpoch = await mockUnirep.attesterCurrentEpoch(app.address)
         for (;;) {
-            // await new Promise((resolve) => setTimeout(resolve, waitTime * 1000))
             await ethers.provider.send('evm_mine', [])
-            const newEpoch = await unirep.attesterCurrentEpoch(app.address)
+            const newEpoch = await mockUnirep.attesterCurrentEpoch(app.address)
             if (oldEpoch + 1 == newEpoch) break
         }
-        const newEpoch = await unirep.attesterCurrentEpoch(app.address)
-        const userState = await genUserState(id, app)
-        const { publicSignals, proof } =
-            await userState.genUserStateTransitionProof({
-                toEpoch: newEpoch,
-            })
-        await unirep
-            .userStateTransition(publicSignals, proof)
-            .then((t) => t.wait())
+        const newEpoch = await mockUnirep.attesterCurrentEpoch(app.address)
+        const tx = await app.userStateTransition(publicSignals, proof)
+        const receipt = await tx.wait()
+
+        expect(receipt.status).equal(1)
     })
 })

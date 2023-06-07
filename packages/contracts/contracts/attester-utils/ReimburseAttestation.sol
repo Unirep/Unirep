@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
 import {Unirep} from '../Unirep.sol';
-import 'hardhat/console.sol';
 
 /**
  * @title ReimburseAttestation
@@ -11,29 +9,35 @@ import 'hardhat/console.sol';
 	e.g. An attester could directly get funded from a gitcoin round for its operation.
  */
 contract ReimburseAttestation {
-    bool public accpetDonations;
+    bool public acceptDonations;
 
     mapping(address => bool) public whitelist;
 
     Unirep public unirep;
 
     // id of the attester this budget contract is deployed for
-    uint256 public attesterId;
+    uint160 public attesterId;
 
-    event Reimbursed(address indexed recepient, uint amount, string txType);
+    enum TxType {
+        Signup,
+        UST
+    }
+    TxType public txType;
+
+    event Reimbursed(address indexed recipient, uint amount, TxType txType);
     event FundsReceived(address sender, uint amount);
 
-    constructor(Unirep _unirep, uint256 _attesterId) {
+    constructor(Unirep _unirep, uint160 _attesterId) {
         unirep = _unirep;
         attesterId = _attesterId;
-        accpetDonations = true;
+        acceptDonations = true;
     }
 
     /**
      * @dev Add users to whitelist
      */
     function addToWhitelist(
-        address[] memory addresses,
+        address[] calldata addresses,
         address owner
     ) public virtual {
         require(
@@ -43,7 +47,6 @@ contract ReimburseAttestation {
         for (uint i = 0; i < addresses.length; i++) {
             whitelist[addresses[i]] = true;
         }
-        console.log('addresses[0] ', addresses[0]);
     }
 
     /**
@@ -80,19 +83,18 @@ contract ReimburseAttestation {
      */
     function toggleAcceptingDonations() public {
         require(
-            msg.sender == address(this),
+            msg.sender == address(attesterId),
             'Only this budget contract itself can call this function'
         );
-        accpetDonations = !accpetDonations;
+        acceptDonations = !acceptDonations;
     }
 
     function userSignUp(
         uint256[] calldata publicSignals,
-        uint[8] calldata proof
+        uint256[8] calldata proof
     ) public payable virtual {
         require(whitelist[msg.sender], 'This user is not in the whitelist');
-
-        uint256 attesterSignalIndex = unirep.numEpochKeyNoncePerEpoch();
+        uint256 attesterSignalIndex = 2;
 
         // check that we're doing a userSignUP for the attester this budget contract is deployed for
         require(publicSignals[attesterSignalIndex] == attesterId);
@@ -105,46 +107,39 @@ contract ReimburseAttestation {
 
         // use BASEFEE here to prevent large gasprice values
         uint txCost = (startGas - gasleft()) * block.basefee;
-        payable(msg.sender).transfer(txCost);
+        require(address(this).balance >= txCost, "Not enough budget in the contract");
 
-        emit Reimbursed(msg.sender, txCost, 'userSignUp');
+        (bool sent,) = payable(msg.sender).call{value: txCost}("");
+        require(sent, "Failed to send Ether");
+        txType = TxType.Signup;
+
+        emit Reimbursed(msg.sender, txCost, txType);
     }
 
     function userStateTransition(
-        uint[] calldata publicSignals,
-        uint[8] calldata proof
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
     ) public payable virtual {
         require(whitelist[msg.sender], 'This user is not in the whitelist');
 
-        uint attesterSignalIndex = unirep.numEpochKeyNoncePerEpoch();
-        console.log('2');
+        uint256 attesterSignalIndex = 3 + unirep.numEpochKeyNoncePerEpoch();
 
         // check that we're doing a UST for the attester this budget contract is deployed for
         require(publicSignals[attesterSignalIndex] == attesterId);
-        console.log(attesterSignalIndex);
-        console.log(attesterId);
-        console.log(publicSignals[0]);
-        console.log(publicSignals[1]);
-        console.log(publicSignals[2]);
-        console.log(publicSignals[3]);
-        console.log('3');
 
         // start measuring gas
         uint startGas = gasleft();
-        console.log('4');
 
         // this is guaranteed not to re-enter if it's configured correctly
         unirep.userStateTransition(publicSignals, proof);
 
-        console.log('5');
-
         // using basefee to prevent large gasprice values
         uint txCost = (startGas - gasleft()) * block.basefee;
-        console.log('6');
 
         payable(msg.sender).transfer(txCost);
-        console.log('6');
 
-        emit Reimbursed(msg.sender, txCost, 'UST');
+        txType = TxType.UST;
+
+        emit Reimbursed(msg.sender, txCost, txType);
     }
 }
