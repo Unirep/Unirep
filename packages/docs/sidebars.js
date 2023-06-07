@@ -120,6 +120,37 @@ const sidebars = {
             label: '@unirep/contracts',
             items: [
                 {
+                    type: 'category',
+                    label: 'Verifiers',
+                    items: [
+                        {
+                            type: 'doc',
+                            label: 'IVerifier.sol',
+                            id: 'contracts-api/verifiers/iverifier-sol',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'BaseVerifierHelper.sol',
+                            id: 'contracts-api/verifiers/base-verifier-helper',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'EpochKeyVerifierHelper.sol',
+                            id: 'contracts-api/verifiers/epoch-key-verifier-helper',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'EpochKeyLiteVerifierHelper.sol',
+                            id: 'contracts-api/verifiers/epoch-key-lite-verifier-helper',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'ReputationVerifierHelper.sol',
+                            id: 'contracts-api/verifiers/reputation-verifier-helper',
+                        },
+                    ],
+                },
+                {
                     type: 'doc',
                     label: 'Deploy',
                     id: 'contracts-api/deploy',
@@ -131,11 +162,6 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'IVerifier.sol',
-                    id: 'contracts-api/iverifier-sol',
-                },
-                {
-                    type: 'doc',
                     label: 'Helpers',
                     id: 'contracts-api/helpers',
                 },
@@ -143,26 +169,6 @@ const sidebars = {
                     type: 'doc',
                     label: 'Error codes',
                     id: 'contracts-api/errors',
-                },
-                {
-                    type: 'doc',
-                    label: 'BaseVerifierHelper.sol',
-                    id: 'contracts-api/base-verifier-helper',
-                },
-                {
-                    type: 'doc',
-                    label: 'ReputationVerifierHelper.sol',
-                    id: 'contracts-api/reputation-verifier-helper',
-                },
-                {
-                    type: 'doc',
-                    label: 'EpochKeyVerifierHelper.sol',
-                    id: 'contracts-api/epoch-key-verifier-helper',
-                },
-                {
-                    type: 'doc',
-                    label: 'EpochKeyLiteVerifierHelper.sol',
-                    id: 'contracts-api/epoch-key-lite-verifier-helper',
                 },
             ],
         },

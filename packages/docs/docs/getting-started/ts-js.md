@@ -580,7 +580,7 @@ See [`reputationProof`](circuits-api/circuits.md#prove-reputation-proof) for mor
 ### Other users and attesters verify the proof
 
 :::info
-See [`ReputationVerifierHelper`](contracts-api/reputation-verifier-helper.md) to learn how to deploy and use the `repVerifier`.
+See [`ReputationVerifierHelper`](contracts-api/verifiers/reputation-verifier-helper.md) to learn how to deploy and use the `repVerifier`.
 :::
 
 ```mdx-code-block

@@ -6,7 +6,7 @@ This is a basic verifier helper contract. It contains signals and error codes us
 
 ## decodeEpochKeyControl
 
-Decode a epoch key related control from [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof), [epoch key proof](../circuits-api/circuits.md#epoch-key-proof), and [reputation proof](../circuits-api/circuits.md#prove-reputation-proof) into named variables.
+Decode a epoch key related control from [epoch key lite proof](../../circuits-api/circuits#epoch-key-lite-proof), [epoch key proof](../../circuits-api/circuits.md#epoch-key-proof), and [reputation proof](../../circuits-api/circuits.md#prove-reputation-proof) into named variables.
 
 ```sol
 function decodeEpochKeyControl(uint256 control)
