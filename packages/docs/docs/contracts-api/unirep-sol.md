@@ -75,12 +75,22 @@ function attesterSignUpViaRelayer(
 
 ## attest
 
-Create an attestation to an epoch key. If the current epoch is not the same as `targetEpoch` the transaction will revert.
+Create an attestation to an epoch key. If the current epoch is not the same as `epoch` the transaction will revert.
 
 Apply a change to a user data field at index `fieldIndex`. Changes will be applied using either addition or replacement, depending on which field is selected.
 
 :::caution
 `msg.sender` must be the attester.
+:::
+
+:::danger
+It is expected that the attester will validate an epoch key before performing an attestation. <br/>
+To check the validity of an epoch key: <br/>
+- [Epoch key proof](../circuits-api/circuits.md#epoch-key-proof) should be valid. (See [`EpochKeyVerifierHelper`](./epoch-key-verifier-helper.md)). <br/>
+- [State tree root](../protocol/trees.md#state-tree) should exist. (See [`attesterStateTreeRootExists`](#attesterstatetreerootexists)) <br/>
+- Epoch should match the current epoch (See: [`attesterCurrentEpoch`](#attestercurrentepoch)) <br/>
+
+All of these must be verified to confirm epoch key validity. Attestations may be lost if these are not verified.
 :::
 
 ```sol
@@ -121,7 +131,7 @@ Decode the control signal of [signup proof](../circuits-api/signup-proof.md)
 function decodeSignupControl(
   uint256 control
 ) public pure returns (
-  uint160 attesterId, 
+  uint160 attesterId,
   uint48 epoch
 )
 ```
@@ -209,8 +219,8 @@ Check if a state tree root exists for an attester and epoch.
 
 ```sol
 function attesterStateTreeRootExists(
-  uint160 attesterId, 
-  uint48 epoch, 
+  uint160 attesterId,
+  uint48 epoch,
   uint256 root
 ) public view returns (bool)
 ```
