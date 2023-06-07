@@ -85,12 +85,12 @@ Apply a change to a user data field at index `fieldIndex`. Changes will be appli
 
 :::danger
 It is expected that the attester will validate an epoch key before performing an attestation. <br/>
-Validity of an epoch key: <br/>
+To check the validity of an epoch key: <br/>
 - [Epoch key proof](../circuits-api/circuits.md#epoch-key-proof) should be valid. (See [`EpochKeyVerifierHelper`](./epoch-key-verifier-helper.md)). <br/>
 - [State tree root](../protocol/trees.md#state-tree) should exist. (See [`attesterStateTreeRootExists`](#attesterstatetreerootexists)) <br/>
 - Epoch should match the current epoch (See: [`attesterCurrentEpoch`](#attestercurrentepoch)) <br/>
 
-If one of these validities are not verified, it is possible for attestations to be lost.
+All of these must be verified to confirm epoch key validity. Attestations may be lost if these are not verified.
 :::
 
 ```sol
@@ -131,7 +131,7 @@ Decode the control signal of [signup proof](../circuits-api/signup-proof.md)
 function decodeSignupControl(
   uint256 control
 ) public pure returns (
-  uint160 attesterId, 
+  uint160 attesterId,
   uint48 epoch
 )
 ```
@@ -219,8 +219,8 @@ Check if a state tree root exists for an attester and epoch.
 
 ```sol
 function attesterStateTreeRootExists(
-  uint160 attesterId, 
-  uint48 epoch, 
+  uint160 attesterId,
+  uint48 epoch,
   uint256 root
 ) public view returns (bool)
 ```
