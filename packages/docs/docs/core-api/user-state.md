@@ -181,6 +181,11 @@ state.genUserStateTransitionProof(options?: {
 
 Generate a proof of reputation. Returns a [`ReputationProof`](../circuits-api/reputation-proof).
 
+:::danger
+**Please avoid assigning the `minRep = data[0] - data[1]` or `maxRep = data[1] - data[0]`.**<br/>
+The proof could allow a user to accidentally publish their overall reputation (i.e. `data[0]-data[1]`). Depending on the circumstances (such as the length of the attestation history) this could revel a user’s epoch key(s) as well.
+:::
+
 ```ts
 state.genProveReputationProof(options: {
   epkNonce?: number
