@@ -86,7 +86,7 @@ Apply a change to a user data field at index `fieldIndex`. Changes will be appli
 :::danger
 It is expected that the attester will validate an epoch key before performing an attestation. <br/>
 To check the validity of an epoch key: <br/>
-- [Epoch key proof](../circuits-api/circuits.md#epoch-key-proof) should be valid. (See [`EpochKeyVerifierHelper`](./epoch-key-verifier-helper.md)). <br/>
+- [Epoch key proof](../circuits-api/circuits.md#epoch-key-proof) should be valid. (See [`EpochKeyVerifierHelper`](./verifiers/epoch-key-verifier-helper.md)). <br/>
 - [State tree root](../protocol/trees.md#state-tree) should exist. (See [`attesterStateTreeRootExists`](#attesterstatetreerootexists)) <br/>
 - Epoch should match the current epoch (See: [`attesterCurrentEpoch`](#attestercurrentepoch)) <br/>
 
