@@ -20,6 +20,7 @@ lerna-debug.log*
 
 **/generated
 **/build
+**/data
 
 .env
 subgraph.yaml

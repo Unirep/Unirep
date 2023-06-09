@@ -4,5 +4,11 @@
             "address": "0xCa61bFcA0107c5952f8bf59f4D510d111cbcE146",
             "startBlock": 8872967
         }
+    },
+    "localhost": {
+        "Unirep": {
+            "address": "0x4E319f162376c77dF67020EdB5500D27DEA13Eb2",
+            "startBlock": 0
+        }
     }
 }

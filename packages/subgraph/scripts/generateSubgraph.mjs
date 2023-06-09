@@ -6,7 +6,9 @@ import fs from 'fs'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-fs.mkdirSync(path.join(__dirname, '../node_modules'))
+try {
+    fs.mkdirSync(path.join(__dirname, '../node_modules'))
+} catch (_) {}
 
 function copy(currentDir, outPath) {
     if (!path.isAbsolute(currentDir)) throw new Error('Path is not absolute')
@@ -20,7 +22,9 @@ function copy(currentDir, outPath) {
         if (stat.isDirectory()) {
             copy(path.join(currentDir, c), path.join(outPath, c))
         } else {
-            fs.copyFileSync(contentPath, path.join(outPath, c))
+            try {
+                fs.copyFileSync(contentPath, path.join(outPath, c))
+            } catch (_) {}
         }
     }
 }

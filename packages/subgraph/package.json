@@ -12,10 +12,12 @@
         "codegen": "node scripts/generateSubgraph.mjs && graph codegen",
         "build": "yarn codegen && graph build",
         "deploy": "graph deploy --node https://api.thegraph.com/deploy/ unirep/unirep",
+        "build-local": "node scripts/generateSubgraph.mjs localhost && graph codegen && graph build",
         "create-local": "graph create --node http://localhost:8020/ unirep/unirep",
         "remove-local": "graph remove --node http://localhost:8020/ unirep/unirep",
         "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 unirep/unirep",
-        "test": "graph test"
+        "test": "graph test",
+        "node": "docker compose -f docker-compose-graph.yml up"
     },
     "dependencies": {
         "@graphprotocol/graph-cli": "0.51.0",

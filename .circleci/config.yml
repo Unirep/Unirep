@@ -255,5 +255,10 @@ jobs:
             - run: *node_version
             - run: *check_version
             - run:
+                  name: Install dependencies
+                  command: |
+                      sudo apt-get update
+                      sudo apt-get install libpq5
+            - run:
                   name: Test
                   command: yarn subgraph test
