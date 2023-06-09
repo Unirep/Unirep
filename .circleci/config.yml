@@ -119,6 +119,7 @@ jobs:
                       - packages/core/cache
                       - packages/test/build
                       - packages/utils/build
+                      - packages/subgraph
     lint:
         machine:
             image: ubuntu-2204:2022.04.1
