@@ -1,0 +1,84 @@
+type Attestation @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt! # uint256
+    epochKey: BigInt! # uint256
+    attesterId: BigInt! # uint160
+    fieldIndex: BigInt! # uint256
+    change: BigInt! # uint256
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type AttesterSignedUp @entity(immutable: true) {
+    id: Bytes!
+    attesterId: BigInt! # uint160
+    epochLength: BigInt! # uint256
+    timestamp: BigInt! # uint256
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type EpochEnded @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt! # uint256
+    attesterId: BigInt! # uint160
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type EpochTreeLeaf @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt! # uint256
+    attesterId: BigInt! # uint160
+    index: BigInt! # uint256
+    leaf: BigInt! # uint256
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type HistoryTreeLeaf @entity(immutable: true) {
+    id: Bytes!
+    attesterId: BigInt! # uint160
+    leaf: BigInt! # uint256
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type StateTreeLeaf @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt! # uint256
+    attesterId: BigInt! # uint160
+    index: BigInt! # uint256
+    leaf: BigInt! # uint256
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type UserSignedUp @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt! # uint256
+    identityCommitment: BigInt! # uint256
+    attesterId: BigInt! # uint160
+    leafIndex: BigInt! # uint256
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type UserStateTransitioned @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt! # uint256
+    attesterId: BigInt! # uint160
+    leafIndex: BigInt! # uint256
+    hashedLeaf: BigInt! # uint256
+    nullifier: BigInt! # uint256
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
