@@ -89,6 +89,65 @@ describe('User state', function () {
         userState.sync.stop()
     })
 
+    it('should correctly get the latest data', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const attesterId = BigInt(attester.address)
+        const id = new Identity()
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesterId
+        )
+
+        const epoch = await userState.sync.loadCurrentEpoch()
+
+        const { publicSignals, proof } = await userState.genUserSignUpProof({
+            epoch,
+        })
+        await unirepContract
+            .connect(attester)
+            .userSignUp(publicSignals, proof)
+            .then((t) => t.wait())
+        const epk0 = userState.getEpochKeys(epoch, 0) as bigint
+        const epk1 = userState.getEpochKeys(epoch, 1) as bigint
+        const fieldIndex = userState.sync.settings.sumFieldCount
+        const firstReplData = BigInt(12345)
+        const secondReplData = BigInt(23456)
+        await unirepContract
+            .connect(attester)
+            .attest(epk0, epoch, fieldIndex, firstReplData)
+            .then((t) => t.wait())
+        await unirepContract
+            .connect(attester)
+            .attest(epk1, epoch, fieldIndex, secondReplData)
+            .then((t) => t.wait())
+        await userState.waitForSync()
+        {
+            const data = await userState.getData()
+            const parsedData = userState.parseReplData(data[fieldIndex])
+            expect(parsedData.data.toString()).to.equal(
+                secondReplData.toString()
+            )
+        }
+        {
+            const data = await userState.getDataByEpochKey(epk0, epoch)
+            const parsedData = userState.parseReplData(data[fieldIndex])
+            expect(parsedData.data.toString()).to.equal(
+                firstReplData.toString()
+            )
+        }
+        {
+            const data = await userState.getDataByEpochKey(epk1, epoch)
+            const parsedData = userState.parseReplData(data[fieldIndex])
+            expect(parsedData.data.toString()).to.equal(
+                secondReplData.toString()
+            )
+        }
+        userState.sync.stop()
+    })
+
     it('user sign up proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
