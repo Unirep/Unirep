@@ -14,12 +14,16 @@ template LowerLessThan(n) {
     signal lower_values[2];
     // to satisfy compiler
     signal _v[2][n];
+    signal _z[2][253-n];
     for (var x = 0; x < 2; x++) {
         upper_values[x] <-- in[x] >> n;
         // lower_values[x] should contain the lower bits
         lower_values[x] <== in[x] - upper_values[x] * 2**n;
-        // verify that lower_values[x] does not have more than lower bits
+        // verify lower/upper ranges
         _v[x] <== Num2Bits(n)(lower_values[x]);
+        _z[x] <== Num2Bits(253-n)(upper_values[x]);
+        // verify equality
+        lower_values[x] + upper_values[x]*2**n === in[x];
     }
 
     component lt = LessThan(n);
@@ -38,12 +42,16 @@ template replFieldEqual(REPL_NONCE_BITS) {
     signal lower_values[2];
     // to satisfy compiler
     signal _v[2][REPL_NONCE_BITS];
+    signal _z[2][253-REPL_NONCE_BITS];
     for (var x = 0; x < 2; x++) {
         upper_values[x] <-- in[x] >> REPL_NONCE_BITS;
         // lower_values[x] should contain the lower bits
         lower_values[x] <== in[x] - upper_values[x] * 2**REPL_NONCE_BITS;
-        // verify that lower_values[x] does not have more than lower bits
+        // verify lower/upper ranges
         _v[x] <== Num2Bits(REPL_NONCE_BITS)(lower_values[x]);
+        _z[x] <== Num2Bits(253-REPL_NONCE_BITS)(upper_values[x]);
+        // verify equality
+        lower_values[x] + upper_values[x]*2**REPL_NONCE_BITS === in[x];
     }
 
     component eq = IsEqual();
