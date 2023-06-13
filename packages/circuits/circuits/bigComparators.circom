@@ -26,6 +26,32 @@ template ExtractBits(l, u) {
     _z <== Num2Bits(u)(upper);
 }
 
+// check if the lowers bits of in[0] are < in[1]
+// and assert that the lower bits are not equal
+template LowerLessThanNotEqual(n) {
+    assert(n < 253);
+    signal input in[2];
+    signal output out;
+
+    component extractor[2];
+
+    for (var x = 0; x < 2; x++) {
+        extractor[x] = ExtractBits(n, 253-n);
+        extractor[x].in <== in[x];
+    }
+
+    component lt = LessThan(n);
+    lt.in[0] <== extractor[0].lower;
+    lt.in[1] <== extractor[1].lower;
+
+    component ne = IsEqual();
+    ne.in[0] <== extractor[0].lower;
+    ne.in[1] <== extractor[1].lower;
+    ne.out === 0;
+
+    out <== lt.out;
+}
+
 template LowerLessThan(n) {
     assert(n < 253);
     signal input in[2];
