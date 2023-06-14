@@ -32,8 +32,9 @@ template LowerGreaterThan(n) {
     signal output out;
 
     component lt = LowerLessThan(n);
-    lt.in <== in;
-    out <== IsZero()(lt.out);
+    lt.in[0] <== in[1];
+    lt.in[1] <== in[0];
+    out <== lt.out;
 }
 
 template LowerLessThan(n) {
