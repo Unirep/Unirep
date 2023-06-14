@@ -5,19 +5,29 @@ import {VerifySignature} from '../libraries/VerifySignature.sol';
 import {IUnirep} from '../interfaces/IUnirep.sol';
 
 contract MockUnirep is IUnirep, VerifySignature {
-
-	// Attester id == address
+    // Attester id == address
     mapping(uint160 => AttesterData) attesters;
+    uint8 public immutable numEpochKeyNoncePerEpoch;
 
-	function userSignUp(uint256[] calldata publicSignals, uint256[8] calldata proof) public {}
+    constructor() {
+        numEpochKeyNoncePerEpoch = 2;
+    }
 
-	function userStateTransition(uint256[] calldata publicSignals, uint256[8] calldata proof) public {}
+    function userSignUp(
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
+    ) public {}
 
-	receive() external payable {}
+    function userStateTransition(
+        uint256[] calldata publicSignals,
+        uint256[8] calldata proof
+    ) public {}
 
-	function _attesterSignUp(address attesterId, uint48 epochLength) private {
+    receive() external payable {}
+
+    function _attesterSignUp(address attesterId, uint48 epochLength) private {
         AttesterData storage attester = attesters[uint160(attesterId)];
-		if (attester.startTimestamp != 0)
+        if (attester.startTimestamp != 0)
             revert AttesterAlreadySignUp(uint160(attesterId));
         attester.startTimestamp = uint48(block.timestamp);
 
@@ -30,11 +40,12 @@ contract MockUnirep is IUnirep, VerifySignature {
             attester.startTimestamp
         );
     }
+
     function attesterSignUp(uint48 epochLength) public {
         _attesterSignUp(msg.sender, epochLength);
     }
 
-	function attesterCurrentEpoch(
+    function attesterCurrentEpoch(
         uint160 attesterId
     ) public view returns (uint48) {
         uint48 timestamp = attesters[attesterId].startTimestamp;
@@ -42,5 +53,4 @@ contract MockUnirep is IUnirep, VerifySignature {
         if (timestamp == 0) revert AttesterNotSignUp(attesterId);
         return (uint48(block.timestamp) - timestamp) / epochLength;
     }
-
 }

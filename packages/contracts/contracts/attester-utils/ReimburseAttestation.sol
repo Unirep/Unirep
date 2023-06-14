@@ -10,6 +10,7 @@ import {Unirep} from '../Unirep.sol';
  */
 contract ReimburseAttestation {
     bool public acceptDonations;
+    bool public acceptReReimburseUST;
 
     mapping(address => bool) public whitelist;
 
@@ -31,6 +32,7 @@ contract ReimburseAttestation {
         unirep = _unirep;
         attesterId = _attesterId;
         acceptDonations = true;
+        acceptReReimburseUST = true;
     }
 
     /**
@@ -106,14 +108,21 @@ contract ReimburseAttestation {
         unirep.userSignUp(publicSignals, proof);
 
         // use BASEFEE here to prevent large gasprice values
-        uint txCost = (startGas - gasleft()) * block.basefee;
-        require(address(this).balance >= txCost, "Not enough budget in the contract");
+        uint reimbursement = (startGas - gasleft()) * block.basefee;
 
-        (bool sent,) = payable(msg.sender).call{value: txCost}("");
-        require(sent, "Failed to send Ether");
+        require(
+            address(this).balance >= reimbursement,
+            'Not enough budget in the contract'
+        );
+
+        (bool sent, ) = payable(msg.sender).call{value: reimbursement}('');
+        // The gas cost will be deducted from the external account that initiated the transaction.
+
+        require(sent, 'Failed to send Ether');
+
         txType = TxType.Signup;
 
-        emit Reimbursed(msg.sender, txCost, txType);
+        emit Reimbursed(msg.sender, reimbursement, txType);
     }
 
     function userStateTransition(
@@ -122,7 +131,7 @@ contract ReimburseAttestation {
     ) public payable virtual {
         require(whitelist[msg.sender], 'This user is not in the whitelist');
 
-        uint256 attesterSignalIndex = 3 + unirep.numEpochKeyNoncePerEpoch();
+        uint256 attesterSignalIndex = unirep.numEpochKeyNoncePerEpoch();
 
         // check that we're doing a UST for the attester this budget contract is deployed for
         require(publicSignals[attesterSignalIndex] == attesterId);

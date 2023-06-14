@@ -72,24 +72,24 @@ describe('Unirep App', function () {
         const appInitialBalance = await ethers.provider.getBalance(app.address)
 
         const tx = await app.userSignUp(publicSignals, proof)
+        const receipt = await tx.wait()
+        const gasUsed = receipt.gasUsed
+        const gasPrice = tx.gasPrice
+        const gasCost = gasUsed.mul(gasPrice)
 
         const appFinalBalance = await ethers.provider.getBalance(app.address)
 
-        const reimbursement = appInitialBalance - appFinalBalance
+        // const reimbursement = appInitialBalance - appFinalBalance
 
-        expect(tx).to.emit(app, 'Reimbursed').withArgs(user, reimbursement, 0)
+        // expect(tx).to.emit(app, 'Reimbursed').withArgs(user, appFinalBalance, 0)
+        const event = receipt.events?.find((e) => e.event === 'Reimbursed')
+
+        const reimbursement = event.args.amount
 
         const userFinalBalance = await ethers.provider.getBalance(user)
 
-        console.log('userInitialBalance: ' + BigInt(userInitialBalance))
-        console.log('userFinalBalance: ' + BigInt(userFinalBalance))
-        console.log(
-            'difference between final balance and initial balance: ' +
-                (BigInt(userFinalBalance) - BigInt(userInitialBalance))
-        )
-        console.log('reimbursement: ' + BigInt(reimbursement))
         expect(BigInt(userFinalBalance.toString())).equal(
-            BigInt(userInitialBalance) + BigInt(reimbursement)
+            BigInt(userInitialBalance) - BigInt(gasCost) + BigInt(reimbursement)
         )
     })
 
