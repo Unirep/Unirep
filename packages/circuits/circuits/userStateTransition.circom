@@ -181,7 +181,7 @@ template UserStateTransition(
       // then combine the replacement data
       for (var j = 0; j < REPL_FIELD_COUNT; j++) {
         var field_i = SUM_FIELD_COUNT + j;
-        index_check[i][j] = LowerLessThan(REPL_NONCE_BITS);
+        index_check[i][j] = LowerGreaterThan(REPL_NONCE_BITS);
         index_check[i][j].in[0] <== new_data[i][field_i];
         if (i == 0) {
           index_check[i][j].in[1] <== data[field_i];
@@ -192,11 +192,11 @@ template UserStateTransition(
         field_select[i][j] = Mux1();
         field_select[i][j].s <== index_check[i][j].out;
         if (i == 0) {
-          field_select[i][j].c[1] <== data[field_i];
+          field_select[i][j].c[0] <== data[field_i];
         } else {
-          field_select[i][j].c[1] <== final_data[i-1][field_i];
+          field_select[i][j].c[0] <== final_data[i-1][field_i];
         }
-        field_select[i][j].c[0] <== new_data[i][field_i];
+        field_select[i][j].c[1] <== new_data[i][field_i];
 
         final_data[i][field_i] <== field_select[i][j].out;
       }
