@@ -12,7 +12,7 @@ tags: [unirep in turkey]
 
 In April, the [UniRep Protocol](https://developer.unirep.io/) was presented to a group of software engineers interested in privacy-related technology at the [ETHPrivacy](https://www.leadingprivacy.com/istanbul) conference for a privacy hackathon in Istanbul, Turkey.
 
-The location for the event was relevant as Turkey is one of the fastest-growing countries for the [adoption](https://www.reuters.com/technology/cryptoverse-digital-coins-lure-inflation-weary-argentines-turks-2023-05-02/#:~:text=Ownership) of blockchain-related products. More importantly, there are concerns within Turkey about freedom of speech and other human rights where privacy can help, so it made sense to have a privacy conference there.
+The location for the event was relevant as Turkey is one of the fastest-growing countries for the adoption of blockchain-related products. More importantly, there are concerns within Turkey about freedom of speech and other human rights where privacy can help, so it made sense to have a privacy conference there.
 
 UniRep allows developers to build applications where a user's data is always in control of the user. A higher-level description is that the data is on a blockchain, and a user submits a zero-knowledge proof proving ownership over an epoch key that had data attested to it. Examples will follow if that does not make sense quite yet (checkout our [docs](https://developer.unirep.io/docs/welcome) if you want to dive in immediately).
 
@@ -32,4 +32,3 @@ UniRep is a generalized protocol and can be used to build any application you ca
 
 -   https://github.com/gagichce/zk-dev
 -   https://github.com/onuruci/zk-dao
--   https://www.reuters.com/technology/cryptoverse-digital-coins-lure-inflation-weary-argentines-turks-2023-05-02/#:~:text=Ownership%20of%20digital%20currencies%20in,data%20from%20research%20firm%20GWI
