@@ -2,8 +2,7 @@ pragma circom 2.0.0;
 
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/comparators.circom";
-include "./circomlib/circuits/poseidon.circom";
-include "./leafHasher.circom";
+include "./hasher.circom";
 
 template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**8);

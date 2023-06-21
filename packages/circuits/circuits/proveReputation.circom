@@ -9,7 +9,6 @@ pragma circom 2.0.0;
 
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/gates.circom";
-include "./circomlib/circuits/poseidon.circom";
 include "./bigComparators.circom";
 include "./incrementalMerkleTree.circom";
 include "./epochKey.circom";

@@ -4,11 +4,9 @@ pragma circom 2.0.0;
     Verify that an epoch key exists in a state tree
 */
 
-include "./circomlib/circuits/poseidon.circom";
-include "./circomlib/circuits/bitify.circom";
 include "./incrementalMerkleTree.circom";
 include "./epochKeyLite.circom";
-include "./leafHasher.circom";
+include "./hasher.circom";
 
 template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     // Global state tree
