@@ -10,21 +10,20 @@ import {
 } from '../generated/Unirep/Unirep'
 import {
     Attestation,
-    AttesterSignedUp,
-    EpochEnded,
+    Attester,
+    Epoch,
     EpochTreeLeaf,
     HistoryTreeLeaf,
+    Nullifier,
     StateTreeLeaf,
-    UserSignedUp,
-    UserStateTransitioned,
+    User,
 } from '../generated/schema'
-import { log } from '@graphprotocol/graph-ts'
 
 export function handleAttestation(event: AttestationEvent): void {
     let entity = new Attestation(
         event.transaction.hash.concatI32(event.logIndex.toI32())
     )
-    entity.epoch = event.params.epoch
+    entity.epoch = event.params.epoch.toI32()
     entity.epochKey = event.params.epochKey
     entity.attesterId = event.params.attesterId
     entity.fieldIndex = event.params.fieldIndex
@@ -38,12 +37,12 @@ export function handleAttestation(event: AttestationEvent): void {
 }
 
 export function handleAttesterSignedUp(event: AttesterSignedUpEvent): void {
-    let entity = new AttesterSignedUp(
+    let entity = new Attester(
         event.transaction.hash.concatI32(event.logIndex.toI32())
     )
     entity.attesterId = event.params.attesterId
-    entity.epochLength = event.params.epochLength
-    entity.timestamp = event.params.timestamp
+    entity.epochLength = event.params.epochLength.toI32()
+    entity.startTimestamp = event.params.timestamp.toI32()
 
     entity.blockNumber = event.block.number
     entity.blockTimestamp = event.block.timestamp
@@ -53,10 +52,10 @@ export function handleAttesterSignedUp(event: AttesterSignedUpEvent): void {
 }
 
 export function handleEpochEnded(event: EpochEndedEvent): void {
-    let entity = new EpochEnded(
+    let entity = new Epoch(
         event.transaction.hash.concatI32(event.logIndex.toI32())
     )
-    entity.epoch = event.params.epoch
+    entity.number = event.params.epoch.toI32()
     entity.attesterId = event.params.attesterId
 
     entity.blockNumber = event.block.number
@@ -70,9 +69,9 @@ export function handleEpochTreeLeaf(event: EpochTreeLeafEvent): void {
     let entity = new EpochTreeLeaf(
         event.transaction.hash.concatI32(event.logIndex.toI32())
     )
-    entity.epoch = event.params.epoch
+    entity.epoch = event.params.epoch.toI32()
     entity.attesterId = event.params.attesterId
-    entity.index = event.params.index
+    entity.index = event.params.index.toI32()
     entity.leaf = event.params.leaf
 
     entity.blockNumber = event.block.number
@@ -100,9 +99,9 @@ export function handleStateTreeLeaf(event: StateTreeLeafEvent): void {
     let entity = new StateTreeLeaf(
         event.transaction.hash.concatI32(event.logIndex.toI32())
     )
-    entity.epoch = event.params.epoch
+    entity.epoch = event.params.epoch.toI32()
     entity.attesterId = event.params.attesterId
-    entity.index = event.params.index
+    entity.index = event.params.index.toI32()
     entity.leaf = event.params.leaf
 
     entity.blockNumber = event.block.number
@@ -113,13 +112,13 @@ export function handleStateTreeLeaf(event: StateTreeLeafEvent): void {
 }
 
 export function handleUserSignedUp(event: UserSignedUpEvent): void {
-    let entity = new UserSignedUp(
+    let entity = new User(
         event.transaction.hash.concatI32(event.logIndex.toI32())
     )
-    entity.epoch = event.params.epoch
-    entity.identityCommitment = event.params.identityCommitment
+    entity.epoch = event.params.epoch.toI32()
+    entity.commitment = event.params.identityCommitment
     entity.attesterId = event.params.attesterId
-    entity.leafIndex = event.params.leafIndex
+    entity.leafIndex = event.params.leafIndex.toI32()
 
     entity.blockNumber = event.block.number
     entity.blockTimestamp = event.block.timestamp
@@ -131,13 +130,11 @@ export function handleUserSignedUp(event: UserSignedUpEvent): void {
 export function handleUserStateTransitioned(
     event: UserStateTransitionedEvent
 ): void {
-    let entity = new UserStateTransitioned(
+    let entity = new Nullifier(
         event.transaction.hash.concatI32(event.logIndex.toI32())
     )
-    entity.epoch = event.params.epoch
+    entity.epoch = event.params.epoch.toI32()
     entity.attesterId = event.params.attesterId
-    entity.leafIndex = event.params.leafIndex
-    entity.hashedLeaf = event.params.hashedLeaf
     entity.nullifier = event.params.nullifier
 
     entity.blockNumber = event.block.number

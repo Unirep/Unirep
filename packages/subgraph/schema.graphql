@@ -1,6 +1,6 @@
 type Attestation @entity(immutable: true) {
     id: Bytes!
-    epoch: BigInt! # uint256
+    epoch: Int! # uint256
     epochKey: BigInt! # uint256
     attesterId: BigInt! # uint160
     fieldIndex: BigInt! # uint256
@@ -10,20 +10,12 @@ type Attestation @entity(immutable: true) {
     transactionHash: Bytes!
 }
 
-type AttesterSignedUp @entity(immutable: true) {
+type StateTreeLeaf @entity(immutable: true) {
     id: Bytes!
-    attesterId: BigInt! # uint160
-    epochLength: BigInt! # uint256
-    timestamp: BigInt! # uint256
-    blockNumber: BigInt!
-    blockTimestamp: BigInt!
-    transactionHash: Bytes!
-}
-
-type EpochEnded @entity(immutable: true) {
-    id: Bytes!
-    epoch: BigInt! # uint256
-    attesterId: BigInt! # uint160
+    epoch: Int!
+    leaf: BigInt!
+    index: Int!
+    attesterId: BigInt!
     blockNumber: BigInt!
     blockTimestamp: BigInt!
     transactionHash: Bytes!
@@ -31,53 +23,59 @@ type EpochEnded @entity(immutable: true) {
 
 type EpochTreeLeaf @entity(immutable: true) {
     id: Bytes!
-    epoch: BigInt! # uint256
-    attesterId: BigInt! # uint160
-    index: BigInt! # uint256
-    leaf: BigInt! # uint256
+    epoch: Int!
+    leaf: BigInt!
+    index: Int!
+    attesterId: BigInt!
     blockNumber: BigInt!
     blockTimestamp: BigInt!
     transactionHash: Bytes!
 }
 
 type HistoryTreeLeaf @entity(immutable: true) {
-    id: Bytes!
-    attesterId: BigInt! # uint160
-    leaf: BigInt! # uint256
+    id: Bytes! # AttesterId
+    leaf: BigInt!
+    attesterId: BigInt!
     blockNumber: BigInt!
     blockTimestamp: BigInt!
     transactionHash: Bytes!
 }
 
-type StateTreeLeaf @entity(immutable: true) {
+type Epoch @entity(immutable: true) {
     id: Bytes!
-    epoch: BigInt! # uint256
-    attesterId: BigInt! # uint160
-    index: BigInt! # uint256
-    leaf: BigInt! # uint256
+    number: Int!
+    attesterId: BigInt!
     blockNumber: BigInt!
     blockTimestamp: BigInt!
     transactionHash: Bytes!
 }
 
-type UserSignedUp @entity(immutable: true) {
+type Nullifier @entity(immutable: true) {
     id: Bytes!
-    epoch: BigInt! # uint256
-    identityCommitment: BigInt! # uint256
-    attesterId: BigInt! # uint160
-    leafIndex: BigInt! # uint256
+    epoch: Int!
+    attesterId: BigInt!
+    nullifier: BigInt!
     blockNumber: BigInt!
     blockTimestamp: BigInt!
     transactionHash: Bytes!
 }
 
-type UserStateTransitioned @entity(immutable: true) {
+type User @entity(immutable: true) {
     id: Bytes!
-    epoch: BigInt! # uint256
-    attesterId: BigInt! # uint160
-    leafIndex: BigInt! # uint256
-    hashedLeaf: BigInt! # uint256
-    nullifier: BigInt! # uint256
+    commitment: BigInt!
+    epoch: Int!
+    attesterId: BigInt!
+    leafIndex: Int!
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type Attester @entity(immutable: true) {
+    id: Bytes!
+    attesterId: BigInt!
+    startTimestamp: Int!
+    epochLength: Int!
     blockNumber: BigInt!
     blockTimestamp: BigInt!
     transactionHash: Bytes!
