@@ -344,7 +344,7 @@ describe('Describe entity assertions', () => {
         let SCHEMA = 'Attester'
         let attesterId = BigInt.fromI32(234)
         let startTimestamp = BigInt.fromI32(300)
-        let epochLength = BigInt.fromI32(500)
+        let epochLength = BigInt.fromString('281474976710655')
 
         let newAttesterSignedUpEvent = createAttesterSignedUpEvent(
             attesterId,

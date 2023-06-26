@@ -1,6 +1,6 @@
 type Attestation @entity(immutable: true) {
     id: Bytes!
-    epoch: Int! # uint256
+    epoch: BigInt! # uint256
     epochKey: BigInt! # uint256
     attesterId: BigInt! # uint160
     fieldIndex: BigInt! # uint256
@@ -12,7 +12,7 @@ type Attestation @entity(immutable: true) {
 
 type StateTreeLeaf @entity(immutable: true) {
     id: Bytes!
-    epoch: Int!
+    epoch: BigInt!
     leaf: BigInt!
     index: Int!
     attesterId: BigInt!
@@ -23,7 +23,7 @@ type StateTreeLeaf @entity(immutable: true) {
 
 type EpochTreeLeaf @entity(immutable: true) {
     id: Bytes!
-    epoch: Int!
+    epoch: BigInt!
     leaf: BigInt!
     index: Int!
     attesterId: BigInt!
@@ -43,7 +43,7 @@ type HistoryTreeLeaf @entity(immutable: true) {
 
 type Epoch @entity(immutable: true) {
     id: Bytes!
-    number: Int!
+    number: BigInt!
     attesterId: BigInt!
     blockNumber: BigInt!
     blockTimestamp: BigInt!
@@ -52,7 +52,7 @@ type Epoch @entity(immutable: true) {
 
 type Nullifier @entity(immutable: true) {
     id: Bytes!
-    epoch: Int!
+    epoch: BigInt!
     attesterId: BigInt!
     nullifier: BigInt!
     blockNumber: BigInt!
@@ -63,7 +63,7 @@ type Nullifier @entity(immutable: true) {
 type User @entity(immutable: true) {
     id: Bytes!
     commitment: BigInt!
-    epoch: Int!
+    epoch: BigInt!
     attesterId: BigInt!
     leafIndex: Int!
     blockNumber: BigInt!
@@ -74,8 +74,8 @@ type User @entity(immutable: true) {
 type Attester @entity(immutable: true) {
     id: Bytes!
     attesterId: BigInt!
-    startTimestamp: Int!
-    epochLength: Int!
+    startTimestamp: BigInt!
+    epochLength: BigInt!
     blockNumber: BigInt!
     blockTimestamp: BigInt!
     transactionHash: Bytes!

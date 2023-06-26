@@ -10,5 +10,11 @@
             "address": "0x4E319f162376c77dF67020EdB5500D27DEA13Eb2",
             "startBlock": 0
         }
+    },
+    "arbitrum-goerli": {
+        "Unirep": {
+            "address": "0xCa61bFcA0107c5952f8bf59f4D510d111cbcE146",
+            "startBlock": 16823579
+        }
     }
 }
