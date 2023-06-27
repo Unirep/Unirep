@@ -5,8 +5,7 @@ authors: [anthony]
 tags: [unirep in turkey]
 ---
 
-<img src="static/img/../../../static/img/engin-yapici-WA1u0scVLZU-unsplash.jpg" alt="Alt Text" width="600" style="display: block; margin: 0 auto;">
-
+<img src="../static/img/turkey.jpg" alt="Alt Text" width="600" style="display: block; margin: 0 auto;"/>
 
 # UniRep Travels to Turkey
 
@@ -20,9 +19,9 @@ One idea a hacker had at the hackathon was creating a completely anonymous GitHu
 
 The term "reputation" in UniRep's name might be confusing at first. Some may first think about reputation being what a certain social group may think about them. In the context of UniRep, though, reputation is data. With this in mind, we can start to imagine what data can be associated with an anonymous developer that can build their "reputation" so they can push to main.
 
-To illustrate, let's assume you have specific criteria for selecting developers who can push to the main branch, such as requiring a certain number of stars on their projects, a minimum of 5 personal projects, and/or X amount of commits on a project on branches that are not the main branch. UniRep has the capacity to do all of that. Check out the hackathon project [here](https://github.com/gagichce/zk-dev), which was bootstrapped with [create-unirep-app](https://developer.unirep.io/docs/getting-started/create-unirep-app) (note: this will direct you to V2 beta 3 of the protocol). All the mentioned GitHub data can be linked to their anonymous identity, lending credibility to their anon identities.
+To illustrate, let's assume you have specific criteria for selecting developers who can push to the main branch, such as requiring a certain number of stars on their projects, a minimum of 5 personal projects, and/or X amount of commits on a project on branches that are not the main branch. UniRep has the capacity to do all of that. Check out the hackathon project [here](https://github.com/gagichce/zk-dev), which was bootstrapped with [create-unirep-app](https://developer.unirep.io/docs/next/getting-started/create-unirep-app). All the mentioned GitHub data can be linked to their anonymous identity, lending credibility to their anon identities.
 
-Simplistically, what UniRep allows developers to do is _associate data_ with _anonymous users_; UniRep is acting as memory for zk-applications in this regard.
+Simplistically, what UniRep allows developers to do is _associate data_ with _anonymous users_; UniRep is acting as storage for zk-applications in this regard.
 
 Another example from the hackathon was from the ODTU group in Istanbul, associated with Middle East Technical University. Their project was a zero-knowledge DAO where anonymous developers can create and vote on proposals anonymously with the support of an anonymous transfer of ERC-20 tokens! You can check out their [source](https://github.com/onuruci/zk-dao) here.
 
