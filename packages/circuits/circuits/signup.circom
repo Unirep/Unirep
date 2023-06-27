@@ -2,10 +2,9 @@ pragma circom 2.0.0;
 
 // Output identity commitment and starting state tree leaf
 
-include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/bitify.circom";
 include "./identity.circom";
-include "./leafHasher.circom";
+include "./hasher.circom";
 
 template Signup(FIELD_COUNT) {
 

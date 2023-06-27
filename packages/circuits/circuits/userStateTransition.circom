@@ -3,10 +3,10 @@ pragma circom 2.0.0;
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/mux1.circom";
-include "./circomlib/circuits/gates.circom";
 include "./incrementalMerkleTree.circom";
-include "./leafHasher.circom";
+include "./hasher.circom";
 include "./bigComparators.circom";
+
 
 template UserStateTransition(
   STATE_TREE_DEPTH,
