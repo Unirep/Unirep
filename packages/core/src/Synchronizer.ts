@@ -23,13 +23,23 @@ type AttesterSetting = {
 
 class BlockQueue {
     private promises: any[] = []
-    public arr: any[] = []
-    public blockEnd: Number = 0
+    private arr: any[] = []
+    public _blockEnd: Number = 0
+
+    get blocks() {
+        return this.arr
+    }
+
+    get blockEnd() {
+        return this._blockEnd
+    }
+
     insert(block: Promise<any>, idx: number) {
         block.then((r) => {
             this.promises.push({ idx, r })
         })
     }
+
     update() {
         this.promises.sort((a, b) => {
             return a.idx - b.idx
@@ -45,6 +55,7 @@ class BlockQueue {
         }
         this.promises = tmp
     }
+
     clear() {
         this.arr = []
         if (this.promises.length > 0) {
@@ -78,7 +89,7 @@ export class Synchronizer extends EventEmitter {
 
     private pollId: string | null = null
     public pollRate: number = 5000
-    public blockRate: number = 100000
+    public blockRate: number = 20
 
     private setupComplete = false
     private setupPromise
@@ -357,7 +368,6 @@ export class Synchronizer extends EventEmitter {
      * block we'll poll many times quickly
      */
     async start() {
-        const N = 20
         await this.setup()
         ;(async () => {
             const pollId = nanoid()
@@ -367,7 +377,7 @@ export class Synchronizer extends EventEmitter {
             for (;;) {
                 // poll repeatedly until we're up to date
                 try {
-                    await this.loadBlocks(N)
+                    await this.loadBlocks(this.blockRate)
                     this.blockQueue.update()
                 } catch (err) {
                     console.error(`--- unable to load blocks`)
@@ -388,7 +398,7 @@ export class Synchronizer extends EventEmitter {
                 if (pollId != this.pollId) break
             }
             for (;;) {
-                await this.loadBlocks(N)
+                await this.loadBlocks(this.blockRate)
                 await new Promise((r) => setTimeout(r, this.pollRate))
                 this.blockQueue.update()
                 if (pollId != this.pollId) break
@@ -432,7 +442,7 @@ export class Synchronizer extends EventEmitter {
         })
         const latestBlock = await this.provider.getBlockNumber()
 
-        const newEvents = this.blockQueue.arr
+        const newEvents = this.blockQueue.blocks
         this.blockQueue.clear()
 
         // filter out the events that have already been seen
@@ -456,12 +466,12 @@ export class Synchronizer extends EventEmitter {
                 OR: this.attestersOrClauses,
             },
             update: {
-                latestCompleteBlock: this.blockQueue.blockEnd,
+                latestCompleteBlock: this.blockQueue._blockEnd,
             },
         })
 
         return {
-            complete: latestBlock === this.blockQueue.blockEnd,
+            complete: latestBlock === this.blockQueue._blockEnd,
         }
     }
 
@@ -479,7 +489,7 @@ export class Synchronizer extends EventEmitter {
         const latestBlock = await this.provider.getBlockNumber()
         const blockStart = latestProcessed + 1
         const count = Math.ceil((latestBlock - blockStart + 1) / n)
-        this.blockQueue.blockEnd = latestBlock
+        this.blockQueue._blockEnd = latestBlock
         if (count <= 0) return
 
         const promises = Array.from(Array(count).keys()).map(async (_, i) => {
