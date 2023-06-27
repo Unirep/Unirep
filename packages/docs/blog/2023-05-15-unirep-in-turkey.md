@@ -5,7 +5,7 @@ authors: [anthony]
 tags: [unirep in turkey]
 ---
 
-<img src="../static/img/turkey.jpg" alt="Alt Text" width="600" style="display: block; margin: 0 auto;"/>
+<img src="/img/turkey.jpg" alt="Alt Text" width="600px" style={{ display: 'block', margin: '16px auto'}} />
 
 # UniRep Travels to Turkey
 
