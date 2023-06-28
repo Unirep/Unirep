@@ -1,4 +1,9 @@
-# FAQs
+---
+
+title: FAQs
+---
+
+# ❓FAQs
 
 What is Unirep?
 
