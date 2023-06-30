@@ -134,7 +134,7 @@ export default class UserState {
         const attesterId = toDecString(_attesterId)
         this.sync.checkAttesterId(attesterId)
         const currentEpoch = await this.sync.loadCurrentEpoch(attesterId)
-        let latestTransitionedEpoch = 0
+        let latestTransitionedEpoch = -1
         for (let x = currentEpoch; x >= 0; x--) {
             const nullifiers = [
                 0,
@@ -152,14 +152,15 @@ export default class UserState {
                 break
             }
         }
-        if (latestTransitionedEpoch === 0) {
+        if (latestTransitionedEpoch === -1) {
             const signup = await this.sync.db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
                     attesterId,
                 },
             })
-            if (!signup) return 0
+            if (!signup)
+                throw new Error('@unirep/core:UserState user is not signed up')
             return signup.epoch
         }
         return latestTransitionedEpoch
@@ -175,41 +176,14 @@ export default class UserState {
         _attesterId: bigint | string = this.sync.attesterId
     ): Promise<number> {
         const attesterId = toDecString(_attesterId)
-        if (!(await this.hasSignedUp(attesterId))) return -1
         const currentEpoch = _epoch ?? this.sync.calcCurrentEpoch(attesterId)
         const latestTransitionedEpoch = await this.latestTransitionedEpoch(
             attesterId
         )
-        if (latestTransitionedEpoch !== currentEpoch) return -1
-        if (latestTransitionedEpoch === 0) {
-            const signup = await this.sync.db.findOne('UserSignUp', {
-                where: {
-                    commitment: this.commitment.toString(),
-                    attesterId: attesterId,
-                },
-            })
-            if (!signup) {
-                throw new Error('@unirep/core:UserState: user is not signed up')
-            }
-            if (signup.epoch !== currentEpoch) {
-                return 0
-            }
-            // don't include attestations that are not provable
-            const data = await this.getData(currentEpoch - 1, attesterId)
-            const leaf = genStateTreeLeaf(
-                this.id.secret,
-                attesterId,
-                signup.epoch,
-                data
+        if (latestTransitionedEpoch !== currentEpoch)
+            throw new Error(
+                '@unirep/core:UserState user has not transitioned to epoch'
             )
-            const foundLeaf = await this.sync.db.findOne('StateTreeLeaf', {
-                where: {
-                    hash: leaf.toString(),
-                },
-            })
-            if (!foundLeaf) return -1
-            return foundLeaf.index
-        }
         const data = await this.getData(latestTransitionedEpoch - 1, attesterId)
         const leaf = genStateTreeLeaf(
             this.id.secret,
@@ -223,7 +197,10 @@ export default class UserState {
                 hash: leaf.toString(),
             },
         })
-        if (!foundLeaf) return -1
+        if (!foundLeaf)
+            throw new Error(
+                '@unirep/core:UserState unable to find state tree leaf index'
+            )
         return foundLeaf.index
     }
 
@@ -242,6 +219,17 @@ export default class UserState {
         return Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) => genEpochKey(this.id.secret, attesterId, epoch, i))
+    }
+
+    parseReplData(replData: bigint) {
+        const data =
+            replData / BigInt(2) ** BigInt(this.sync.settings.replNonceBits)
+        const nonce =
+            replData % BigInt(2) ** BigInt(this.sync.settings.replNonceBits)
+        return {
+            data,
+            nonce,
+        }
     }
 
     /**
@@ -334,10 +322,15 @@ export default class UserState {
         })
         for (const a of attestations) {
             const { fieldIndex } = a
+            let currentNonce = BigInt(-1)
             if (fieldIndex < this.sync.settings.sumFieldCount) {
                 data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
             } else {
-                data[fieldIndex] = BigInt(a.change)
+                const { nonce } = this.parseReplData(BigInt(a.change))
+                if (nonce > currentNonce) {
+                    data[fieldIndex] = BigInt(a.change)
+                    currentNonce = nonce
+                }
             }
         }
         return data
@@ -372,10 +365,15 @@ export default class UserState {
         })
         for (const a of attestations) {
             const { fieldIndex } = a
+            let currentNonce = BigInt(-1)
             if (fieldIndex < this.sync.settings.sumFieldCount) {
                 data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
             } else {
-                data[fieldIndex] = BigInt(a.change)
+                const { nonce } = this.parseReplData(BigInt(a.change))
+                if (nonce > currentNonce) {
+                    data[fieldIndex] = BigInt(a.change)
+                    currentNonce = nonce
+                }
             }
         }
         return data
@@ -421,7 +419,7 @@ export default class UserState {
             seenEpochKeys[epochKey] = true
             index++
         }
-        return 0
+        return -1
     }
 
     public genUserStateTransitionProof = async (
@@ -484,7 +482,17 @@ export default class UserState {
                 const hasChanges = newData.reduce((acc, obj) => {
                     return acc || obj != BigInt(0)
                 }, false)
-                const proof = epochTree.createProof(epochKeyLeafIndices[i])
+                const proof =
+                    epochKeyLeafIndices[i] !== -1
+                        ? epochTree.createProof(epochKeyLeafIndices[i])
+                        : {
+                              pathIndices: Array(
+                                  this.sync.settings.epochTreeDepth
+                              ).fill(0),
+                              siblings: Array(
+                                  this.sync.settings.epochTreeDepth
+                              ).fill(0),
+                          }
                 return { epochKey, hasChanges, newData, proof }
             })
         )

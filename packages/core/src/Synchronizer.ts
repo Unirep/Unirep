@@ -653,7 +653,6 @@ export class Synchronizer extends EventEmitter {
                 index: 'asc',
             },
         })
-        if (leaves.length === 0) tree.insert(0)
         for (const { hash } of leaves) {
             tree.insert(hash)
         }
