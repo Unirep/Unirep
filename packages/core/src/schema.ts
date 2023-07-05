@@ -69,7 +69,9 @@ const _schema = [
     },
     {
         name: 'HistoryTreeLeaf',
+        primaryKey: 'id',
         rows: [
+            ['id', 'String'],
             ['index', 'Int'],
             ['attesterId', 'String'],
             ['leaf', 'String', { unique: true }],

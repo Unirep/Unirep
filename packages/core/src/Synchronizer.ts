@@ -948,20 +948,18 @@ export class Synchronizer extends EventEmitter {
     async handleHistoryTreeLeaf({ decodedData, event, db }: EventHandlerArgs) {
         const attesterId = BigInt(decodedData.attesterId).toString()
         const leaf = BigInt(decodedData.leaf).toString()
-        if (
-            attesterId !== this.attesterId.toString() &&
-            this.attesterId !== BigInt(0)
-        )
-            return
+        if (!this.attesterExist(attesterId)) return
         const index = await this._db.count('HistoryTreeLeaf', {
             attesterId,
         })
+        const id = `${index}-${attesterId}`
         db.upsert('HistoryTreeLeaf', {
             where: {
-                leaf,
+                id,
             },
             update: {},
             create: {
+                id,
                 index,
                 attesterId,
                 leaf,
