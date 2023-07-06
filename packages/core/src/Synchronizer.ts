@@ -321,41 +321,6 @@ export class Synchronizer extends EventEmitter {
         })
     }
 
-    get blocks() {
-        return this._blocks
-    }
-
-    get blockEnd() {
-        return this._blockEnd
-    }
-
-    insert(block: Promise<any>) {
-        block.then((r) => {
-            this.promises.push(r)
-        })
-    }
-
-    update() {
-        this.promises.sort((a, b) => {
-            return a.blockNumber - b.blockNumber
-        })
-        console.log(this.promises)
-        const tmp: any[] = []
-        for (const chunk of this.promises) {
-            if (chunk === undefined || chunk.length === 0) {
-                continue
-            }
-            for (const block of chunk) {
-                this._blocks.splice(0, 0, block)
-            }
-        }
-        this.promises = tmp
-    }
-
-    clear() {
-        this._blocks = []
-    }
-
     /**
      * Start polling the blockchain for new events. If we're behind the HEAD
      * block we'll poll many times quickly
@@ -390,7 +355,6 @@ export class Synchronizer extends EventEmitter {
                 if (pollId != this.pollId) break
             }
             for (;;) {
-                console.log(`${pollId} - ${this.pollId}`)
                 await this.loadBlocks(this.blockRate)
                 await new Promise((r) => setTimeout(r, this.pollRate))
                 if (pollId != this.pollId) break
@@ -434,8 +398,8 @@ export class Synchronizer extends EventEmitter {
         })
         const latestBlock = await this.provider.getBlockNumber()
 
-        const newEvents = this.blocks
-        this.clear()
+        const newEvents = this._blocks
+        this._blocks = []
 
         // filter out the events that have already been seen
         const unprocessedEvents = newEvents.filter((e) => {
@@ -451,7 +415,6 @@ export class Synchronizer extends EventEmitter {
             }
             return e.blockNumber > state.latestProcessedBlock
         })
-        // console.log(`processing ${unprocessedEvents.length} events...`)
         await this.processEvents(unprocessedEvents)
         await this._db.update('SynchronizerState', {
             where: {
@@ -492,7 +455,19 @@ export class Synchronizer extends EventEmitter {
         })
 
         await Promise.all(promises)
-        this.update()
+        this.promises.sort((a, b) => {
+            return a.blockNumber - b.blockNumber
+        })
+        const tmp: any[] = []
+        for (const chunk of this.promises) {
+            if (chunk === undefined || chunk.length === 0) {
+                continue
+            }
+            for (const block of chunk) {
+                this._blocks.splice(0, 0, block)
+            }
+        }
+        this.promises = tmp
     }
 
     // Overridden in subclasses
@@ -512,7 +487,9 @@ export class Synchronizer extends EventEmitter {
                         toBlock
                     )
                     promises.push(request)
-                    this.insert(request)
+                    request.then((r) => {
+                        this.promises.push(r)
+                    })
                     break
                 } catch (err) {
                     console.error(`--- unable to load new events`)
