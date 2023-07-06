@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import {Unirep} from '../Unirep.sol';
-
 /**
- * @title ReimburseAttestation
- * @dev An attester can inherit this contract to hold budget and allow the callers of the contract (attester app users) to be reimbersed for attestations.
+ * @title ReimburseTransactions
+ * @dev An attester can inherit this contract to hold budget and allow the callers of the contract (attester app users) to be reimbersed for transactions.
  	This would make the publicly funding operation of attesters more modular and transparent.
 	e.g. An attester could directly get funded from a gitcoin round for its operation.
  */
-contract ReimburseAttestation {
+contract ReimburseTransactions {
     bool public acceptDonations;
     bool public acceptReReimburseUST;
 
@@ -23,7 +22,6 @@ contract ReimburseAttestation {
         Signup,
         UST
     }
-    TxType public txType;
 
     event Reimbursed(address indexed recipient, uint amount, TxType txType);
     event FundsReceived(address sender, uint amount);
@@ -39,13 +37,8 @@ contract ReimburseAttestation {
      * @dev Add users to whitelist
      */
     function addToWhitelist(
-        address[] calldata addresses,
-        address owner
+        address[] calldata addresses
     ) public virtual {
-        require(
-            msg.sender == owner,
-            'Only owner contract itself can call addToWhitelist()'
-        );
         for (uint i = 0; i < addresses.length; i++) {
             whitelist[addresses[i]] = true;
         }
@@ -55,13 +48,8 @@ contract ReimburseAttestation {
      * @dev Remove users from whitelist
      */
     function removeFromWhitelist(
-        address[] calldata toRemoveAddresses,
-        address owner
+        address[] calldata toRemoveAddresses
     ) external {
-        require(
-            msg.sender == owner,
-            'Only owner contract itself can callremoveFromWhitelist()'
-        );
         for (uint i = 0; i < toRemoveAddresses.length; i++) {
             delete whitelist[toRemoveAddresses[i]];
         }
@@ -120,9 +108,7 @@ contract ReimburseAttestation {
 
         require(sent, 'Failed to send Ether');
 
-        txType = TxType.Signup;
-
-        emit Reimbursed(msg.sender, reimbursement, txType);
+        emit Reimbursed(msg.sender, reimbursement, TxType.Signup);
     }
 
     function userStateTransition(
@@ -147,8 +133,6 @@ contract ReimburseAttestation {
 
         payable(msg.sender).transfer(txCost);
 
-        txType = TxType.UST;
-
-        emit Reimbursed(msg.sender, txCost, txType);
+        emit Reimbursed(msg.sender, txCost, TxType.UST);
     }
 }

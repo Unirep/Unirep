@@ -5,7 +5,7 @@ import { expect } from 'chai'
 describe('Unirep App', function () {
     let mockUnirep
     let app
-    let reimburseAttestation
+    let reimburseTransactions
 
     const epochLength = 300
     let startTime = 0
@@ -36,18 +36,18 @@ describe('Unirep App', function () {
         )
         publicSignals = [0, 1, app.address, 3]
 
-        // deploy ReimburseAttestation contract
-        console.log('Deploying Reimburse Attestation Contract')
-        const ReimburseAttestation = await ethers.getContractFactory(
-            'ReimburseAttestation'
+        // deploy ReimburseTransactions contract
+        console.log('Deploying ReimburseTransactions Contract')
+        const ReimburseTransactions = await ethers.getContractFactory(
+            'ReimburseTransactions'
         )
-        reimburseAttestation = await ReimburseAttestation.deploy(
+        reimburseTransactions = await ReimburseTransactions.deploy(
             mockUnirep.address,
             app.address
         )
-        await reimburseAttestation.deployed()
+        await reimburseTransactions.deployed()
         console.log(
-            `ReimburseAttestation contract with epoch length ${epochLength} is deployed to ${reimburseAttestation.address}`
+            `ReimburseTransactions contract with epoch length ${epochLength} is deployed to ${reimburseTransactions.address}`
         )
     })
 
@@ -65,23 +65,15 @@ describe('Unirep App', function () {
     })
 
     it('user sign up', async () => {
-        await app.addToWhitelist([user], user)
+        await app.addToWhitelist([user])
 
         const userInitialBalance = await ethers.provider.getBalance(user)
-
-        const appInitialBalance = await ethers.provider.getBalance(app.address)
-
         const tx = await app.userSignUp(publicSignals, proof)
         const receipt = await tx.wait()
         const gasUsed = receipt.gasUsed
         const gasPrice = tx.gasPrice
         const gasCost = gasUsed.mul(gasPrice)
 
-        const appFinalBalance = await ethers.provider.getBalance(app.address)
-
-        // const reimbursement = appInitialBalance - appFinalBalance
-
-        // expect(tx).to.emit(app, 'Reimbursed').withArgs(user, appFinalBalance, 0)
         const event = receipt.events?.find((e) => e.event === 'Reimbursed')
 
         const reimbursement = event.args.amount
@@ -100,10 +92,21 @@ describe('Unirep App', function () {
             const newEpoch = await mockUnirep.attesterCurrentEpoch(app.address)
             if (oldEpoch + 1 == newEpoch) break
         }
-        const newEpoch = await mockUnirep.attesterCurrentEpoch(app.address)
+        const userInitialBalance = await ethers.provider.getBalance(user)
         const tx = await app.userStateTransition(publicSignals, proof)
         const receipt = await tx.wait()
+        const gasUsed = receipt.gasUsed
+        const gasPrice = tx.gasPrice
+        const gasCost = gasUsed.mul(gasPrice)
 
-        expect(receipt.status).equal(1)
+        const event = receipt.events?.find((e) => e.event === 'Reimbursed')
+
+        const reimbursement = event.args.amount
+
+        const userFinalBalance = await ethers.provider.getBalance(user)
+
+        expect(BigInt(userFinalBalance.toString())).equal(
+            BigInt(userInitialBalance) - BigInt(gasCost) + BigInt(reimbursement)
+        )
     })
 })
