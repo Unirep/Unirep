@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import {Unirep} from '../Unirep.sol';
+
 /**
  * @title ReimburseTransactions
  * @dev An attester can inherit this contract to hold budget and allow the callers of the contract (attester app users) to be reimbersed for transactions.
@@ -36,9 +37,7 @@ contract ReimburseTransactions {
     /**
      * @dev Add users to whitelist
      */
-    function addToWhitelist(
-        address[] calldata addresses
-    ) public virtual {
+    function addToWhitelist(address[] calldata addresses) public virtual {
         for (uint i = 0; i < addresses.length; i++) {
             whitelist[addresses[i]] = true;
         }

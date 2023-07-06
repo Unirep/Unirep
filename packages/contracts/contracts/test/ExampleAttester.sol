@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import {Unirep} from '../Unirep.sol';
-import {ReimburseTransactions } from '../attester-utils/ReimburseTransactions.sol';
+import {ReimburseTransactions} from '../attester-utils/ReimburseTransactions.sol';
 
 contract ExampleAttester is ReimburseTransactions {
     constructor(
