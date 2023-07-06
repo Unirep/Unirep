@@ -2,7 +2,7 @@
 slug: unirep-travels-to-turkey-2023
 title: UniRep Travels to Turkey, 2023
 authors: [anthony]
-tags: [unirep in turkey]
+tags: [unirep in turkey, eth privacy]
 ---
 
 <img src="/img/turkey.jpg" alt="Alt Text" width="600px" style={{ display: 'block', margin: '16px auto'}} />
