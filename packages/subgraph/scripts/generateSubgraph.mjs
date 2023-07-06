@@ -43,7 +43,12 @@ copy(
     path.join(__dirname, '../node_modules/matchstick-as')
 )
 
-const network = process.argv.at(2) ?? 'goerli'
+copy(
+    path.join(__dirname, '../../contracts/abi'),
+    path.join(__dirname, '../abis')
+)
+
+const network = process.argv.at(2) ?? 'localhost'
 
 const template = fs.readFileSync('./subgraph.template.yaml', 'utf-8')
 const networks = JSON.parse(fs.readFileSync('./networks.json', 'utf-8'))
