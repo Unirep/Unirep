@@ -92,45 +92,6 @@ const proof = tree.createProof(index)
 const isValid = tree.verifyProof(proof)
 ```
 
-### SparseMerkleTree
-
-**Create a SparseMerkleTree**
-```typescript
-import { SparseMerkleTree } from '@unirep/utils'
-
-const depth = 4
-// initialize incremental merkle tree with depth 4
-const zeroHash = 0
-// initialize sparse merkle tree with depth 4 and zeroHash 0
-const tree = new SparseMerkleTree(
-    depth,
-    zeroHash
-)
-```
-
-**Get tree root**
-```typescript
-const root = tree.root
-```
-
-**Update leaf**
-```typescript
-const leafKey = BigInt(3)
-const leafValue = BigInt(4)
-tree.update(leafKey, leafValue)
-```
-
-**Generate merkle proof**
-```typescript
-const leafKey = Bigint(1)
-const proof = tree.createProof(leafKey)
-```
-
-**Verify merkle proof**
-```typescript
-const isValid = tree.verifyProof(proof)
-```
-
 ### Crypto utils
 
 **genRandomSalt**
@@ -141,8 +102,73 @@ import { genRandomSalt } from '@unirep/utils'
 const salt = genRandomSalt()
 ```
 
+**genEpochKey**
+```typescript
+import { Identity } from '@semaphore-protocol/identity'
+import { genEpochKey } from '@unirep/utils'
+
+const id = new Identity()
+const attesterId = '0x1234'
+const epoch = 0
+const nonce = 0
+const epochKey = genEpochKey(
+    id.secret,
+    attesterId,
+    epoch,
+    nonce
+)
+```
+
+**genIdentityHash**
+```typescript
+import { Identity } from '@semaphore-protocol/identity'
+import { genIdentityHash } from '@unirep/utils'
+
+const id = new Identity()
+const attesterId = '0x1234'
+const epoch = 0
+const idHash = genIdentityHash(
+    id.secret,
+    attesterId,
+    epoch
+)
+```
+
+**genStateTreeLeaf**
+```typescript
+import { Identity } from '@semaphore-protocol/identity'
+import { genStateTreeLeaf } from '@unirep/utils'
+
+const id = new Identity()
+const attesterId = '0x1234'
+const epoch = 0
+const FIELD_COUNT = 6
+const data = Array(FIELD_COUNT).fill(0)
+const leaf = genStateTreeLeaf(
+    id.secret,
+    attesterId,
+    epoch,
+    data
+)
+```
+
+**genEpochTreeLeaf**
+```typescript
+import { genEpochTreeLeaf } from '@unirep/utils'
+
+const epochKey = '0x3456'
+const FIELD_COUNT = 6
+const data = Array(FIELD_COUNT).fill(0)
+const leaf = genEpochTreeLeaf(
+    epochKey,
+    data
+)
+```
+
 **stringifyBigInts/unstringifyBigInts**
 ```typescript
+import { stringifyBigInts, unstringifyBigInts } from '@unirep/utils'
+
 const values = {
     input1: genRandomSalt(),
     input2: genRandomSalt(),
