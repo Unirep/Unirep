@@ -4,7 +4,7 @@ title: "Hash functions"
 
 ## genEpochKey
 
-Calculate an epoch key.
+Calculate an [epoch key](../protocol/epoch-key.md).
 
 ```ts
 import { genEpochKey } from '@unirep/utils'
@@ -19,7 +19,13 @@ genEpochKey(
 
 ## genIdentityHash
 
-Calculate an identity hash for a user. It is used for user signup. The state tree leaf should follow the format: `stateTreeLeaf = H(identityHash, H(data))` where `identityHash = H(identitySecret, attesterId + (epoch << 160))`.
+Calculate an identity hash for a user. It is used for user signup. The state tree leaf should follow the format: <br/>
+`stateTreeLeaf = H(identityHash, H(data))` where <br/>
+`identityHash = H(identitySecret, attesterId + (epoch << 160))`.
+
+:::info
+See [state tree](../protocol/trees.md#state-tree) for more details.
+:::
 
 ```ts
 import { genIdentityHash } from '@unirep/utils'
@@ -34,7 +40,7 @@ genIdentityHash(
 
 ## genStateTreeLeaf
 
-Calculate a state tree leaf for a user.
+Calculate a [state tree](../protocol/trees.md#state-tree) leaf for a user.
 
 ```ts
 import { genStateTreeLeaf } from '@unirep/utils'
@@ -49,7 +55,7 @@ genStateTreeLeaf(
 
 ## genEpochTreeLeaf
 
-Calculate a state tree leaf for a user.
+Calculate a epoch tree leaf in an [epoch tree](../protocol/trees.md#epoch-tree).
 
 ```ts
 import { genEpochTreeLeaf } from '@unirep/utils'

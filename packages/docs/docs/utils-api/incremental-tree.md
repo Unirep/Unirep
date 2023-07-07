@@ -2,6 +2,10 @@
 title: "Incremental Merkle Tree"
 ---
 
+:::info
+The tree extends from [@zk-kit/incremental-merkle-tree](https://github.com/privacy-scaling-explorations/zk-kit/tree/main/packages/incremental-merkle-tree)<br/>
+:::
+
 Import this class like so:
 
 ```js
@@ -16,23 +20,31 @@ Get a new tree instance.
 ```ts
 constructor(
   depth: number,
-  zeroValue: number = 0,
+  zeroValue: Node = 0,
   arity: number = 2
 ): IncrementalMerkleTree
+```
+
+## Node
+
+The type of each leaf.
+
+```ts
+type Node = any
 ```
 
 ## insert
 
 Insert a new leaf in the next free index.
 ```ts
-tree.insert(leaf: bigint)
+tree.insert(leaf: Node)
 ```
 
 ## update
 
 Update a leaf in the tree by index.
 ```ts
-tree.update(index: number, leaf: bigint)
+tree.update(index: number, leaf: Node)
 ```
 
 ## delete
@@ -42,16 +54,23 @@ Delete (set to zero value) a leaf in the tree.
 tree.delete(index: number)
 ```
 
-## Proof
+## indexOf
+
+Get the index of given node.
+```ts
+tree.indexOf(leaf: Node)
+```
+
+## MerkleProof
 
 A struct for representing merkle proofs.
 
 ```ts
-type Proof = {
-  root: bigint,
-  leaf: bigint,
-  pathIndices: number[],
-  siblings: bigint[][]
+type MerkleProof = {
+  root: any
+  leaf: any
+  siblings: any[]
+  pathIndices: number[]
 }
 ```
 
@@ -59,12 +78,12 @@ type Proof = {
 
 Get a merkle inclusion proof for an index.
 ```ts
-tree.createProof(index: number): Proof
+tree.createProof(index: number): MerkleProof
 ```
 
 ## verifyProof
 
 Verify a merkle proof in the tree.
 ```ts
-tree.verifyProof(proof: Proof): boolean
+tree.verifyProof(proof: MerkleProof): boolean
 ```
