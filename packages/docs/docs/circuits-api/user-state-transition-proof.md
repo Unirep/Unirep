@@ -14,7 +14,7 @@ const data = new UserStateTransitionProof(publicSignals, proof)
 
 ## historyTreeRoot
 
-The history tree root being proven against.
+The [history tree](../protocol/trees.md#history-tree) root being proven against.
 
 ```ts
 this.historyTreeRoot

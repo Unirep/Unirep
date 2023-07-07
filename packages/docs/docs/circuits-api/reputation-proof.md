@@ -4,7 +4,13 @@ title: ReputationProof
 
 Inherits: [`BaseProof`](base-proof)
 
-A class representing a reputation proof. Each of the following are accessible as properties on the object.
+A class representing a [reputation proof](circuits.md#prove-reputation-proof). Each of the following are accessible as properties on the object.
+
+```ts
+import { ReputationProof } from '@unirep/circuits'
+
+const data = new ReputationProof(publicSignals, proof)
+```
 
 ## epochKey
 

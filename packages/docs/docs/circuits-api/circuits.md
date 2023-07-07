@@ -11,6 +11,7 @@ enum Circuit {
   userStateTransition,
   signup,
   epochKeyLite,
+  preventDoubleAction
 }
 ```
 
@@ -22,7 +23,7 @@ import { Circuit } from '@unirep/circuits'
 
 ## Signup Proof
 
-The signup proof outputs a state tree leaf and an identity commitment for the user. The state tree leaf will have zero values for all data fields.
+The signup proof outputs a [state tree](../protocol/trees.md#state-tree) leaf and an [identity commitment](https://semaphore.appliedzkp.org/docs/glossary#identity-commitment) for the user. The state tree leaf will have zero values for all data fields.
 
 Control field:
 - 48 bits `epoch`
@@ -179,7 +180,7 @@ Inputs:
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `data[FIELD_COUNT]`
 - `new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT]`
-- `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY]`
+- `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
 - `epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
 - `history_tree_indices[HISTORY_TREE_DEPTH]`
 - `history_tree_elements[HISTORY_TREE_DEPTH]`
@@ -187,5 +188,5 @@ Inputs:
 Outputs:
 - `history_tree_root`
 - `state_tree_leaf`
-- `epoch_keys[EPOCH_KEY_NONCE_PER_EPOCH]`
+- `epks[EPOCH_KEY_NONCE_PER_EPOCH]`
 

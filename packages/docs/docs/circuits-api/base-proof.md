@@ -41,7 +41,7 @@ constructor(
 
 ## \_snarkProof
 
-The proof data in `SnarkProof` format. Use this when manually verifying with `snarkjs`.
+The proof data in [`SnarkProof`](../utils-api/types.md#snarkproof) format. Use this when manually verifying with `snarkjs`.
 
 ```ts
 proof._snarkProof
