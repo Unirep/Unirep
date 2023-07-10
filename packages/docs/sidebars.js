@@ -188,6 +188,11 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
+                    label: 'Config',
+                    id: 'circuits-api/circuit-config',
+                },
+                {
+                    type: 'doc',
                     label: 'Prover',
                     id: 'circuits-api/prover',
                 },
