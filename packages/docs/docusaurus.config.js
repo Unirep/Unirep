@@ -157,6 +157,12 @@ const config = {
                 darkTheme: darkCodeTheme,
                 additionalLanguages: ['typescript', 'solidity'],
             },
+            algolia: {
+                appId: 'HEISL6JPF1',
+                apiKey: '698ea9abfb5063c0b29978afaeda4288',
+                indexName: 'developer-unirep',
+                contextualSearch: true,
+            },
         }),
     plugins: [
         function svgFix() {
