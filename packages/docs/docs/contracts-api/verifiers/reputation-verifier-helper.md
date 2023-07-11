@@ -1,15 +1,29 @@
 ---
-title: Reputation Verifier Helper Contract 
+title: ReputationVerifierHelper.sol
 ---
 
 A contract address for a reputation verifier helper. See [IVerifier](iverifier-sol) for more info.
-```ts
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+```mdx-code-block
+<Tabs
+    defaultValue="typescript"
+    values={[
+        {label: 'Typescript/Javascript', value: 'typescript'},
+        {label: 'Solidity', value: 'solidity'},
+    ]}>
+<TabItem value="typescript">
+```
+
+```ts title="reputationVerifierHelper.ts"
 import { deployVerifierHelper } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { Circuit } from '@unirep/circuits'
+import { Circuit, ReputationProof } from '@unirep/circuits'
 
 // deploys reputation verifier helper contract
-const reputationVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.proveReputation) 
+const reputationVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.proveReputation)
 
 const r = await defaultProver.genProofAndPublicSignals(
   Circuit.proveReputation,
@@ -26,6 +40,43 @@ const signals = await reputationVerifierHelper.verifyAndCheck(
   publicSignals,
   proof
 ) 
+```
+
+```mdx-code-block
+  </TabItem>
+  <TabItem value="solidity">
+```
+
+```sol title="App.sol"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import { ReputationVerifierHelper } from '@unirep/contracts/verifierHelpers/ReputationVerifierHelper.sol';
+
+contract App {
+  // use the deployed helper
+  ReputationVerifierHelper public helper;
+  constructor(
+    ReputationVerifierHelper _helper
+  ) {
+    helper = _helper;
+  }
+
+  // decode and verify the proofs
+  // fails or returns proof signals
+  function decodeAndVerify(
+    uint256[] calldata publicSignals,
+    uint256[8] calldata proof
+  ) public view returns (ReputationVerifierHelper.ReputationSignals memory) {
+    return helper.verifyAndCheck(publicSignals, proof);
+  }
+}
+
+```
+
+```mdx-code-block
+  </TabItem>
+</Tabs>
 ```
 
 ## decodeReputationControl
@@ -113,3 +164,23 @@ function verifyAndCheckCaller(
   view
   returns (ReputationSignals memory) 
 ```
+
+:::danger
+The helper is not connected to the [`Unirep.sol`](../unirep-sol.md) contract. Please manually check if the state tree root exists with [`attesterStateTreeRootExists`](../unirep-sol.md#attesterstatetreerootexists).
+
+1. Decode public signals
+```sol
+ReputationVerifierHelper.ReputationSignals memory signals = verifier.decodeReputationSignals(publicSignals); 
+```
+
+2. Verify state tree root
+```sol
+require(
+  unirep.attesterStateTreeRootExists(
+    signals.attesterId, 
+    signals.epoch, 
+    signals.stateTreeRoot
+  )
+);
+```
+:::

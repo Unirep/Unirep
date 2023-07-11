@@ -1,5 +1,5 @@
 ---
-title: IVerifier
+title: IVerifier.sol
 ---
 
 This is an interface for a generic zk verifier helper. This is the interface UniRep uses for the verifiers stored as contract variables.

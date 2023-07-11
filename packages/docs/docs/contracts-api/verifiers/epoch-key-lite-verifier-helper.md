@@ -1,13 +1,26 @@
 ---
-title: Epoch Key Lite Verifier Helper Contract
+title: EpochKeyLiteVerifierHelper.sol
 ---
 
 A contract address for an epoch key lite verifier helper. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
 
-```ts
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+```mdx-code-block
+<Tabs
+    defaultValue="typescript"
+    values={[
+        {label: 'Typescript/Javascript', value: 'typescript'},
+        {label: 'Solidity', value: 'solidity'},
+    ]}>
+<TabItem value="typescript">
+```
+
+```ts title="epochKeyLiteVerifierHelper.ts"
 import { deployVerifierHelper } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
-import { Circuit } from '@unirep/circuits'
+import { Circuit, EpochKeyLiteProof } from '@unirep/circuits'
 
 // deploys epoch key lite verifier helper contract
 const epochKeyLiteVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.epochKeyLite)
@@ -27,7 +40,43 @@ const signals = await epochKeyLiteVerifierHelper.verifyAndCheck(
   publicSignals,
   proof
 ) 
+```
 
+```mdx-code-block
+  </TabItem>
+  <TabItem value="solidity">
+```
+
+```sol title="App.sol"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import { EpochKeyLiteVerifierHelper } from '@unirep/contracts/verifierHelpers/EpochKeyLiteVerifierHelper.sol';
+
+contract App {
+  // use the deployed helper
+  EpochKeyLiteVerifierHelper public helper;
+  constructor(
+    EpochKeyLiteVerifierHelper _helper
+  ) {
+    helper = _helper;
+  }
+
+  // decode and verify the proofs
+  // fails or returns proof signals
+  function decodeAndVerify(
+    uint256[] calldata publicSignals,
+    uint256[8] calldata proof
+  ) public view returns (EpochKeyLiteVerifierHelper.EpochKeySignals memory) {
+    return helper.verifyAndCheck(publicSignals, proof);
+  }
+}
+
+```
+
+```mdx-code-block
+  </TabItem>
+</Tabs>
 ```
 
 ## decodeEpochKeyLiteSignals
