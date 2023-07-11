@@ -30,7 +30,7 @@ Attesters are at the application layer. They are the platforms, businesses, and 
 UniRep's key offering is providing developers with a pre-built, audited system to create apps that securely handle private user data and manage reputation using ZK technology. UniRep protocol allows applications to securely attest to user data changes through the use of dynamic, short-lived identifiers known as **epoch keys**.
 
 :::
-### Application built by our core contributors ###
+### Applications built by our core contributors ###
 
 - Built by [Vimwitch](https://github.com/vimwitch)
   - Do things with ethereum addresses in zk: ZKETH [Repo](https://github.com/Unirep/zketh) | [Try it now](https://zketh.io/)
