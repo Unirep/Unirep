@@ -87,6 +87,11 @@ const config = {
                         position: 'right',
                     },
                     {
+                        to: 'docs/faqs',
+                        label: 'FAQs',
+                        position: 'right',
+                    },
+                    {
                         href: 'https://airtable.com/shroZ9JGQLMznKU18',
                         label: 'Feedback',
                         position: 'right',
