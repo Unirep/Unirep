@@ -2,10 +2,9 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
-import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUserState } from './utils'
+import { EPOCH_LENGTH, genUserState } from './utils'
 
 describe('Epoch key proof', function () {
     this.timeout(0)

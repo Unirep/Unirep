@@ -4,9 +4,7 @@ import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUserState } from './utils'
-
-const EPOCH_LENGTH = 1000
+import { EPOCH_LENGTH, genUserState } from './utils'
 
 describe('Attester signs up and gives attestation', function () {
     this.timeout(30 * 60 * 1000)

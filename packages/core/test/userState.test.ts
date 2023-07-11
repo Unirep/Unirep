@@ -3,10 +3,9 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { F } from '@unirep/utils'
-import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUnirepState, genUserState } from './utils'
+import { EPOCH_LENGTH, genUnirepState, genUserState } from './utils'
 import { bootstrapUsers, bootstrapAttestations } from './test'
 
 describe('User state', function () {
