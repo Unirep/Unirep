@@ -42,6 +42,8 @@ UniRep's key offering is providing developers with a pre-built, audited system t
   - Craiglist reinvent: Trustlist [Repo](https://github.com/CJ-Rose/trustlist)
 - Built by UniRep team
   - Reputation-Infused Social Network: Unirep.social [Repo](https://github.com/unirep/unirep-social)
+- Built by PSE team members
+  - Anonymous voting for hackathons: Voteathon [Repo](https://github.com/NicoSerranoP/voteathon) | [Blog](../../blog/voteathon) | [Try it now](https://voteathon.org/)
 
 
 ### Other few ideas for you to get started
