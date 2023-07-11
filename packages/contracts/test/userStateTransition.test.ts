@@ -13,13 +13,12 @@ import { poseidon2 } from 'poseidon-lite'
 import {
     Circuit,
     UserStateTransitionProof,
-    SNARK_SCALAR_FIELD,
     SignupProof,
     CircuitConfig,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH } from './config'
 import { deployUnirep } from '../deploy'
 const {
     EPOCH_TREE_DEPTH,
@@ -27,7 +26,6 @@ const {
     HISTORY_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     FIELD_COUNT,
-    SUM_FIELD_COUNT,
 } = CircuitConfig.default
 
 const signupUser = async (id, unirepContract, attesterId, account) => {
