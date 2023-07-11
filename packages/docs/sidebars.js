@@ -44,6 +44,11 @@ const sidebars = {
             id: 'testnet-deployment',
         },
         {
+            type: 'doc',
+            label: '❓ FAQs',
+            id: 'faqs',
+        },
+        {
             type: 'category',
             label: '📘 Protocol',
             items: [
