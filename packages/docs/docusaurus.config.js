@@ -80,6 +80,11 @@ const config = {
                         position: 'left',
                         label: 'Docs',
                     },
+                    {
+                        to: 'docs/faqs',
+                        label: 'FAQs',
+                        position: 'left',
+                    },
                     { to: '/blog', label: 'Blog', position: 'left' },
                     {
                         type: 'docsVersionDropdown',

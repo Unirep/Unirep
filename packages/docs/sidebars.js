@@ -23,6 +23,11 @@ const sidebars = {
             id: 'welcome',
         },
         {
+            type: 'doc',
+            label: '🏗️ What Can I Build With UniRep?',
+            id: 'what-can-i-build',
+        },
+        {
             type: 'category',
             label: '🚀 Getting Started',
             items: [
