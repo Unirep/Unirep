@@ -4,7 +4,7 @@ title: ABIs
 
 ## ABI of Unirep.sol
 
-Import the abi of `Unirep.sol` like so,
+Import the abi of `Unirep.sol` like so:
 
 ```ts
 import abi from '@unirep/contracts/abi/Unirep.json'
