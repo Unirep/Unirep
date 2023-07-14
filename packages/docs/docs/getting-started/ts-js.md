@@ -151,9 +151,11 @@ Connect a wallet with a private key and a provider, and then call [`attesterSign
 
 ```ts
 // deploy or connect to a unirep smart contract
-const unirepContract = getUnirepContract(address, provider)
+let unirepContract = getUnirepContract(address, provider)
 // attester wallet
 const attester = new ethers.Wallet(privateKey, provider)
+// connect unirep contract with attester wallet
+unirepContract = await unirepContract.connect(attester)
 // define epoch length
 const epochLength = 300 // 300 seconds
 // send transaction
