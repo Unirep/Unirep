@@ -151,9 +151,11 @@ Connect a wallet with a private key and a provider, and then call [`attesterSign
 
 ```ts
 // deploy or connect to a unirep smart contract
-const unirepContract = getUnirepContract(address, provider)
+let unirepContract = getUnirepContract(address, provider)
 // attester wallet
 const attester = new ethers.Wallet(privateKey, provider)
+// connect unirep contract with attester wallet
+unirepContract = await unirepContract.connect(attester)
 // define epoch length
 const epochLength = 300 // 300 seconds
 // send transaction
@@ -193,7 +195,7 @@ contract App {
 
 ## 👤 User sign up
 
-TThe attester can now start signing up users. Users of this application should provide a [signup proof](circuits-api/circuits.md#signup-proof) which includes:
+The attester can now start signing up users. Users of this application should provide a [signup proof](circuits-api/circuits.md#signup-proof) which includes:
 1. Proving the user owns a [semaphore identity](https://semaphore.appliedzkp.org/)
 2. Proving the user has initialized [data](protocol/data.md)
 3. Proving the user wants to sign up to this attester (proving attester ID)
