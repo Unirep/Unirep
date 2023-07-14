@@ -239,16 +239,6 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'constants',
-                    id: 'utils-api/constants',
-                },
-                {
-                    type: 'doc',
-                    label: 'hashes',
-                    id: 'utils-api/hashes',
-                },
-                {
-                    type: 'doc',
                     label: 'types',
                     id: 'utils-api/types',
                 },
