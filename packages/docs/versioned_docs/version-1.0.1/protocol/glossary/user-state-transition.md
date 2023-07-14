@@ -40,7 +40,7 @@ const newLeaf = hash(idCommitment, userStateTreeRoot)
 
 <img src="/img/v1/UST-3.png" alt="How a new global state tree is computed."/>
 
-#### 5. Call unirep smart contract to insert a new global state tree leaf
+#### 5. Call UniRep smart contract to insert a new global state tree leaf
 
 User performs user state transition by calling [`updateUserStateRoot()`](https://github.com/Unirep/Unirep/blob/5ef3fa8ed70761e0d128fe054bcdb6c72be2f7a1/packages/contracts/contracts/Unirep.sol#L606)
 

@@ -1,6 +1,6 @@
-# Unirep utils package
+# UniRep utils package
 
-Client library for utils functions which are used in unirep protocol.
+Client library for utils functions which are used in UniRep protocol.
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">
@@ -33,12 +33,12 @@ Client library for utils functions which are used in unirep protocol.
 
 ---
 
-## 💡 About Unirep
+## 💡 About UniRep
 **UniRep** is a *private* and *non-repudiable* **data system**. Users can receive attestations from attesters, and voluntarily prove facts about their data without revealing the data itself. Moreover, users cannot refuse to receive attestations from an attester.
 
 ## 📘 Documentation
 
-Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of Unirep protocol.
+Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of UniRep protocol.
 For more information, refer to the [documentation](https://developer.unirep.io/)
 
 ## 🛠 Install

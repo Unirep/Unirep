@@ -9,7 +9,7 @@ The UniRep contract emits a number of events to help offchain observers track st
 
 ### AttesterSignedUp
 
-Emitted when an attester registers with the unirep contract.
+Emitted when an attester registers with the UniRep contract.
 
 ```sol
 event AttesterSignedUp(

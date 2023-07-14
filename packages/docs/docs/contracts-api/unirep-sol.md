@@ -282,7 +282,7 @@ function attesterEpochRoot(uint160 attesterId, uint48 epoch)
 
 ## stateTreeDepth
 
-Get the state tree depth for the Unirep contract.
+Get the state tree depth for the UniRep contract.
 
 ```sol
 function stateTreeDepth() public view returns (uint8)
@@ -290,7 +290,7 @@ function stateTreeDepth() public view returns (uint8)
 
 ## epochTreeDepth
 
-Get the epoch tree depth for the Unirep contract.
+Get the epoch tree depth for the UniRep contract.
 
 ```sol
 function epochTreeDepth() public view returns (uint8)
@@ -298,7 +298,7 @@ function epochTreeDepth() public view returns (uint8)
 
 ## historyTreeDepth
 
-Get the history tree depth for the Unirep contract.
+Get the history tree depth for the UniRep contract.
 
 ```sol
 function historyTreeDepth() public view returns (uint8)
@@ -314,7 +314,7 @@ function numEpochKeyNoncePerEpoch() public view returns (uint8)
 
 ## fieldCount
 
-The number of data fields each user has in this Unirep deployment.
+The number of data fields each user has in this UniRep deployment.
 
 ```sol
 function fieldCount() public view returns (uint8)

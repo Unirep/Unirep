@@ -18,17 +18,17 @@ Error: cannot estimate gas; transaction may fail or may require manual gas limit
 
 ## 0x099cfcff
 - `UserAlreadySignedUp(uint256 identityCommitment)` <br/>
-The given identity commitment has already signed up in the current Unirep contract. <br/>
+The given identity commitment has already signed up in the current UniRep contract. <br/>
 A user cannot double sign-up in an application.
 
 ## 0x6767dda1
 - `AttesterAlreadySignUp(uint160 attester)` <br/>
-The attester has already signed up in the current Unirep contract. <br/>
-An attester cannot double sign-up in the Unirep protocol.
+The attester has already signed up in the current UniRep contract. <br/>
+An attester cannot double sign-up in the UniRep protocol.
 
 ## 0xd724105a
 - `AttesterNotSignUp(uint160 attester)`<br/>
-The attester has not signed up in the current Unirep contract. <br/>
+The attester has not signed up in the current UniRep contract. <br/>
 Please call [`attesterSignUp()`](unirep-sol#attestersignup)
 
 ## 0xd7aa5847
@@ -38,8 +38,8 @@ Please check if the attester address is correctly assigned while generating proo
 
 ## 0xdc215c0a
 - `NullifierAlreadyUsed(uint256 nullilier)`<br/>
-The [nullifier](../protocol/nullifiers) is already used in Unirep contract. <br/>
-A nullifier cannot be submitted twice in the Unirep protocol.
+The [nullifier](../protocol/nullifiers) is already used in UniRep contract. <br/>
+A nullifier cannot be submitted twice in the UniRep protocol.
 
 ## 0xedc650d7
 - `AttesterIdNotMatch(uint160 attesterId)`<br/>
@@ -86,7 +86,7 @@ Please make sure the signature is signed through the correct attester.
 
 ## 0xf1b8a45e
 - `InvalidStateTreeRoot(uint256 stateTreeRoot)`<br/>
-    The [state tree](../protocol/trees.md#state-tree) root of given epoch does not exist in the current Unirep contract. <br/>
+    The [state tree](../protocol/trees.md#state-tree) root of given epoch does not exist in the current UniRep contract. <br/>
     There are several reasons:
     1. The user does not sign up successfully
     2. The user does not perform user state transition successfully
@@ -95,5 +95,5 @@ Please make sure the signature is signed through the correct attester.
 
 ## 0xd542f669
 - `InvalidHistoryTreeRoot(uint256 historyTreeRoot)`<br/>
-    The [epoch tree](../protocol/trees.md#history-tree) root of given epoch does not match the current Unirep contract. <br/>
+    The [epoch tree](../protocol/trees.md#history-tree) root of given epoch does not match the current UniRep contract. <br/>
     Please check if all attestations are processed correctly and successfully.

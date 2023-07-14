@@ -1,6 +1,6 @@
 # Unirep procotol package
 
-Client library for protocol related functions which are used in unirep protocol.
+Client library for protocol related functions which are used in UniRep protocol.
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">

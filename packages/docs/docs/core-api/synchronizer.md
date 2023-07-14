@@ -57,7 +57,7 @@ synchronizer.unirepContract: ethers.Contract
 
 ## settings
 
-The settings of the unirep smart contract.
+The settings of the UniRep smart contract.
 
 ```ts
 synchronizer.settings: any

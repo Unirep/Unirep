@@ -181,7 +181,7 @@ contract App {
         Unirep _unirep,
         uint48 _epochLength
     ) {
-        // set unirep address
+        // set UniRep address
         unirep = _unirep;
         // sign up as an attester
         unirep.attesterSignUp(_epochLength);

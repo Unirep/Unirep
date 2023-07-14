@@ -1,6 +1,6 @@
-# Unirep contracts package
+# UniRep contracts package
 
-Client library for contracts related functions which are used in unirep protocol.
+Client library for contracts related functions which are used in UniRep protocol.
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">
@@ -36,12 +36,12 @@ Client library for contracts related functions which are used in unirep protocol
 
 ---
 
-## 💡 About Unirep
+## 💡 About UniRep
 **UniRep** is a *private* and *non-repudiable* **data system**. Users can receive attestations from attesters, and voluntarily prove facts about their data without revealing the data itself. Moreover, users cannot refuse to receive attestations from an attester.
 
 ## 📘 Documentation
 
-Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of Unirep protocol.
+Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of UniRep protocol.
 For more information, refer to the [documentation](https://developer.unirep.io/)
 
 ## 🛠 Install
@@ -84,9 +84,9 @@ yarn contracts compile
 
 By default, The `artifacts` directory will be found in `./packages/contracts/build`
 
-## 🙆🏻‍♀️ Unirep contract has been compiled
+## 🙆🏻‍♀️ UniRep contract has been compiled
 
-### Deploy Unirep contract
+### Deploy UniRep contract
 
 Deploy Unirep smart contract with default [config](../circuits/config/index.ts):
 
@@ -102,7 +102,7 @@ const deployer = new ethers.Wallet(privateKey, provider);
 const unirepContract: Unirep = await deployUnirep(deployer)
 ```
 
-### Get unirep contract with address
+### Get UniRep contract with address
 
 ```typescript
 import { ethers } from 'ethers'
@@ -114,7 +114,7 @@ const provider = 'YOUR/ETH/PROVIDER'
 const unirepContract: Unirep = getUnirepContract(address, provider)
 ```
 
-## 🧑🏻‍💻 Call Unirep contract with `ethers`
+## 🧑🏻‍💻 Call UniRep contract with `ethers`
 
 ```typescript
 import { ethers } from 'ethers'
@@ -134,7 +134,7 @@ const tx = await unirepContract.attesterSignUp(epochLength)
 await tx.wait()
 ```
 
-## 🙋🏻‍♂️ Call Unirep contract in DApps
+## 🙋🏻‍♂️ Call UniRep contract in DApps
 
 ```solidity
 // SPDX-License-Identifier: UNLICENSED

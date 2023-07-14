@@ -63,7 +63,7 @@ const privateKey = 'YOUR/PRIVATE/KEY'
 const provider = 'YOUR/ETH/PROVIDER'
 const deployer = new ethers.Wallet(privateKey, provider)
 
-// deploy unirep contract
+// deploy UniRep contract
 const unirepContract = await deployUnirep(deployer)
 ```
 
@@ -81,7 +81,7 @@ const privateKey = 'YOUR/PRIVATE/KEY'
 const provider = 'YOUR/ETH/PROVIDER'
 const deployer = new ethers.Wallet(privateKey, provider)
 
-// deploy unirep contract
+// deploy UniRep contract
 const unirepContract = await deployUnirep(deployer)
 ```
 
@@ -150,7 +150,7 @@ The app builder must sign up with `Unirep.sol` as an attester. There are two way
 Connect a wallet with a private key and a provider, and then call [`attesterSignUp`](contracts-api/unirep-sol.md#attestersignup) in `Unirep.sol`.
 
 ```ts
-// deploy or connect to a unirep smart contract
+// deploy or connect to a UniRep smart contract
 const unirepContract = getUnirepContract(address, provider)
 // attester wallet
 const attester = new ethers.Wallet(privateKey, provider)

@@ -15,7 +15,7 @@ Using anonymous identifiers ([**epoch keys**](protocol/epoch-key.md)), the proto
 UniRep aims to be the ultimate foundation for constructing tailored, yet fully compatible, zero-knowledge (zk) applications. It functions as a powerful memory layer for zk, offering private, non-repudiable data storage and retrieval capabilities. With UniRep, users can effortlessly receive data, prove facts about their information, and store the results while enjoying robust privacy assurances. The protocol empowers developers to create bespoke zk applications without compromising on interoperability and efficiency.
 
 Key UniRep features include:
-- **Data Storage**: Unirep allows small amounts of data to be associated with anonymous users. Applications can conditionally associate data, like requiring a user to prove control of an Ethereum address before attesting to it.
+- **Data Storage**: UniRep allows small amounts of data to be associated with anonymous users. Applications can conditionally associate data, like requiring a user to prove control of an Ethereum address before attesting to it.
 - **Extensible Proofs**: The system is designed to be extended with custom application logic. For example, an application might require proof of [Ethereum address control to sign up](https://github.com/Unirep/zketh/blob/b7e0fdf3dcc1b3f97673da20837ed9c7d3e27c9f/packages/circuits/circuits/signupWithAddress.circom).
 - **Trustless Interoperability**: Applications can interconnect by having users create proofs using publicly available state.
 - **No Forced Data Sharing**: Unirep applications cannot see what data belongs to what user, unless the user reveals it. User data also cannot be changed unless the user provides the application with an [epoch key](protocol/epoch-key.md).

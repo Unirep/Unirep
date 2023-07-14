@@ -2,7 +2,7 @@
 title: "Installation"
 ---
 
-`@unirep/contracts` is a client library for contracts functions which are used in unirep protocol.
+`@unirep/contracts` is a client library for contracts functions which are used in UniRep protocol.
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">
