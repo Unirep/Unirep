@@ -417,7 +417,7 @@ function attesterStateTreeLeafCount(uint160 attesterId)
 
 ## attesterSemaphoreGroupRoot
 
-Get the semaphore group root for an attester.
+Get the Semaphore group root for an attester.
 
 ```sol
 function attesterSemaphoreGroupRoot(uint160 attesterId)
@@ -428,7 +428,7 @@ function attesterSemaphoreGroupRoot(uint160 attesterId)
 
 ## attesterMemberCount
 
-Get the number of members in the attester semaphore group.
+Get the number of members in the attester Semaphore group.
 
 ```sol
 function attesterMemberCount(uint160 attesterId)
