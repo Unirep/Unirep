@@ -2,7 +2,7 @@
 title: CircuitConfig
 ---
 
-Use the default circuit config like so
+Use the default circuit config like so:
 
 ```ts
 import { CircuitConfig } from '@unirep/circuits'

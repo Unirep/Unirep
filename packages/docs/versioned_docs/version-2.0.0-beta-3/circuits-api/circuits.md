@@ -112,7 +112,7 @@ See [data in UniRep protocol](../protocol/data.md) for more information.
 
 :::danger
 **Please avoid assigning the `min_rep = data[0] - data[1]` or `max_rep = data[1] - data[0]`.**<br/>
-The proof could allow a user to accidentally publish their overall reputation (i.e. `data[0]-data[1]`). Depending on the circumstances (such as the length of the attestation history) this could revel a user’s epoch key(s) as well.
+The proof could allow a user to accidentally publish their overall reputation (i.e. `data[0]-data[1]`). Depending on the circumstances (such as the length of the attestation history) this could reveal a user’s epoch key(s) as well.
 :::
 
 The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
@@ -158,7 +158,7 @@ The user state transition proof allows a user to prove how much reputation they 
 
 Once it has proved inclusion it sums the reputation values stored in the leaves. Then it takes the replacement values with the highest timestamps and outputs a new state tree leaf for the next epoch.
 
-TODO: add a graphic for this
+<!-- TODO: add a graphic for this -->
 
 Inputs:
 - `identity_secret`

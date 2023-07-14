@@ -73,7 +73,7 @@ proof.proof
 
 ## verify
 
-A function to verify the proof with the supplied `Prover`. The `prover` property must be set either in the constructor, or manually otherwise this will throw.
+A function to verify the proof with the supplied `Prover`. The `prover` property must be set either in the constructor or manually, otherwise this will throw.
 
 ```ts
 proof.verify(): Promise<boolean>

@@ -153,7 +153,7 @@ The user state transition proof allows a user to prove how much reputation they 
 
 Once it has proved inclusion it sums the reputation values stored in the leaves. Then it takes the replacement values with the highest timestamps and outputs a new state tree leaf for the next epoch.
 
-TODO: add a graphic for this
+<!-- TODO: add a graphic for this -->
 
 Inputs:
 - `identity_secret`
