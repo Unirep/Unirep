@@ -22,6 +22,13 @@ const state = new UserState({
   synchronizer,
   id
 })
+
+// start the synchoronizer deamon
+await state.start()
+await state.waitForSync()
+
+// stop the synchronizer deamon
+state.stop()
 ```
 
 
@@ -40,12 +47,12 @@ constructor(
     id: Identity
     prover: Prover
   }
-) {
+)
 ```
 
 ## commitment
 
-The identity commitment of the user.
+The [Semaphore](https://semaphore.appliedzkp.org/) identity commitment of the user.
 
 ```ts
 state.commitment: bigint
@@ -53,7 +60,7 @@ state.commitment: bigint
 
 ## id
 
-The identity of the user.
+The [Semaphore](https://semaphore.appliedzkp.org/) identity of the user.
 
 ```ts
 state.id: Identity
@@ -101,12 +108,15 @@ state.stop(): void
 
 ## hasSignedUp
 
+Query the current database if the [Semaphore](https://semaphore.appliedzkp.org/) identity commitment is stored.
+
 ```ts
 state.hasSignedUp(attesterId?: bigint | string): Promise<boolean>
 ```
 
 ## latestTransitionedEpoch
 
+Query the current database where the latest [nullifier](../protocol/nullifiers.md) is emitted or signup in which epoch.
 
 ```ts
 state.latestTransitionedEpoch(attesterId?: bigint | string): Promise<number>
@@ -163,7 +173,11 @@ state.getProvableData(attesterId?: bigint | string): Promise<bigint[]>
 Get the pending changes to the data owned by an epoch key.
 
 ```ts
-state.getDataByEpochKey(epochKey: bigint, epoch: number, attesterId?: bigint | string): Promise<bigint[]>
+state.getDataByEpochKey(
+  epochKey: bigint | string, 
+  epoch: number, 
+  attesterId?: bigint | string
+): Promise<bigint[]>
 ```
 
 ## getEpochKeyIndex
@@ -171,7 +185,11 @@ state.getDataByEpochKey(epochKey: bigint, epoch: number, attesterId?: bigint | s
 Get the index of epoch key among all attestations.
 
 ```ts
-state.getEpochKeyIndex(epoch: number, epochKey: bigint | string): Promise<number>
+state.getEpochKeyIndex(
+  epoch: number, 
+  epochKey: bigint | string, 
+  attesterId?: bigint | string
+): Promise<number>
 ```
 
 ## genUserStateTransitionProof
@@ -180,7 +198,7 @@ Generate a user state transition proof. Returns a [`UserStateTransitionProof`](.
 
 ```ts
 state.genUserStateTransitionProof(options?: {
-  toEpoch?: bigint | number
+  toEpoch?: number
   attesterId?: bigint | string
 }): Promise<UserStateTransitionProof>
 ```
@@ -213,7 +231,7 @@ Generate a proof that can be used to signup. Returns a [`SignupProof`](../circui
 
 ```ts
 state.genUserSignUpProof(options: {
-  epoch?: bigint | number
+  epoch?: number
   attesterId?: bigint | string
 }): Promise<SignupProof>
 ```
@@ -234,7 +252,7 @@ state.genEpochKeyProof(options: {
 
 ## genEpochKeyLiteProof
 
-Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyLiteProof`](../circuits-api/epoch-key-lite-proof). This proof will not include a merkle tree proof which makes the proof size smaller than an [`EpochKeyProof`](../circuits-api/epoch-key-proof). It can be used to prove a seen and valid epoch key.
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyLiteProof`](../circuits-api/epoch-key-lite-proof). This proof **will not include a merkle tree proof** which makes the proof size smaller than an [`EpochKeyProof`](../circuits-api/epoch-key-proof). It can be used to prove a seen and valid epoch key.
 
 ```ts
 state.genEpochKeyLiteProof(options: {
