@@ -202,7 +202,7 @@ synchronizer.epochTreeProof(
 
 ## nullifierExist
 
-Determine if a [nullifier](../protocol/nullifiers.md) exists. This can be a proof nullifier, user state transition nullifier, or any other kind of nullifier. All nullifiers are stored in a single mapping and expected to be globally unique.
+Determine if a [nullifier](../protocol/nullifiers.md) exists. All nullifiers are stored in a single mapping and expected to be globally unique.
 
 ```ts
 synchronizer.nullifierExist(nullifier: any): Promise<boolean>
