@@ -206,7 +206,7 @@ struct ReputationSignals {
 Verify a [reputation proof](../circuits-api/circuits#prove-reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
-This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
 ```sol
@@ -244,7 +244,7 @@ struct EpochKeySignals {
 Verify an [epoch key proof](../circuits-api/circuits#epoch-key-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
-This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
 ```sol
@@ -286,7 +286,7 @@ struct EpochKeySignals {
 Verify an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
-This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
 ```sol
@@ -417,7 +417,7 @@ function attesterStateTreeLeafCount(uint160 attesterId)
 
 ## attesterSemaphoreGroupRoot
 
-Get the semaphore group root for an attester.
+Get the Semaphore group root for an attester.
 
 ```sol
 function attesterSemaphoreGroupRoot(uint160 attesterId)
@@ -428,7 +428,7 @@ function attesterSemaphoreGroupRoot(uint160 attesterId)
 
 ## attesterMemberCount
 
-Get the number of members in the attester semaphore group.
+Get the number of members in the attester Semaphore group.
 
 ```sol
 function attesterMemberCount(uint160 attesterId)
@@ -450,7 +450,7 @@ function attesterEpochRoot(uint160 attesterId, uint256 epoch)
 
 ## stateTreeDepth
 
-Get the state tree depth for the Unirep contract.
+Get the state tree depth for the UniRep contract.
 
 ```sol
 function stateTreeDepth() public view returns (uint8)
@@ -458,7 +458,7 @@ function stateTreeDepth() public view returns (uint8)
 
 ## epochTreeDepth
 
-Get the epoch tree depth for the Unirep contract.
+Get the epoch tree depth for the UniRep contract.
 
 ```sol
 function epochTreeDepth() public view returns (uint8)
@@ -466,7 +466,7 @@ function epochTreeDepth() public view returns (uint8)
 
 ## historyTreeDepth
 
-Get the history tree depth for the Unirep contract.
+Get the history tree depth for the UniRep contract.
 
 ```sol
 function historyTreeDepth() public view returns (uint8)
@@ -482,7 +482,7 @@ function numEpochKeyNoncePerEpoch() public view returns (uint8)
 
 ## fieldCount
 
-The number of data fields each user has in this Unirep deployment.
+The number of data fields each user has in this UniRep deployment.
 
 ```sol
 function fieldCount() public view returns (uint8)

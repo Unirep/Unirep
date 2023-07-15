@@ -11,6 +11,8 @@ import { DB } from 'anondb/node'
 import * as crypto from 'crypto'
 import { Synchronizer } from '../src/Synchronizer'
 
+export const EPOCH_LENGTH = 1000
+
 export const computeEpochKeyProofHash = (epochKeyProof: any) => {
     const abiEncoder = ethers.utils.defaultAbiCoder.encode(
         ['uint256', 'uint256', 'uint256', 'uint256[8]'],

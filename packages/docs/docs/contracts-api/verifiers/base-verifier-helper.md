@@ -1,5 +1,5 @@
 ---
-title: Base Verifier Helper Contract
+title: BaseVerifierHelper.sol
 ---
 
 This is a basic verifier helper contract. It contains signals and error codes used across verifier helper contracts.

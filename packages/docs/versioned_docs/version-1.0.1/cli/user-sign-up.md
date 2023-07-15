@@ -5,7 +5,7 @@ description: User and attester sign up
 # User Sign Up
 
 * There are two different actors in Unirep: _**user**_ and _**attester**_
-* A _**user**_ with a semaphore identity can generate an epoch key without revealing the semaphore identity and identity commitment
+* A _**user**_ with a Semaphore identity can generate an epoch key without revealing the Semaphore identity and identity commitment
 * An _**attester**_ is associated with his Ethereum account or a smart contract. When an attester sign up, the attester has a unique attester id, and whenever the attester submit attestations, other users will know the attestation comes from which attester id.
 
 ## `userSignup`

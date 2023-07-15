@@ -125,6 +125,11 @@ const sidebars = {
             label: '@unirep/contracts',
             items: [
                 {
+                    type: 'doc',
+                    label: 'Installation',
+                    id: 'contracts-api/installation',
+                },
+                {
                     type: 'category',
                     label: 'Verifiers',
                     items: [
@@ -164,6 +169,16 @@ const sidebars = {
                     type: 'doc',
                     label: 'Unirep.sol',
                     id: 'contracts-api/unirep-sol',
+                },
+                {
+                    type: 'doc',
+                    label: 'IUnirep.sol',
+                    id: 'contracts-api/iunirep-sol',
+                },
+                {
+                    type: 'doc',
+                    label: 'ABIs',
+                    id: 'contracts-api/abis',
                 },
                 {
                     type: 'doc',

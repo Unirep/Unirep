@@ -183,7 +183,7 @@ contract App {
         Unirep _unirep,
         uint48 _epochLength
     ) {
-        // set unirep address
+        // set UniRep address
         unirep = _unirep;
         // sign up as an attester
         unirep.attesterSignUp(_epochLength);
@@ -196,7 +196,7 @@ contract App {
 ## 👤 User sign up
 
 The attester can now start signing up users. Users of this application should provide a [signup proof](circuits-api/circuits.md#signup-proof) which includes:
-1. Proving the user owns a [semaphore identity](https://semaphore.appliedzkp.org/)
+1. Proving the user owns a [Semaphore identity](https://semaphore.appliedzkp.org/)
 2. Proving the user has initialized [data](protocol/data.md)
 3. Proving the user wants to sign up to this attester (proving attester ID)
 
@@ -218,7 +218,7 @@ import { UserState } from '@unirep/core'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Identity } from "@semaphore-protocol/identity"
 
-// semaphore Identity
+// Semaphore Identity
 const id = new Identity()
 // generate user state
 const userState = new UserState({
@@ -246,7 +246,7 @@ const { UserState } = require('@unirep/core')
 const { defaultProver } = require('@unirep/circuits/provers/defaultProver')
 const { Identity } = require("@semaphore-protocol/identity")
 
-// semaphore Identity
+// Semaphore Identity
 const id = new Identity()
 // generate user state
 const userState = new UserState({
@@ -472,7 +472,7 @@ To verify an epoch key on-chain, see [Verify epoch key on-chain](./create-unirep
 
 After an epoch ends, the user will perform [user state transition](protocol/user-state-transition.md) to finalize the state in the previous epoch, and use a new state to receive more data in a new epoch.
 
-The user state transition proof must be built by the user because only the user holds the semaphore identity secret key.
+The user state transition proof must be built by the user because only the user holds the Semaphore identity secret key.
 
 ### User generates user state transition proof
 

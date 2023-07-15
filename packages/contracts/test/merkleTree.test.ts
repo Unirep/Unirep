@@ -5,7 +5,6 @@ import { IncrementalMerkleTree, F } from '@unirep/utils'
 import randomf from 'randomf'
 
 const deployTrees = async (depth) => {
-    const [attester] = await ethers.getSigners()
     const Poseidon = await ethers.getContractFactory('PoseidonT3')
     const poseidon = await Poseidon.deploy()
     await poseidon.deployed()

@@ -1,9 +1,9 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
 import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
-import { genUnirepState, genUserState } from './utils'
+import { EPOCH_LENGTH, genUnirepState, genUserState } from './utils'
 import { Identity } from '@semaphore-protocol/identity'
 import { schema } from '../src/schema'
 import { SQLiteConnector } from 'anondb/node'

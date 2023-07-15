@@ -249,7 +249,7 @@ function attesterStateTreeLeafCount(uint160 attesterId)
 
 ## attesterSemaphoreGroupRoot
 
-Get the semaphore group root for an attester.
+Get the Semaphore group root for an attester.
 
 ```sol
 function attesterSemaphoreGroupRoot(uint160 attesterId)
@@ -260,7 +260,7 @@ function attesterSemaphoreGroupRoot(uint160 attesterId)
 
 ## attesterMemberCount
 
-Get the number of members in the attester semaphore group.
+Get the number of members in the attester Semaphore group.
 
 ```sol
 function attesterMemberCount(uint160 attesterId)
@@ -282,7 +282,7 @@ function attesterEpochRoot(uint160 attesterId, uint48 epoch)
 
 ## stateTreeDepth
 
-Get the state tree depth for the Unirep contract.
+Get the state tree depth for the UniRep contract.
 
 ```sol
 function stateTreeDepth() public view returns (uint8)
@@ -290,7 +290,7 @@ function stateTreeDepth() public view returns (uint8)
 
 ## epochTreeDepth
 
-Get the epoch tree depth for the Unirep contract.
+Get the epoch tree depth for the UniRep contract.
 
 ```sol
 function epochTreeDepth() public view returns (uint8)
@@ -298,7 +298,7 @@ function epochTreeDepth() public view returns (uint8)
 
 ## historyTreeDepth
 
-Get the history tree depth for the Unirep contract.
+Get the history tree depth for the UniRep contract.
 
 ```sol
 function historyTreeDepth() public view returns (uint8)
@@ -314,7 +314,7 @@ function numEpochKeyNoncePerEpoch() public view returns (uint8)
 
 ## fieldCount
 
-The number of data fields each user has in this Unirep deployment.
+The number of data fields each user has in this UniRep deployment.
 
 ```sol
 function fieldCount() public view returns (uint8)
@@ -350,106 +350,4 @@ The attestation nonce that is used in [replacement data field](../protocol/data.
 
 ```sol
 function attestationCount() public returns (uint48)
-```
-
-## Events
-
-The UniRep contract emits a number of events to help offchain observers track state.
-
-### AttesterSignedUp
-
-Emitted when an attester registers with the unirep contract.
-
-```sol
-event AttesterSignedUp(
-    uint160 indexed attesterId,
-    uint48 epochLength,
-    uint48 timestamp
-);
-```
-
-### UserSignUp
-
-Emitted when a user joins an attester.
-
-```sol
-event UserSignedUp(
-    uint48 indexed epoch,
-    uint256 indexed identityCommitment,
-    uint160 indexed attesterId,
-    uint256 leafIndex
-);
-```
-
-### UserStateTransitioned
-
-Emitted when a user transitions to a new epoch.
-
-```sol
-event UserStateTransitioned(
-    uint48 indexed epoch,
-    uint160 indexed attesterId,
-    uint256 indexed leafIndex,
-    uint256 hashedLeaf,
-    uint256 nullifier
-);
-```
-
-### Attestation
-
-Emitted when an attester makes an attestation to an epoch key.
-
-```sol
-event Attestation(
-    uint48 indexed epoch,
-    uint256 indexed epochKey,
-    uint160 indexed attesterId,
-    uint256 fieldIndex,
-    uint256 change
-);
-```
-
-### StateTreeLeaf
-
-Emitted when a leaf is added to a state tree.
-
-```sol
-event StateTreeLeaf(
-    uint48 indexed epoch,
-    uint160 indexed attesterId,
-    uint256 indexed index,
-    uint256 leaf
-);
-```
-
-### EpochTreeLeaf
-
-Emitted when a leaf in an epoch tree is updated.
-
-```sol
-event EpochTreeLeaf(
-    uint48 indexed epoch,
-    uint160 indexed attesterId,
-    uint256 indexed index,
-    uint256 leaf
-);
-```
-
-### HistoryTreeLeaf
-
-Emitted when a leaf is added to the history tree.
-
-```sol
-event HistoryTreeLeaf(
-    uint160 indexed attesterId,
-    uint256 leaf
-);
-```
-
-### EpochEnded
-
-Emitted when an attester epoch ends.
-
-```sol
-event EpochEnded(uint48 indexed epoch, uint160 indexed attesterId);
 ```

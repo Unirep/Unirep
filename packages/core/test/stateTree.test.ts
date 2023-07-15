@@ -5,9 +5,7 @@ import { Identity } from '@semaphore-protocol/identity'
 import { genStateTreeLeaf, IncrementalMerkleTree } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUnirepState, genUserState } from './utils'
-
-const EPOCH_LENGTH = 1000
+import { EPOCH_LENGTH, genUnirepState, genUserState } from './utils'
 
 describe('State tree', function () {
     this.timeout(30 * 60 * 1000)

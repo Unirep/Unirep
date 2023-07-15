@@ -71,7 +71,7 @@ export const deployVerifier = async (
 export const deployVerifiers = async (
     deployer: ethers.Signer,
     prover?: Prover
-): Promise<{ [circuit: string]: Promise<Prover> }> => {
+): Promise<{ [circuit: string]: string }> => {
     let verifiers = {}
     for (const circuit in Circuit) {
         const verifierContract = await deployVerifier(deployer, circuit, prover)
@@ -83,7 +83,7 @@ export const deployVerifiers = async (
 export const deployVerifierHelpers = async (
     deployer: ethers.Signer,
     prover?: Prover
-) => {
+): Promise<{ [circuit: string]: ethers.Contract }> => {
     let verifierHelpers = {}
 
     for (const verifierHelper in VerifierHelpers) {
