@@ -41,7 +41,7 @@ constructor(
 
 ## \_snarkProof
 
-The proof data in `SnarkProof` format. Use this when manually verifying with `snarkjs`.
+The proof data in [`SnarkProof`](../utils-api/types.md#snarkproof) format. Use this when manually verifying with `snarkjs`.
 
 ```ts
 proof._snarkProof
@@ -73,7 +73,7 @@ proof.proof
 
 ## verify
 
-A function to verify the proof with the supplied `Prover`. The `prover` property must be set either in the constructor, or manually otherwise this will throw.
+A function to verify the proof with the supplied `Prover`. The `prover` property must be set either in the constructor or manually, otherwise this will throw.
 
 ```ts
 proof.verify(): Promise<boolean>

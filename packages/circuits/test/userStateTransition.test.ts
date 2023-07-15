@@ -3,7 +3,6 @@ import { Identity } from '@semaphore-protocol/identity'
 import {
     IncrementalMerkleTree,
     genEpochKey,
-    stringifyBigInts,
     genStateTreeLeaf,
     genEpochTreeLeaf,
     F,
@@ -17,7 +16,6 @@ const {
     HISTORY_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     STATE_TREE_DEPTH,
-    SUM_FIELD_COUNT,
     FIELD_COUNT,
 } = CircuitConfig.default
 

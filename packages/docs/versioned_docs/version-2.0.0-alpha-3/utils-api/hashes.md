@@ -32,7 +32,8 @@ genEpochKey(
 
 ## genEpochNullifier
 
-Calculate a user state transition nullifier. TODO: update name
+Calculate a user state transition nullifier. 
+<!-- TODO: update name -->
 ```ts
 import { genEpochNullifier } from '@unirep/utils'
 

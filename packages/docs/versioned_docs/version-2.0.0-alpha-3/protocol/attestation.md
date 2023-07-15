@@ -14,4 +14,4 @@ UniRep offers an [`AggregateEpochKeys`](../circuits-api/circuits#aggregate-epoch
 
 When an attestation is made it is stored in an on-chain mapping. When it is time to update the epoch tree root the `buildHashchain` function can be used to make a hashchain of epoch keys that need to be updated. This hashchain is output by the ZK proof and compared when it is processed.
 
-TODO: more detailed descriptions
+<!-- TODO: more detailed descriptions -->

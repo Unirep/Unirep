@@ -183,8 +183,18 @@ const sidebars = {
             items: [
                 {
                     type: 'doc',
+                    label: 'Installation',
+                    id: 'circuits-api/installation',
+                },
+                {
+                    type: 'doc',
                     label: 'Circuits',
                     id: 'circuits-api/circuits',
+                },
+                {
+                    type: 'doc',
+                    label: 'Config',
+                    id: 'circuits-api/circuit-config',
                 },
                 {
                     type: 'doc',

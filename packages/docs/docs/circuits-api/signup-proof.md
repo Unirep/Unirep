@@ -14,7 +14,7 @@ const data = new SignupProof(publicSignals, proof)
 
 ## identityCommitment
 
-The identity commitment for the user signing up.
+The [identity commitment](https://semaphore.appliedzkp.org/docs/glossary#identity-commitment) for the user signing up.
 
 ```ts
 this.identityCommitment
@@ -22,7 +22,7 @@ this.identityCommitment
 
 ## stateTreeLeaf
 
-The new state tree leaf for the user. This leaf will contain zero values for `posRep`, `negRep`, and `graffiti`.
+The new state tree leaf for the user. This leaf will contain zero values for [data](../protocol/data.md).
 
 ```ts
 this.stateTreeLeaf

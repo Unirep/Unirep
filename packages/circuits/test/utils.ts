@@ -4,14 +4,8 @@ import { poseidon1 } from 'poseidon-lite'
 
 import { Circuit, SNARK_SCALAR_FIELD, CircuitConfig } from '../src'
 import { defaultProver } from '../provers/defaultProver'
-const {
-    EPOCH_TREE_DEPTH,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    SUM_FIELD_COUNT,
-    FIELD_COUNT,
-    REPL_NONCE_BITS,
-} = CircuitConfig.default
+const { STATE_TREE_DEPTH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS } =
+    CircuitConfig.default
 
 export const randomData = () => [
     ...Array(SUM_FIELD_COUNT)

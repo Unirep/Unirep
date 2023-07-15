@@ -22,7 +22,7 @@ this.epochKey
 
 ## stateTreeRoot
 
-The state tree root the proof was made against. This should be verified to exist onchain. When verifying the proof.
+The state tree root the proof was made against. This should be verified to exist onchain when verifying the proof.
 
 ```ts
 this.stateTreeRoot
