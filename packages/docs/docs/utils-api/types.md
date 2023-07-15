@@ -7,7 +7,7 @@ title: "Snark types"
 Type of snark public signals.
 
 ```ts
-const publicSignals: SnarkPublicSignals
+type SnarkPublicSignals = bigint[]
 ```
 
 ## SnarkProof
@@ -15,5 +15,9 @@ const publicSignals: SnarkPublicSignals
 Interface of snark proof.
 
 ```ts
-const proof: SnarkProof
+interface SnarkProof {
+    pi_a: bigint[]
+    pi_b: bigint[][]
+    pi_c: bigint[]
+}
 ```

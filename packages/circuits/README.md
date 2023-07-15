@@ -121,6 +121,78 @@ const isValid = await prover.verifyProof(
 )
 ```
 
+### Circom
+
+Use the unirep circom circuits like so:
+
+```circom
+pragma circom 2.0.0;
+
+include "PATH/TO/node_modules/@unirep/circuits/circuits/epochKey.circom";
+
+template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
+    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_elements[STATE_TREE_DEPTH];
+    signal input identity_secret;
+    signal input data[FIELD_COUNT];
+    signal input sig_data;
+    signal input reveal_nonce;
+    signal input attester_id;
+    signal input epoch;
+    signal input nonce;
+
+    signal output epoch_key;
+    signal output state_tree_root;    
+
+    component epoch_key_template = EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT);
+    for (var x = 0; x < STATE_TREE_DEPTH; x++) {
+      epoch_key_template.state_tree_indexes[x] <== state_tree_indexes[x];
+      epoch_key_template.state_tree_elements[x] <== state_tree_elements[x];
+    }
+    epoch_key_template.identity_secret <== identity_secret;
+    epoch_key_template.reveal_nonce <== reveal_nonce;
+    epoch_key_template.attester_id <== attester_id;
+    epoch_key_template.epoch <== epoch;
+    epoch_key_template.nonce <== nonce;
+    epoch_key_template.sig_data <== sig_data;
+    control <== epoch_key_template.control;
+    epoch_key <== epoch_key_template.epoch_key;
+
+    // add your customized circuits
+    ...
+}
+```
+
+### Proof helpers
+
+Proof helpers can help users query the public signals in each proof.
+
+**EpochKeyProof**
+
+```ts
+import { EpochKeyProof } from '@unirep/circuits'
+
+const { proof, publicSignals } = await prover.genProofAndPublicSignals(
+    Circuit.epochKey,
+    circuitInputs
+)
+const data = new EpochKeyProof(publicSignals, proof)
+const epk = data.epochKey
+```
+
+**SignupProof**
+
+```ts
+import { SignupProof } from '@unirep/circuits'
+
+const { proof, publicSignals } = await prover.genProofAndPublicSignals(
+    Circuit.signup,
+    circuitInputs
+)
+const data = new SignupProof(publicSignals, proof)
+const idCommitment = data.identityCommitment
+```
+
 ## 🙌🏻 Join our community
 - Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord"></a>
 - Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>

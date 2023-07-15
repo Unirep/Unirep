@@ -1,5 +1,4 @@
 export * from './crypto'
 export * from './IncrementalMerkleTree'
-export * from './SparseMerkleTree'
 export * from './stringify'
 export * from './snark'

@@ -5,7 +5,7 @@ import {
     genEpochKey,
     genStateTreeLeaf,
 } from '@unirep/utils'
-import { poseidon1, poseidon2 } from 'poseidon-lite'
+import { poseidon2 } from 'poseidon-lite'
 import {
     Circuit,
     CircuitConfig,
