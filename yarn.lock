@@ -4646,7 +4646,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@unirep/utils@workspace:packages/utils"
   dependencies:
-    "@zk-kit/incremental-merkle-tree": ^0.4.3
+    "@zk-kit/incremental-merkle-tree": ^1.1.0
     mocha: ^10.0.0
     poseidon-lite: ^0.2.0
     randomf: ^0.0.3
@@ -4826,10 +4826,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@zk-kit/incremental-merkle-tree@npm:^0.4.3":
-  version: 0.4.3
-  resolution: "@zk-kit/incremental-merkle-tree@npm:0.4.3"
-  checksum: 582ef97bd2b1b9638ce7c8a941200a5cf0ab86975f767de233905e8af0ff72d31b44f2497595f0ff585e45c7491481cf4e027ee6486a136cd64498d4b16b3e29
+"@zk-kit/incremental-merkle-tree@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@zk-kit/incremental-merkle-tree@npm:1.1.0"
+  checksum: 5f2d6dd2a4898aa75f72d5b3811ab965c369f0a51561250313849fb9a6a1163064c4887da3bea298d25e80a4bc79b3c6997edf6492a6a8fc157512bc3fcb5e23
   languageName: node
   linkType: hard
 

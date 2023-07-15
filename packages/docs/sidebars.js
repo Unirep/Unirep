@@ -239,33 +239,13 @@ const sidebars = {
             items: [
                 {
                     type: 'doc',
-                    label: 'constants',
-                    id: 'utils-api/constants',
-                },
-                {
-                    type: 'doc',
-                    label: 'hash()',
-                    id: 'utils-api/hashes',
+                    label: 'installation',
+                    id: 'utils-api/installation',
                 },
                 {
                     type: 'doc',
                     label: 'types',
                     id: 'utils-api/types',
-                },
-                {
-                    type: 'link',
-                    label: 'genEpochKey()',
-                    href: '/docs/utils-api/hashes#genepochkey',
-                },
-                {
-                    type: 'link',
-                    label: 'genEpochNullifier()',
-                    href: '/docs/utils-api/hashes#genepochnullifier',
-                },
-                {
-                    type: 'link',
-                    label: 'genStateTreeLeaf()',
-                    href: '/docs/utils-api/hashes#genstatetreeleaf',
                 },
                 {
                     type: 'doc',
@@ -274,8 +254,8 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'SparseMerkleTree',
-                    id: 'utils-api/sparse-tree',
+                    label: 'Helpers',
+                    id: 'utils-api/helpers',
                 },
             ],
         },
