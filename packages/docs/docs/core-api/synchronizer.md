@@ -49,7 +49,7 @@ synchronizer.provider: ethers.providers.Provider
 
 ## unirepContract
 
-The unirep smart contract object which is connected in the synchronizer.
+The UniRep smart contract object which is connected in the synchronizer.
 
 ```ts
 synchronizer.unirepContract: ethers.Contract
@@ -57,7 +57,7 @@ synchronizer.unirepContract: ethers.Contract
 
 ## settings
 
-The settings of the unirep smart contract.
+The settings of the UniRep smart contract.
 
 ```ts
 synchronizer.settings: any

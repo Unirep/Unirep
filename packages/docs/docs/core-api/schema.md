@@ -132,7 +132,7 @@ An object created when a user joins an attester.
 
 ## Attester
 
-An object created when an attester registers with the Unirep instance.
+An object created when an attester registers with the UniRep instance.
 
 ```ts
 {
