@@ -4,11 +4,14 @@ import Link from '@docusaurus/Link'
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 import Layout from '@theme/Layout'
 import HomepageFeatures from '@site/src/components/HomepageFeatures'
+import {Hero} from '@site/src/components/Hero'
+
 
 import styles from './index.module.css'
 
 const HeroImage = require('@site/static/img/img-hero.svg').default
 const FooterImage = require('@site/static/img/img-footer.svg').default
+
 
 function HomepageHeader() {
     const { siteConfig } = useDocusaurusContext()
@@ -60,6 +63,7 @@ function HomepageHeader() {
     )
 }
 
+
 export default function Home() {
     const { siteConfig } = useDocusaurusContext()
     return (
@@ -70,6 +74,7 @@ export default function Home() {
             <HomepageHeader />
             <main>
                 <HomepageFeatures />
+                <Hero />
             </main>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <FooterImage
@@ -81,3 +86,4 @@ export default function Home() {
         </Layout>
     )
 }
+

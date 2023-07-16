@@ -68,7 +68,7 @@ const config = {
         /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
         ({
             navbar: {
-                title: 'Universal Reputation',
+                title: 'UniRep',
                 logo: {
                     alt: 'UniRep logo',
                     src: 'img/unirep-icon.png',
@@ -89,16 +89,6 @@ const config = {
                     {
                         type: 'docsVersionDropdown',
                         dropdownActiveClassDisabled: true,
-                        position: 'right',
-                    },
-                    {
-                        href: 'https://airtable.com/shroZ9JGQLMznKU18',
-                        label: 'Feedback',
-                        position: 'right',
-                    },
-                    {
-                        href: 'https://explorer.unirep.io',
-                        label: 'Explorer',
                         position: 'right',
                     },
                     {
