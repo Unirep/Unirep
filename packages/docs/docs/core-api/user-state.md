@@ -116,7 +116,7 @@ state.hasSignedUp(attesterId?: bigint | string): Promise<boolean>
 
 ## latestTransitionedEpoch
 
-Query the current database where the latest [nullifier](../protocol/nullifiers.md) is emitted or signup in which epoch.
+Query the current database for a user's signup event or latest user state transition [nullifier](../protocol/nullifiers.md).
 
 ```ts
 state.latestTransitionedEpoch(attesterId?: bigint | string): Promise<number>
