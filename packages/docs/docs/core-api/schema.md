@@ -30,6 +30,7 @@ Used to store information about what blocks/transactions/events have been proces
   attesterId: string,
   latestProcessedBlock: number
   latestProcessedTransactionIndex: number
+  latestProcessedEventIndex: number
   latestCompleteBlock: number
 }
 ```
@@ -45,7 +46,7 @@ An attestation given to an epoch key.
   index: string
   attesterId: string
   fieldIndex: number
-  change: number
+  change: string
   blockNumber: number
 }
 ```
@@ -85,6 +86,7 @@ A leaf from an attester history tree.
 
 ```ts
 {
+  id: string
   index: number
   attesterId: string
   leaf: string
@@ -130,11 +132,11 @@ An object created when a user joins an attester.
 
 ## Attester
 
-An object created when an attester registers with the Unirep instance.
+An object created when an attester registers with the UniRep instance.
 
 ```ts
 {
-  _id: string // the contract address
+  _id: string // the attester address
   startTimestamp: number
   epochLength: number
 }
