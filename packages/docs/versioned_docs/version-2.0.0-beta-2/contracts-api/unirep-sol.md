@@ -293,7 +293,7 @@ bool valid = unirep.epochKeyVerifier.verifyProof(publicSignals, proof);
 
 ## epochKeyLiteVerifier
 
-A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for an epoch key lite proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 :::warning
 Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
