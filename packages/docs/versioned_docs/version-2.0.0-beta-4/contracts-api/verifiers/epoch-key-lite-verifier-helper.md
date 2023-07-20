@@ -2,7 +2,7 @@
 title: EpochKeyLiteVerifierHelper.sol
 ---
 
-A contract address for an epoch key lite verifier helper. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for an epoch key lite verifier helper. See [IVerifier](iverifier-sol) for more info.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
