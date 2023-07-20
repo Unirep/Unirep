@@ -15,11 +15,11 @@
     --ifm-color-primary-lightest: #d2f6f0;
     --ifm-code-font-size: 95%;
     --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
-    --ifm-footer-background-color: #FFFFFD;
+    --ifm-footer-background-color: #fffffd;
     --ifm-footer-link-color: #090909;
     --ifm-footer-title-color: #090909;
     --ifm-footer-color: #f6f6f6;
-    --ifm-background-color:#f6f6f6;
+    --ifm-background-color: #f6f6f6;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
@@ -36,7 +36,7 @@
     --ifm-footer-link-color: #f6f6f6;
     --ifm-footer-title-color: #f6f6f6;
     --ifm-footer-color: #f6f6f6;
-    --ifm-background-color:#333333;
+    --ifm-background-color: #333333;
 }
 
 code {
@@ -62,12 +62,10 @@ code {
         no-repeat;
 }
 
-
-
 /** Brand Typography **/
 @import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
-.brand-h1{
+.brand-h1 {
     font-family: 'Azeret Mono', monospace;
     font-size: 6rem;
     font-style: normal;
@@ -75,7 +73,7 @@ code {
     line-height: 95%; /* 5.7rem */
 }
 
-.brand-lg{
+.brand-lg {
     font-family: 'Azeret Mono', monospace;
     font-size: 1.25rem;
     font-style: normal;

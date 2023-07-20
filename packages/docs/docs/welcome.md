@@ -62,8 +62,8 @@ In summary, UniRep empowers developers to create applications that foster trust 
 ## 🔍  Audit report
 | Version | Auditor |  Report |  Scope |
 | -------- | -------- |  -------- |  -------- |
-| v2.0.0-beta-1  | [PSE](https://www.appliedzkp.org/projects/pse-security/) |  [Report](/files/unirep_audit.pdf) |  `solidity`, `circum` |
-| v2.0.0-beta-3  | [Verdise](https://veridise.com/) |  [Report](/files/VAR_Unirep.pdf)|  `solidity`, `circum`, `Typescrip` |
+| v2.0.0-beta-1  | [PSE](https://www.appliedzkp.org/projects/pse-security/) |  [Report](/files/unirep_audit.pdf) |  `solidity`, `circom` |
+| v2.0.0-beta-3  | [Verdise](https://veridise.com/) |  [Report](/files/VAR_Unirep.pdf)|  `solidity`, `circom`, `Typescript` |
 
 
 ## Stay informed
