@@ -74,7 +74,7 @@ export default function Home() {
             <HomepageHeader />
             <main>
                 <HomepageFeatures />
-                <Hero />
+               
             </main>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <FooterImage

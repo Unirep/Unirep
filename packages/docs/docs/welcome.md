@@ -59,6 +59,11 @@ UniRep's key offering is providing developers with a pre-built, audited system t
 
 In summary, UniRep empowers developers to create applications that foster trust and alignment within the platform, all while ensuring users maintain complete privacy. This unique combination of features enhances user experience, promotes engagement, and supports the growth of a secure and trusted digital community.
 
+## 🔍  Audit report
+| Version | Auditor |  Report |  Scope |
+| -------- | -------- |  -------- |  -------- |
+| v2.0.0-beta-1  | [PSE](https://www.appliedzkp.org/projects/pse-security/) |  [Report](/files/unirep_audit.pdf) |  `solidity`, `circum` |
+| v2.0.0-beta-3  | [Verdise](https://veridise.com/) |  [Report](/files/VAR_Unirep.pdf)|  `solidity`, `circum`, `Typescrip` |
 
 
 ## Stay informed
