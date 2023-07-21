@@ -72,8 +72,10 @@ function HomepageHeader() {
     return (
         <div
             style={{
-                maxWidth: '1096px',
+                maxWidth: '1196px',
                 margin: 'auto',
+                paddingLeft: '16px',
+                paddingRight: '16px',
                 paddingTop: '104px',
                 display: 'flex',
                 flexDirection: 'column',
