@@ -1,8 +1,10 @@
 import React from 'react'
+import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Link from '@docusaurus/Link'
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 import Layout from '@theme/Layout'
+// import { AnimatedText } from '../components/AnimateText'
 import HomepageFeatures from '@site/src/components/HomepageFeatures'
 import { Hero } from '@site/src/components/Hero'
 
@@ -47,6 +49,40 @@ const Button = ({ style, children, href }) => {
     )
 }
 
+const FADE_INTERVAL_MS = 1750
+const WORD_CHANGE_INTERVAL_MS = FADE_INTERVAL_MS * 2
+const WORDS_TO_ANIMATE = ['Reddit clone', 'p2p marketplace', 'anon voting', 'Upwork clone', 'p2p lending', 'anon journalism', 'verified product review', 'ebay clone', 'anon streaming',]
+
+
+const AnimatedText = () => {
+  const [fadeProp, setFadeProp] = useState({ fade: 'fade-in' })
+  const [wordOrder, setWordOrder] = useState(0)
+
+  useEffect(() => {
+    const fadeTimeout = setInterval(() => {
+      fadeProp.fade === 'fade-in' ? setFadeProp({ fade: 'fade-out' }) : setFadeProp({ fade: 'fade-in' })
+    }, FADE_INTERVAL_MS)
+
+    return () => clearInterval(fadeTimeout)
+  }, [fadeProp])
+
+  useEffect(() => {
+    const wordTimeout = setInterval(() => {
+      setWordOrder((prevWordOrder) => (prevWordOrder + 1) % WORDS_TO_ANIMATE.length)
+    }, WORD_CHANGE_INTERVAL_MS)
+
+    return () => clearInterval(wordTimeout)
+  }, [])
+
+  return (
+    // <div className={styles.rotatingTextWrapper} >
+      <h2>
+        {WORDS_TO_ANIMATE[wordOrder]}
+      </h2>
+    // </div>      
+  )
+}
+
 const Section = ({ title, description }) => (
     <div
         style={{
@@ -54,12 +90,12 @@ const Section = ({ title, description }) => (
             flexDirection: 'column',
             borderTop: '1px solid black',
             width: '250px',
-            marginTop: '56px',
+            marginTop: '30px',
             color: 'black',
         }}
     >
         <div style={{ height: '24px' }} />
-        <div style={{ fontSize: '20px', fontWeight: 700, lineHeight: '28px' }}>
+        <div style={{ fontSize: '20px', fontWeight: 700, lineHeight: '28px', width: '180px'}}>
             {title}
         </div>
         <div style={{ height: '24px' }} />
@@ -83,9 +119,9 @@ function HomepageHeader() {
         >
             <div className='brand-h1'
             >
-                A protocol built for handling user data anonymously.
+                A protocol built to handle anonymous user data.
             </div>
-            <div style={{ height: '24px' }} />
+            <div style={{ height: '20px' }} />
             <div className='brand-lg' style={{ maxWidth: '768px' }}>
                 UniRep is a Zero-Knowledge Protocol for user data & reputation
                 management. We use pioneering technology to offer a space for
@@ -96,21 +132,10 @@ function HomepageHeader() {
             <div style={{ alignSelf: 'flex-start' }}>
                 <Button href="/docs/welcome">Start building</Button>
             </div>
-            <div style={{ height: '124px' }} />
-            <div
-                style={{
-                    background:
-                        'linear-gradient(135.45deg, #FEE4CB 0%, #DBF2F2 95.26%)',
-                    borderRadius: '32px',
-                    padding: '104px 113px 104px 113px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                }}
-            >
-                <div className='brand-h3'>
-                    Use UniRep to build
-                   /** animated text here **/
-                </div>
+            
+            <div className={styles.buildContainer}>
+                <div className='brand-h3'>Use UniRep to build</div>
+                <AnimatedText />
                  
                 <div
                     style={{
@@ -121,7 +146,7 @@ function HomepageHeader() {
                 >
                     <Section
                         title="Extensible & Interoperable"
-                        description="Designed for scalability, uses smart contracts, ZK circuits, and flexible data structures to enable seamless app integration."
+                        description="Designed for scalability: smart contracts, ZK circuits, and flexible data structures enable seamless app integration."
                     />
                     <Section
                         title="Anonymity & User Sovereignty"
@@ -134,7 +159,7 @@ function HomepageHeader() {
                 </div>
                 <div style={{ height: '56px' }} />
                 <div style={{ alignSelf: 'flex-start' }}>
-                    <Button href="/docs/getting-started/create-unirep-app"
+                    <Button href="/docs/what-can-i-build"
                         style={{ backgroundColor: 'white', color: 'black' }}
                     >
                         Learn more
@@ -142,7 +167,7 @@ function HomepageHeader() {
                 </div>
             </div>
             <div style={{ height: '124px' }} />
-            <div style={{ display: 'flex' }}>
+            <div className={styles.diagram}>
                 <DiagramImage
                     height="auto"
                     style={{ maxHeight: '611px' }}
@@ -160,17 +185,17 @@ function HomepageHeader() {
                     <div className={styles.subheader}>How it works</div>
                     <div style={{ height: '24px' }} />
                     <div className={styles.paragraph}>
-                        Users read the state of the unirep system from the
-                        unirep contract. Once a user knows this state they can
-                        make a ZK proof of some data and submit it to the
-                        attester. Once the attester validates the proof they can
-                        submit attestations to the unirep contract.
+                        Users read the state of the UniRep system from the
+                        UniRep contract. Once users know this state they can
+                        make ZK proofs of some data and submit to an
+                        attester. Attesters validate proofs before
+                        submiting attestations to the UniRep contract.
                     </div>
                     <div style={{ height: '24px' }} />
                     <div className={styles.paragraph}>
                         Attestations change user data, and users read changes
-                        from the unirep contract to construct their most up to
-                        date state.
+                        from the UniRep contract to construct their 
+                        most up-to-date state.
                     </div>
                 </div>
             </div>
@@ -188,12 +213,12 @@ function HomepageHeader() {
                     className={styles.paragraph}
                     style={{ maxWidth: '1089px', textAlign: 'center' }}
                 >
-                    To enable developers like you to harness the full potential
+                    To enable developers to harness the full potential
                     of UniRep, we've crafted a range of powerful tools designed
                     to simplify and streamline the development process.
                 </div>
             </div>
-            <div style={{ height: '100px' }} />
+            <div style={{ height: '30px' }} />
             <div
                 style={{
                     display: 'flex',
@@ -236,7 +261,7 @@ function HomepageHeader() {
                     </div>
                     <div style={{ height: '24px' }} />
                     <div style={{ alignSelf: 'flex-start' }}>
-                        <Button href="https://github.com/unirep/create-unirep-app#readme">
+                        <Button href="/docs/getting-started/create-unirep-app">
                             Get started
                         </Button>
                     </div>
@@ -309,7 +334,7 @@ export default function Home() {
             >
                 <div
                     style={{
-                        fontSize: '56px',
+                        fontSize: '30px',
                         fontWeight: 700,
                         color: 'black',
                     }}

@@ -6,12 +6,11 @@ import { useEffect, useState } from 'react'
 
 const FADE_INTERVAL_MS = 1750
 const WORD_CHANGE_INTERVAL_MS = FADE_INTERVAL_MS * 2
-const WORDS_TO_ANIMATE = ['Hello', 'Ciao', 'Jambo', 'Bonjour', 'Salut', 'Hola', 'Nǐ hǎo', 'Hallo', 'Hej', '👋🏻']
+const WORDS_TO_ANIMATE = ['Reddit clone', 'p2p marketplace', 'anon voting', 'Upwork clone', 'p2p lending', 'anon journalism', 'verified product review', 'ebay clone', 'anon streaming',]
 
-type FadeProp = { fade: 'fade-in' | 'fade-out' }
 
 export const AnimatedText = () => {
-  const [fadeProp, setFadeProp] = useState<FadeProp>({ fade: 'fade-in' })
+  const [fadeProp, setFadeProp] = useState({ fade: 'fade-in' })
   const [wordOrder, setWordOrder] = useState(0)
 
   useEffect(() => {
@@ -31,9 +30,7 @@ export const AnimatedText = () => {
   }, [])
 
   return (
-    <h2>
-      <span className={fadeProp.fade}>{WORDS_TO_ANIMATE[wordOrder]}</span>, I'm Julia.
-    </h2>
+    <h2 className='rotating-text-wrapper'>{WORDS_TO_ANIMATE[wordOrder]}</h2>
   )
 }
 

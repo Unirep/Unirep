@@ -3,19 +3,7 @@
  * and scoped locally.
  */
 
-.subheader {
-    font-weight: 700;
-    font-size: 48px;
-    line-height: 48px;
-}
-
-.paragraph {
-    font-weight: 200;
-    font-size: 20px;
-    line-height: 28px;
-}
-
-.heroBanner {
+/* .heroBanner {
     padding: 4rem 0 0rem 0;
     position: relative;
     overflow: hidden;
@@ -78,14 +66,60 @@ img {
     display: inline;
     margin-left: 1px;
     margin-right: 1px;
+} */
+
+h2 {
+  font-size: 4rem;
+  font-weight: 700;
+  color: lightseagreen;
 }
 
+.subheader {
+  font-weight: 700;
+  font-size: 48px;
+  line-height: 48px;
+}
 
+.paragraph {
+  font-weight: 200;
+  font-size: 20px;
+  line-height: 28px;
+}
+
+.buildContainer {
+  background: linear-gradient(135.45deg, #FEE4CB 0%, #DBF2F2 95.26%);
+  border-radius: 2rem;
+  margin-top: 6rem;
+  padding: 5rem 7rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.diagram {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+@media screen and (max-width: 576px) {
+  .subheader {
+    text-align: center;
+  }
+
+  .buildContainer {
+    margin-top: 4rem;
+    padding: 2rem;
+  }
+
+  h2 {
+    font-size: 2.5rem;
+  }
+}
 
 
 /* for text */
 
-.rotating-text-wrapper {
+.rotatingTextWrapper {
     height: 90vh;
     display: flex;
     flex-direction: column;
@@ -93,7 +127,7 @@ img {
     justify-content: center;
     text-align: center;
   }
-  .rotating-text-wrapper h2 {
+  .rotatingTextWrapper h2 {
     font-size: 2.5em;
     margin: 0;
     padding: 0.3em;
@@ -103,11 +137,11 @@ img {
     animation-iteration-count: infinite;
     opacity: 0;
   }
-  .rotating-text-wrapper h2:nth-child(1) {
+  .rotatingTextWrapper h2:nth-child(1) {
     background-color: lightseagreen;
-    animation-name: rotating-text-1;
+    animation-name: rotatingText1;
   }
-  @keyframes rotating-text-1 {
+  @keyframes rotatingText1 {
     0% {
       transform: translateY(200%);
     }
@@ -119,11 +153,11 @@ img {
       opacity: 0;
     }
   }
-  .rotating-text-wrapper h2:nth-child(2) {
+  .rotatingTextWrapper h2:nth-child(2) {
     background-color: tomato;
-    animation-name: rotating-text-2;
+    animation-name: rotatingText2;
   }
-  @keyframes rotating-text-2 {
+  @keyframes rotatingText2 {
     33% {
       transform: translateY(100%);
       opacity: 0;
@@ -136,11 +170,11 @@ img {
       opacity: 0;
     }
   }
-  .rotating-text-wrapper h2:nth-child(3) {
+  .rotatingTextWrapper h2:nth-child(3) {
     background-color: cornflowerblue;
-    animation-name: rotating-text-3;
+    animation-name: rotatingText3;
   }
-  @keyframes rotating-text-3 {
+  @keyframes rotatingText3 {
     66% {
       transform: translateY(0);
       opacity: 0;
@@ -155,7 +189,7 @@ img {
     }
   }
   @media screen and (max-width: 576px) {
-    .rotating-text-wrapper {
+    .rotatingTextWrapper {
       font-size: 0.7rem;
     }
   }
