@@ -284,6 +284,7 @@ const sidebars = {
                 },
             ],
         },
+        
     ],
 }
 

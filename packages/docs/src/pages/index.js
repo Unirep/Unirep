@@ -81,18 +81,12 @@ function HomepageHeader() {
                 flexDirection: 'column',
             }}
         >
-            <div
-                style={{
-                    fontSize: '96px',
-                    fontWeight: 700,
-                    lineHeight: '100%',
-                    alignSelf: 'center',
-                }}
+            <div className='brand-h1'
             >
                 A protocol built for handling user data anonymously.
             </div>
             <div style={{ height: '24px' }} />
-            <div className={styles.paragraph} style={{ maxWidth: '768px' }}>
+            <div className='brand-lg' style={{ maxWidth: '768px' }}>
                 UniRep is a Zero-Knowledge Protocol for user data & reputation
                 management. We use pioneering technology to offer a space for
                 developers and users alike to explore the potential of
@@ -113,16 +107,11 @@ function HomepageHeader() {
                     flexDirection: 'column',
                 }}
             >
-                <div
-                    style={{
-                        color: 'black',
-                        fontSize: '56px',
-                        fontWeight: 700,
-                        lineHeight: '53px',
-                    }}
-                >
-                    Use UniRep to build a Reddit clone
+                <div className='brand-h3'>
+                    Use UniRep to build
+                   /** animated text here **/
                 </div>
+                 
                 <div
                     style={{
                         display: 'flex',
@@ -145,7 +134,7 @@ function HomepageHeader() {
                 </div>
                 <div style={{ height: '56px' }} />
                 <div style={{ alignSelf: 'flex-start' }}>
-                    <Button
+                    <Button href="/docs/getting-started/create-unirep-app"
                         style={{ backgroundColor: 'white', color: 'black' }}
                     >
                         Learn more
