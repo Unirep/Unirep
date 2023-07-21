@@ -51,36 +51,47 @@ const Button = ({ style, children, href }) => {
 
 const FADE_INTERVAL_MS = 1750
 const WORD_CHANGE_INTERVAL_MS = FADE_INTERVAL_MS * 2
-const WORDS_TO_ANIMATE = ['Reddit clone', 'p2p marketplace', 'anon voting', 'Upwork clone', 'p2p lending', 'anon journalism', 'verified product review', 'ebay clone', 'anon streaming',]
-
+const WORDS_TO_ANIMATE = [
+    'Reddit clone',
+    'p2p marketplace',
+    'anon voting',
+    'Upwork clone',
+    'p2p lending',
+    'anon journalism',
+    'verified product review',
+    'ebay clone',
+    'anon streaming',
+]
 
 const AnimatedText = () => {
-  const [fadeProp, setFadeProp] = useState({ fade: 'fade-in' })
-  const [wordOrder, setWordOrder] = useState(0)
+    const [fadeProp, setFadeProp] = useState({ fade: 'fade-in' })
+    const [wordOrder, setWordOrder] = useState(0)
 
-  useEffect(() => {
-    const fadeTimeout = setInterval(() => {
-      fadeProp.fade === 'fade-in' ? setFadeProp({ fade: 'fade-out' }) : setFadeProp({ fade: 'fade-in' })
-    }, FADE_INTERVAL_MS)
+    useEffect(() => {
+        const fadeTimeout = setInterval(() => {
+            fadeProp.fade === 'fade-in'
+                ? setFadeProp({ fade: 'fade-out' })
+                : setFadeProp({ fade: 'fade-in' })
+        }, FADE_INTERVAL_MS)
 
-    return () => clearInterval(fadeTimeout)
-  }, [fadeProp])
+        return () => clearInterval(fadeTimeout)
+    }, [fadeProp])
 
-  useEffect(() => {
-    const wordTimeout = setInterval(() => {
-      setWordOrder((prevWordOrder) => (prevWordOrder + 1) % WORDS_TO_ANIMATE.length)
-    }, WORD_CHANGE_INTERVAL_MS)
+    useEffect(() => {
+        const wordTimeout = setInterval(() => {
+            setWordOrder(
+                (prevWordOrder) => (prevWordOrder + 1) % WORDS_TO_ANIMATE.length
+            )
+        }, WORD_CHANGE_INTERVAL_MS)
 
-    return () => clearInterval(wordTimeout)
-  }, [])
+        return () => clearInterval(wordTimeout)
+    }, [])
 
-  return (
-    // <div className={styles.rotatingTextWrapper} >
-      <h2>
-        {WORDS_TO_ANIMATE[wordOrder]}
-      </h2>
-    // </div>      
-  )
+    return (
+        // <div className={styles.rotatingTextWrapper} >
+        <h2>{WORDS_TO_ANIMATE[wordOrder]}</h2>
+        // </div>
+    )
 }
 
 const Section = ({ title, description }) => (
@@ -95,7 +106,14 @@ const Section = ({ title, description }) => (
         }}
     >
         <div style={{ height: '24px' }} />
-        <div style={{ fontSize: '20px', fontWeight: 700, lineHeight: '28px', width: '180px'}}>
+        <div
+            style={{
+                fontSize: '20px',
+                fontWeight: 700,
+                lineHeight: '28px',
+                width: '180px',
+            }}
+        >
             {title}
         </div>
         <div style={{ height: '24px' }} />
@@ -117,12 +135,11 @@ function HomepageHeader() {
                 flexDirection: 'column',
             }}
         >
-            <div className='brand-h1'
-            >
+            <div className="brand-h1">
                 A protocol built to handle anonymous user data.
             </div>
             <div style={{ height: '20px' }} />
-            <div className='brand-lg' style={{ maxWidth: '768px' }}>
+            <div className="brand-lg" style={{ maxWidth: '768px' }}>
                 UniRep is a Zero-Knowledge Protocol for user data & reputation
                 management. We use pioneering technology to offer a space for
                 developers and users alike to explore the potential of
@@ -132,11 +149,11 @@ function HomepageHeader() {
             <div style={{ alignSelf: 'flex-start' }}>
                 <Button href="/docs/welcome">Start building</Button>
             </div>
-            
+
             <div className={styles.buildContainer}>
-                <div className='brand-h3'>Use UniRep to build</div>
+                <div className="brand-h3">Use UniRep to build</div>
                 <AnimatedText />
-                 
+
                 <div
                     style={{
                         display: 'flex',
@@ -159,7 +176,8 @@ function HomepageHeader() {
                 </div>
                 <div style={{ height: '56px' }} />
                 <div style={{ alignSelf: 'flex-start' }}>
-                    <Button href="/docs/what-can-i-build"
+                    <Button
+                        href="/docs/what-can-i-build"
                         style={{ backgroundColor: 'white', color: 'black' }}
                     >
                         Learn more
@@ -187,15 +205,15 @@ function HomepageHeader() {
                     <div className={styles.paragraph}>
                         Users read the state of the UniRep system from the
                         UniRep contract. Once users know this state they can
-                        make ZK proofs of some data and submit to an
-                        attester. Attesters validate proofs before
-                        submiting attestations to the UniRep contract.
+                        make ZK proofs of some data and submit to an attester.
+                        Attesters validate proofs before submiting attestations
+                        to the UniRep contract.
                     </div>
                     <div style={{ height: '24px' }} />
                     <div className={styles.paragraph}>
                         Attestations change user data, and users read changes
-                        from the UniRep contract to construct their 
-                        most up-to-date state.
+                        from the UniRep contract to construct their most
+                        up-to-date state.
                     </div>
                 </div>
             </div>
@@ -213,9 +231,9 @@ function HomepageHeader() {
                     className={styles.paragraph}
                     style={{ maxWidth: '1089px', textAlign: 'center' }}
                 >
-                    To enable developers to harness the full potential
-                    of UniRep, we've crafted a range of powerful tools designed
-                    to simplify and streamline the development process.
+                    To enable developers to harness the full potential of
+                    UniRep, we've crafted a range of powerful tools designed to
+                    simplify and streamline the development process.
                 </div>
             </div>
             <div style={{ height: '30px' }} />

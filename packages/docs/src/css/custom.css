@@ -73,7 +73,7 @@ code {
     line-height: 95%; /* 5.7rem */
 }
 
-.brand-h3{
+.brand-h3 {
     font-family: 'Azeret Mono', monospace;
     font-size: 2rem;
     font-style: normal;
@@ -90,15 +90,15 @@ code {
 }
 
 @media only screen and (max-width: 800px) {
-  .brand-h1 {
-    font-size: 2.5rem;
-  }
+    .brand-h1 {
+        font-size: 2.5rem;
+    }
 
-  .brand-h3 {
-    font-size: 1.3rem;
-  }
+    .brand-h3 {
+        font-size: 1.3rem;
+    }
 
-  .brand-lg {
-    font-size: 0.8rem;
-  }
+    .brand-lg {
+        font-size: 0.8rem;
+    }
 }
