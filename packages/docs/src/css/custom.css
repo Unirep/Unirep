@@ -79,6 +79,7 @@ code {
     font-style: normal;
     font-weight: 700;
     line-height: 95%; /* 3.325rem */
+    color: black;
 }
 
 .brand-lg {
