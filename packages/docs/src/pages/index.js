@@ -5,7 +5,6 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
 import Layout from '@theme/Layout'
 import HomepageFeatures from '@site/src/components/HomepageFeatures'
 import { Hero } from '@site/src/components/Hero'
-import Button from '@site/src/components/Button'
 
 import styles from './index.module.css'
 
@@ -14,6 +13,39 @@ const FooterImage = require('@site/static/img/img-footer.png').default
 const DiagramImage = require('@site/static/img/unirep-data-diagram.svg').default
 const ExampleImage1 = require('@site/static/img/example1.png').default
 const ExampleImage2 = require('@site/static/img/example2.png').default
+
+const Button = ({ style, children, href }) => {
+    return (
+        <a href={href} target="_blank">
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
+            >
+                <div
+                    style={{
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        backgroundColor: '#A3ECE1',
+                        borderRadius: '32px',
+                        height: '64px',
+                        fontSize: '20px',
+                        fontWeight: 600,
+                        lineHeight: '28px',
+                        color: 'black',
+                        userSelect: 'none',
+                        padding: '18px 40px',
+                        ...(style ?? {}),
+                    }}
+                >
+                    {children}
+                </div>
+            </div>
+        </a>
+    )
+}
 
 const Section = ({ title, description }) => (
     <div
