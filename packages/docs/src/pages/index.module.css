@@ -3,6 +3,18 @@
  * and scoped locally.
  */
 
+.subheader {
+    font-weight: 700;
+    font-size: 48px;
+    line-height: 48px;
+}
+
+.paragraph {
+    font-weight: 200;
+    font-size: 20px;
+    line-height: 28px;
+}
+
 .heroBanner {
     padding: 4rem 0 0rem 0;
     position: relative;
