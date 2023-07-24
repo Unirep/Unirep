@@ -45,7 +45,7 @@ export class Synchronizer extends EventEmitter {
 
     private pollId: string | null = null
     public pollRate: number = 5000
-    public blockRate: number = 20
+    public blockRate: number = 10000
 
     private setupComplete = false
     private setupPromise
