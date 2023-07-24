@@ -89,7 +89,7 @@ const AnimatedText = () => {
 
     return (
         // <div className={styles.rotatingTextWrapper} >
-        <h2>{WORDS_TO_ANIMATE[wordOrder]}</h2>
+        <div className={styles.animated}>{WORDS_TO_ANIMATE[wordOrder]}</div>
         // </div>
     )
 }

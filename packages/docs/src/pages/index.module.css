@@ -68,7 +68,7 @@ img {
     margin-right: 1px;
 } */
 
-h2 {
+.animated {
     font-size: 4rem;
     font-weight: 700;
     color: lightseagreen;
@@ -111,7 +111,7 @@ h2 {
         padding: 2rem;
     }
 
-    h2 {
+    .animated {
         font-size: 2.5rem;
     }
 }
