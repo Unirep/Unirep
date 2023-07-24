@@ -22,7 +22,7 @@ The Graph protocol uses the [GraphQL](https://graphql.org/) query language. For 
 
 <p>
     UniRep subgraph version {contractVersion} is deployed on the following
-    networks
+    networks:
 </p>
 
 <table>
@@ -96,7 +96,7 @@ query MyQuery {
 }
 ```
 
-3. Query the top 100 state tree leaves which is sorted by index.
+3. Query the top 100 state tree leaves, sorted by index.
 
 ```graphql
 query MyQuery {
@@ -117,35 +117,35 @@ query MyQuery {
 ### Attestation
 
 -   `id`: An id to avoid data collision
--   `epoch`: The epoch where an attestation happens
+-   `epoch`: The epoch in which an attestation occurred
 -   `epochKey`: The receiver's epoch key
 -   `attesterId`: The attester address
--   `fieldIndex`: Which index of the data fields changes
+-   `fieldIndex`: The index of the data field that was changed
 -   `change`: The change number of the data
--   `blockNumber`: The attestation transaction happens in which block number
--   `blockTimestamp`: The attestation transaction happens in which block timestamp
+-   `blockNumber`: The block number in which the attestation transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the attestation transaction occurred
 -   `transactionHash`: The attestation transaction hash
 
 ### StateTreeLeaf
 
 -   `id`: An id to avoid data collision
--   `epoch`: The epoch where the state tree leaf emits
+-   `epoch`: The epoch in which the state tree leaf was emitted
 -   `leaf`: The emitted state tree leaf
--   `index`: The index of the state tree leaf in the certain epoch
+-   `index`: The index of the state tree leaf in the epoch
 -   `attesterId`: The attester address
--   `blockNumber`: The transaction happens in which block number
--   `blockTimestamp`: The transaction happens in which block timestamp
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
 -   `transactionHash`: The transaction hash
 
 ### EpochTreeLeaf
 
 -   `id`: An id to avoid data collision
--   `epoch`: The epoch where the epoch tree leaf emits
+-   `epoch`: The epoch in which the epoch tree leaf was emitted
 -   `leaf`: The emitted epoch tree leaf
--   `index`: The index of the epoch tree leaf in the certain epoch
+-   `index`: The index of the epoch tree leaf in the epoch
 -   `attesterId`: The attester address
--   `blockNumber`: The transaction happens in which block number
--   `blockTimestamp`: The transaction happens in which block timestamp
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
 -   `transactionHash`: The transaction hash
 
 ### HistoryTreeLeaf
@@ -153,46 +153,46 @@ query MyQuery {
 -   `id`: An id to avoid data collision
 -   `leaf`: The emitted history tree leaf
 -   `attesterId`: The attester address
--   `blockNumber`: The transaction happens in which block number
--   `blockTimestamp`: The transaction happens in which block timestamp
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
 -   `transactionHash`: The transaction hash
 
 ### Epoch
 
 -   `id`: An id to avoid data collision
--   `number`: The ended epoch number
+-   `number`: The number of the ended epoch
 -   `attesterId`: The attester address
--   `blockNumber`: The transaction happens in which block number
--   `blockTimestamp`: The transaction happens in which block timestamp
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
 -   `transactionHash`: The transaction hash
 
 ### Nullifier
 
 -   `id`: An id to avoid data collision
--   `epoch`: The nullifier is emitted in which epoch
+-   `epoch`: The epoch in which the nullifier was emitted
 -   `attesterId`: The attester address
--   `nullifier`: The nullifier which is used to prevent double user state transition
--   `blockNumber`: The transaction happens in which block number
--   `blockTimestamp`: The transaction happens in which block timestamp
+-   `nullifier`: The nullifier that was used to prevent a double user state transition
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
 -   `transactionHash`: The transaction hash
 
 ### User
 
 -   `id`: An id to avoid data collision
 -   `commitment`: The Semaphore identity commitment
--   `epoch`: The signup epoch
--   `attesterId`: The attester address which signs up the user
+-   `epoch`: The epoch in which the user signed up
+-   `attesterId`: The address of the attester the user signed up to
 -   `leafIndex`: The state tree leaf of the signup event
--   `blockNumber`: The transaction happens in which block number
--   `blockTimestamp`: The transaction happens in which block timestamp
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
 -   `transactionHash`: The transaction hash
 
 ### Attester
 
 -   `id`: An id to avoid data collision
 -   `attesterId`: The attester address
--   `startTimestamp`: The time of the first epoch of the attester starts
--   `epochLength`: The length of each epoch of the attester
--   `blockNumber`: The transaction happens in which block number
--   `blockTimestamp`: The transaction happens in which block timestamp
+-   `startTimestamp`: The start time of the attester's first epoch
+-   `epochLength`: The length of the attester's epochs
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
 -   `transactionHash`: The transaction hash
