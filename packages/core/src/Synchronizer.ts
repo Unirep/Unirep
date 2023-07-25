@@ -45,12 +45,16 @@ export class Synchronizer extends EventEmitter {
 
     private pollId: string | null = null
     public pollRate: number = 5000
-    public blockRate: number = 100000
+    public blockRate: number = 10000
 
     private setupComplete = false
     private setupPromise
 
     private lock = new AsyncLock()
+
+    private promises: any[] = []
+    private _blocks: any[] = []
+    public _blockEnd: Number = 0
 
     /**
      * Maybe we can default the DB argument to an in memory implementation so
@@ -94,6 +98,7 @@ export class Synchronizer extends EventEmitter {
             replNonceBits: 0,
             replFieldBits: 0,
         }
+
         this.setup().then(() => (this.setupComplete = true))
     }
 
@@ -330,6 +335,13 @@ export class Synchronizer extends EventEmitter {
             for (;;) {
                 // poll repeatedly until we're up to date
                 try {
+                    await this.loadBlocks(this.blockRate)
+                } catch (err) {
+                    console.error(`--- unable to load blocks`)
+                    console.error(err)
+                    console.error(`---`)
+                }
+                try {
                     const { complete } = await this.poll()
                     if (complete) break
                     backoff = Math.max(backoff / 2, minBackoff)
@@ -343,6 +355,7 @@ export class Synchronizer extends EventEmitter {
                 if (pollId != this.pollId) break
             }
             for (;;) {
+                await this.loadBlocks(this.blockRate)
                 await new Promise((r) => setTimeout(r, this.pollRate))
                 if (pollId != this.pollId) break
                 await this.poll().catch((err) => {
@@ -383,15 +396,10 @@ export class Synchronizer extends EventEmitter {
                 latestCompleteBlock: 'asc',
             },
         })
-        const latestProcessed = state.latestCompleteBlock
         const latestBlock = await this.provider.getBlockNumber()
-        const blockStart = latestProcessed + 1
-        const blockEnd = Math.min(+latestBlock, blockStart + this.blockRate)
 
-        const newEvents = await this.loadNewEvents(
-            latestProcessed + 1,
-            blockEnd
-        )
+        const newEvents = this._blocks
+        this._blocks = []
 
         // filter out the events that have already been seen
         const unprocessedEvents = newEvents.filter((e) => {
@@ -413,24 +421,86 @@ export class Synchronizer extends EventEmitter {
                 OR: this.attestersOrClauses,
             },
             update: {
-                latestCompleteBlock: blockEnd,
+                latestCompleteBlock: this._blockEnd,
             },
         })
 
         return {
-            complete: latestBlock === blockEnd,
+            complete: latestBlock === this._blockEnd,
         }
+    }
+
+    async loadBlocks(n: number) {
+        const state = await this._db.findOne('SynchronizerState', {
+            where: {
+                OR: this.attestersOrClauses,
+            },
+            orderBy: {
+                latestCompleteBlock: 'asc',
+            },
+        })
+
+        const latestProcessed = state.latestCompleteBlock
+        const latestBlock = await this.provider.getBlockNumber()
+        const blockStart = latestProcessed + 1
+        const count = Math.ceil((latestBlock - blockStart + 1) / n)
+        this._blockEnd = latestBlock
+        if (count <= 0) return
+
+        const promises = Array.from(Array(count).keys()).map(async (_, i) => {
+            return this.loadNewEvents(
+                blockStart + n * i,
+                Math.min(blockStart + n * (i + 1) - 1, latestBlock)
+            )
+        })
+
+        await Promise.all(promises)
+        this.promises.sort((a, b) => {
+            return a.blockNumber - b.blockNumber
+        })
+        const tmp: any[] = []
+        for (const chunk of this.promises) {
+            if (chunk === undefined || chunk.length === 0) {
+                continue
+            }
+            for (const block of chunk) {
+                this._blocks.splice(0, 0, block)
+            }
+        }
+        this.promises = tmp
     }
 
     // Overridden in subclasses
     async loadNewEvents(fromBlock: number, toBlock: number) {
         const promises = [] as any[]
+        const minBackOff = 128
+
         for (const address of Object.keys(this.contracts)) {
             const { contract } = this.contracts[address]
             const filter = this._eventFilters[address]
-            promises.push(contract.queryFilter(filter, fromBlock, toBlock))
+            let backoff = minBackOff
+            for (;;) {
+                try {
+                    const request = contract.queryFilter(
+                        filter,
+                        fromBlock,
+                        toBlock
+                    )
+                    promises.push(request)
+                    request.then((r) => {
+                        this.promises.push(r)
+                    })
+                    break
+                } catch (err) {
+                    console.error(`--- unable to load new events`)
+                    console.error(err)
+                    console.error(`---`)
+                    backoff *= 2
+                }
+                await new Promise((r) => setTimeout(r, backoff))
+            }
         }
-        return (await Promise.all(promises)).flat()
+        return Promise.all(promises)
     }
 
     // override this and only this
