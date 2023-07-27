@@ -1,8 +1,6 @@
 import { version } from '../package.json'
 
-// TODO: use keys.unirep.io
-// const KEY_URL = `https://keys.unirep.io/${version}/`
-const KEY_URL = `https://s3.amazonaws.com/keys-${version}/`
+const KEY_URL = `https://keys.unirep.io/${version}/`
 
 export class WebProver {
     cache: { [key: string]: any } = {}
