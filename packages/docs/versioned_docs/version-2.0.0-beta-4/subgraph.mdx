@@ -68,7 +68,16 @@ The Graph protocol uses the [GraphQL](https://graphql.org/) query language. For 
 
 ## Query Examples
 
-1. Query the top 100 attesters (by default).
+1. Query the first 100 attesters (by default, sorted by `id`).
+
+:::info
+`id` is computed by
+
+```ts
+event.transaction.hash.concatI32(event.logIndex.toI32())
+```
+
+:::
 
 ```graphql
 query MyQuery {
@@ -82,7 +91,7 @@ query MyQuery {
 }
 ```
 
-2. Query the top 100 users from a certain attester ID.
+2. Query the first 100 users from a certain attester ID (by default, sorted by `id`).
 
 ```graphql
 query MyQuery {
@@ -96,11 +105,46 @@ query MyQuery {
 }
 ```
 
-3. Query the top 100 state tree leaves, sorted by index.
+3. Query the first 100 state tree leaves, sorted by `index`.
 
 ```graphql
 query MyQuery {
     stateTreeLeaves(
+        orderBy: index
+        where: {
+            attesterId: "812064237485286466066480536294992408637941768146"
+            epoch: "1"
+        }
+    ) {
+        leaf
+    }
+}
+```
+
+3. Query the first 1000 state tree leaves, sorted by `index`.
+
+```graphql
+query MyQuery {
+    stateTreeLeaves(
+        first: 1000
+        orderBy: index
+        where: {
+            attesterId: "812064237485286466066480536294992408637941768146"
+            epoch: "1"
+        }
+    ) {
+        leaf
+    }
+}
+```
+
+4. Query the next 1000 state tree leaves, sorted by `index`.
+
+```graphql
+query MyQuery {
+    stateTreeLeaves(
+        skip: 1000
+        first: 1000
         orderBy: index
         where: {
             attesterId: "812064237485286466066480536294992408637941768146"
