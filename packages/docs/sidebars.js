@@ -95,6 +95,11 @@ const sidebars = {
             ],
         },
         {
+            type: 'doc',
+            label: '📌 Subgraph',
+            id: 'subgraph',
+        },
+        {
             type: 'category',
             label: '@unirep/core',
             items: [
