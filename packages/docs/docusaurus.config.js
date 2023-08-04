@@ -186,3 +186,20 @@ const config = {
 }
 
 module.exports = config
+
+<!-- Matomo web tracking -->
+module.exports = {
+    plugins: [
+      'docusaurus-plugin-matomo',
+    ],
+    themeConfig: {
+      matomo: {
+        matomoUrl: 'https://psedev.matomo.cloud/',
+        siteId: '6',
+        phpLoader: 'matomo.php',
+        jsLoader: 'matomo.js',
+      },
+    },
+  };
+
+
