@@ -159,8 +159,8 @@ const config = {
                 contextualSearch: true,
             },
             matomo: {
-                matomoUrl: 'https://your.matomo.instance/',
-                siteId: 'ID',
+                matomoUrl: 'https://psedev.matomo.cloud/',
+                siteId: '6',
                 phpLoader: 'matomo.php',
                 jsLoader: 'matomo.js',
             },
