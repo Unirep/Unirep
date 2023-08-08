@@ -158,6 +158,12 @@ const config = {
                 indexName: 'developer-unirep',
                 contextualSearch: true,
             },
+            matomo: {
+                matomoUrl: 'https://psedev.matomo.cloud/',
+                siteId: '6',
+                phpLoader: 'matomo.php',
+                jsLoader: 'matomo.js',
+            },
         }),
     plugins: [
         function svgFix() {
@@ -182,6 +188,7 @@ const config = {
                 },
             }
         },
+        'docusaurus-plugin-matomo',
     ],
 }
 
