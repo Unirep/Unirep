@@ -5,12 +5,8 @@ template IdentitySecret() {
   signal input trapdoor;
 
   signal output out;
-
-  component hasher = Poseidon(2);
-  hasher.inputs[0] <== nullifier;
-  hasher.inputs[1] <== trapdoor;
-
-  out <== hasher.out;
+    
+  out <== Poseidon(2)([nullifier, trapdoor]);
 }
 
 template IdentityCommitment() {
@@ -20,14 +16,7 @@ template IdentityCommitment() {
   signal output secret;
   signal output out;
 
-  component _secret = IdentitySecret();
-  _secret.nullifier <== nullifier;
-  _secret.trapdoor <== trapdoor;
-
-  secret <== _secret.out;
-
-  component hasher = Poseidon(1);
-  hasher.inputs[0] <== _secret.out;
-
-  out <== hasher.out;
+  secret <== IdentitySecret()(nullifier, trapdoor);
+  out <== Poseidon(1)([secret]);
 }
+
