@@ -28,26 +28,14 @@ template LowerGreaterThan(n) {
     assert(n < 253);
     signal input in[2];
     signal output out;
+    
     out <== LowerLessThan(n)([in[1], in[0]]);
-
-    // component lt = LowerLessThan(n);
-    // lt.in[0] <== in[1];
-    // lt.in[1] <== in[0];
-    // out <== lt.out;
 }
 
 template LowerLessThan(n) {
     assert(n < 253);
     signal input in[2];
     signal output out;
-
-    // component extractor[2];
-
-    // for (var x = 0; x < 2; x++) {
-    //     extractor[x] = ExtractBits(n, 253-n);
-    //     extractor[x].in <== in[x];
-    // }
-
     signal extractor[2];
 
     for (var x = 0; x < 2; x++) {
@@ -56,23 +44,12 @@ template LowerLessThan(n) {
     }
 
     out <== LessThan(n)(extractor);
-    // lt.in[0] <== extractor[0].lower;
-    // lt.in[1] <== extractor[1].lower;
-
-    // out <== lt.out;
 }
 
 template replFieldEqual(REPL_NONCE_BITS) {
     assert(REPL_NONCE_BITS < 253);
     signal input in[2];
     signal output out;
-
-    // component extractor[2];
-
-    // for (var x = 0; x < 2; x++) {
-    //     extractor[x] = ExtractBits(REPL_NONCE_BITS, 253-REPL_NONCE_BITS);
-    //     extractor[x].in <== in[x];
-    // }
     signal extractor[2];
 
     for (var x = 0; x < 2; x++) {
@@ -80,10 +57,4 @@ template replFieldEqual(REPL_NONCE_BITS) {
     }
 
     out <== IsEqual()(extractor);
-
-    // component eq = IsEqual();
-    // eq.in[0] <== extractor[0].upper;
-    // eq.in[1] <== extractor[1].upper;
-
-    // out <== eq.out;
 }
