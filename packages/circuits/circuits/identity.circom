@@ -1,3 +1,5 @@
+pragma circom 2.1.0;
+
 include "./circomlib/circuits/poseidon.circom";
 
 template IdentitySecret() {
@@ -5,7 +7,7 @@ template IdentitySecret() {
   signal input trapdoor;
 
   signal output out;
-    
+
   out <== Poseidon(2)([nullifier, trapdoor]);
 }
 
