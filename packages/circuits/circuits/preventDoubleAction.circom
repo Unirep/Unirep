@@ -36,14 +36,14 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     nullifier <== Poseidon(2)([identity_nullifier, external_nullifier]);
 
      /* 2. Compute identity commitment */
-    signal commitment_secret;
-    (commitment_secret, _) <== IdentityCommitment()(identity_nullifier, identity_trapdoor);
+    signal identity_secret;
+    (identity_secret, _) <== IdentityCommitment()(identity_nullifier, identity_trapdoor);
 
     /* 3. Check epoch key is valid */
     (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
         state_tree_indexes,
         state_tree_elements,
-        commitment_secret,
+        identity_secret,
         reveal_nonce,
         attester_id,
         epoch,
