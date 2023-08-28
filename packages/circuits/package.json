@@ -30,8 +30,7 @@
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
         "time": "ts-node scripts/time.ts",
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
-        "rebuild": "find ./zksnarkBuild -type f -not -name '*.ptau' -delete && yarn build"
-
+        "buildOverwrite": "find ./zksnarkBuild -type f -not -name '*.ptau' -delete && yarn build"
     },
     "dependencies": {
         "@unirep/utils": "2.0.0-beta-4",
