@@ -36,34 +36,31 @@ template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     /* 1. Check if user exists in the Global State Tree */
 
     // Compute user state tree root
-    component leaf_hasher = StateTreeLeaf(FIELD_COUNT);
-    leaf_hasher.identity_secret <== identity_secret;
-    leaf_hasher.attester_id <== attester_id;
-    leaf_hasher.epoch <== epoch;
-    for (var x = 0; x < FIELD_COUNT; x++) {
-      leaf_hasher.data[x] <== data[x];
-    }
+    signal leaf <== StateTreeLeaf(FIELD_COUNT)(
+        data,
+        identity_secret,
+        attester_id,
+        epoch
+    );
 
-    component merkletree = MerkleTreeInclusionProof(STATE_TREE_DEPTH);
-    merkletree.leaf <== leaf_hasher.out;
-    for (var i = 0; i < STATE_TREE_DEPTH; i++) {
-        merkletree.path_index[i] <== state_tree_indexes[i];
-        merkletree.path_elements[i] <== state_tree_elements[i];
-    }
-    state_tree_root <== merkletree.root;
+    state_tree_root <== MerkleTreeInclusionProof(STATE_TREE_DEPTH)(
+        leaf,
+        state_tree_indexes,
+        state_tree_elements,
+    );
 
     /* End of check 1 */
 
     /* 2. Check epoch key validity */
 
-    component epoch_key_lite = EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH);
-    epoch_key_lite.identity_secret <== identity_secret;
-    epoch_key_lite.reveal_nonce <== reveal_nonce;
-    epoch_key_lite.attester_id <== attester_id;
-    epoch_key_lite.epoch <== epoch;
-    epoch_key_lite.nonce <== nonce;
-    epoch_key_lite.sig_data <== sig_data;
-    control <== epoch_key_lite.control;
-    epoch_key <== epoch_key_lite.epoch_key;
+    (control, epoch_key) <== EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH)(
+        identity_secret,
+        reveal_nonce,
+        attester_id,
+        epoch,
+        nonce,
+        sig_data
+    );
+    
     /* End of check 2*/
 }
