@@ -1,4 +1,4 @@
-pragma circom 2.1.0;
+pragma circom 2.1.5;
 
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/comparators.circom";
@@ -49,7 +49,7 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
 
     control <== reveal_nonce * 2**(NONCE_BITS + EPOCH_BITS + ATTESTER_ID_BITS) + attester_id * 2**(NONCE_BITS + EPOCH_BITS) + epoch * 2**NONCE_BITS + reveal_nonce * nonce;
 
-    epoch_key = EpochKeyHasher()(
+    epoch_key <== EpochKeyHasher()(
         identity_secret,
         attester_id,
         epoch,

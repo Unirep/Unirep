@@ -1,4 +1,4 @@
-pragma circom 2.0.0;
+pragma circom 2.1.0;
 
 /*
     Verify that an epoch key exists in a state tree
@@ -36,7 +36,8 @@ template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     /* 1. Check if user exists in the Global State Tree */
 
     // Compute user state tree root
-    signal leaf <== StateTreeLeaf(FIELD_COUNT)(
+    signal leaf; 
+    (leaf, _, _)<== StateTreeLeaf(FIELD_COUNT)(
         data,
         identity_secret,
         attester_id,
@@ -46,7 +47,7 @@ template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     state_tree_root <== MerkleTreeInclusionProof(STATE_TREE_DEPTH)(
         leaf,
         state_tree_indexes,
-        state_tree_elements,
+        state_tree_elements
     );
 
     /* End of check 1 */
@@ -61,6 +62,6 @@ template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
         nonce,
         sig_data
     );
-    
+
     /* End of check 2*/
 }
