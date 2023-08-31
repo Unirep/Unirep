@@ -22,7 +22,7 @@ template EpochTreeLeaf(FIELD_COUNT) {
 
   for (var x = 0; x < FIELD_COUNT; x++) {
     if (x == 0) {
-      hasher[0] <== Poseidon(2)([epoch_key, data[0]]);
+      hasher[x] <== Poseidon(2)([epoch_key, data[x]]);
     } else {
       hasher[x] <== Poseidon(2)([hasher[x-1], data[x]]);
     }
@@ -47,7 +47,7 @@ template StateTreeLeaf(FIELD_COUNT) {
 
   for (var x = 0; x < FIELD_COUNT-1; x++) {
     if (x == 0) {
-      hasher[0] <== Poseidon(2)([data[0], data[x+1]]);
+      hasher[x] <== Poseidon(2)([data[x], data[x+1]]);
     } else {
       hasher[x] <== Poseidon(2)([hasher[x-1], data[x+1]]);
     }
@@ -55,6 +55,6 @@ template StateTreeLeaf(FIELD_COUNT) {
 
   control <== attester_id + 2**160*epoch;
   data_hash <== hasher[FIELD_COUNT-2];
-  signal interm <== Poseidon(2)([identity_secret, control]);
-  out <== Poseidon(2)([interm, data_hash]);
+  signal leaf_identity_hash <== Poseidon(2)([identity_secret, control]);
+  out <== Poseidon(2)([leaf_identity_hash, data_hash]);
 }
