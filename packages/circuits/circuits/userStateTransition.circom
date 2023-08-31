@@ -82,7 +82,7 @@ template UserStateTransition(
 
     signal history_leaf_hasher <== Poseidon(2)([state_merkletree_root, epoch_tree_root]);
 
-    signal history_tree_root <== MerkleTreeInclusionProof(HISTORY_TREE_DEPTH)(
+    history_tree_root <== MerkleTreeInclusionProof(HISTORY_TREE_DEPTH)(
         history_leaf_hasher,
         history_tree_indices,
         history_tree_elements
@@ -120,7 +120,7 @@ template UserStateTransition(
     }
 
     for (var x = 0; x < EPOCH_KEY_NONCE_PER_EPOCH; x++) {
-        epk[x] <== EpochKeyHasher()(
+        epks[x] <== EpochKeyHasher()(
             identity_secret,
             attester_id,
             from_epoch,
