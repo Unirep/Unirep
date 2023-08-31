@@ -74,20 +74,19 @@ template UserStateTransition(
         from_epoch
     );
 
-    signal state_merkletree <== MerkleTreeInclusionProof(STATE_TREE_DEPTH)(
+    signal state_merkletree_root <== MerkleTreeInclusionProof(STATE_TREE_DEPTH)(
         leaf_hasher,
         state_tree_indexes,
         state_tree_elements
     );
 
-    signal history_leaf_hasher <== Poseidon(2)([state_merkletree, epoch_tree_root]);
+    signal history_leaf_hasher <== Poseidon(2)([state_merkletree_root, epoch_tree_root]);
 
-    signal history_merkletree <== MerkleTreeInclusionProof(HISTORY_TREE_DEPTH)(
+    signal history_tree_root <== MerkleTreeInclusionProof(HISTORY_TREE_DEPTH)(
         history_leaf_hasher,
         history_tree_indices,
         history_tree_elements
     );
-    history_tree_root <== history_merkletree;
 
     /* End of check 1 */
 
@@ -120,16 +119,13 @@ template UserStateTransition(
       epoch_tree_proof_valid[x] <== IsEqual()([epoch_tree_root, epoch_tree_proof[x]]);
     }
 
-    signal epk_out_hashers[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var x = 0; x < EPOCH_KEY_NONCE_PER_EPOCH; x++) {
-        epk_out_hashers[x] <== EpochKeyHasher()(
+        epk[x] <== EpochKeyHasher()(
             identity_secret,
             attester_id,
             from_epoch,
             epoch_tree_proof_valid[x] * EPOCH_KEY_NONCE_PER_EPOCH + x // nonce
         );
-
-        epks[x] <== epk_out_hashers[x];
     }
 
     // if an inclusion proof is not valid the newData must be 0
@@ -182,16 +178,12 @@ template UserStateTransition(
       }
     }
 
-    signal out_leaf_hasher;
-    (out_leaf_hasher, _, _) <== StateTreeLeaf(FIELD_COUNT)(
+    (state_tree_leaf, _, _) <== StateTreeLeaf(FIELD_COUNT)(
         final_data[EPOCH_KEY_NONCE_PER_EPOCH - 1],
         identity_secret,
         attester_id,
         to_epoch
     );
-
-
-    state_tree_leaf <== out_leaf_hasher;
 
     /* End of check 3 */
 }
