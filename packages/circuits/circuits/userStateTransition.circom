@@ -129,7 +129,6 @@ template UserStateTransition(
     }
 
     // if an inclusion proof is not valid the newData must be 0
-    var data_check[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
     signal proof_invalid[EPOCH_KEY_NONCE_PER_EPOCH];
     for (var x = 0; x < EPOCH_KEY_NONCE_PER_EPOCH; x++) {
         proof_invalid[x] <== IsZero()(epoch_tree_proof_valid[x]);
