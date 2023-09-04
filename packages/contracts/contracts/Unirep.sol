@@ -84,7 +84,7 @@ contract Unirep is IUnirep, VerifySignature {
                 sumFieldCount: sumFieldCount,
                 numEpochKeyNoncePerEpoch: numEpochKeyNoncePerEpoch,
                 replNonceBits: replNonceBits,
-                replFieldBits: replNonceBits
+                replFieldBits: replFieldBits
             });
     }
 
