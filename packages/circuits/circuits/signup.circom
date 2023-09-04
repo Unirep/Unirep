@@ -18,9 +18,9 @@ template Signup(FIELD_COUNT) {
     signal input identity_nullifier;
     signal input identity_trapdoor;
 
-    signal commitment_secret;
+    signal identity_secret;
 
-    (commitment_secret, identity_commitment) <== IdentityCommitment()(
+    (identity_secret, identity_commitment) <== IdentityCommitment()(
       identity_nullifier,
       identity_trapdoor);
  
@@ -33,7 +33,7 @@ template Signup(FIELD_COUNT) {
     }
     (state_tree_leaf, control, _) <== StateTreeLeaf(FIELD_COUNT)(
       data,
-      commitment_secret, 
+      identity_secret, 
       attester_id, 
       epoch);
 }
