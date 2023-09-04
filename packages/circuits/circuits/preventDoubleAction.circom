@@ -43,7 +43,6 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
         state_tree_indexes,
         state_tree_elements,
-        commitment_secret,
         identity_secret,
         reveal_nonce,
         attester_id,

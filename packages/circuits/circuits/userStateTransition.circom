@@ -61,7 +61,7 @@ template UserStateTransition(
     epoch_check === 1;
 
     // range check
-    _ = Num2Bits(160)(attester_id);
+    _ <== Num2Bits(160)(attester_id);
 
 
     /* 1. Check if user exists in the Global State Tree */
