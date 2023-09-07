@@ -24,17 +24,17 @@ template MerkleTreeInclusionProof(n_levels) {
 
     signal mux[n_levels][2];
     signal hashers[n_levels];
-    var merklePath[2][2];
+    signal merklePath[n_levels][2][2];
     for (var i = 0; i < n_levels; i++) {
         // Should be 0 or 1
         path_index[i] * (1 - path_index[i]) === 0;
 
-        merklePath[0][0] = levelHashes[i];
-        merklePath[0][1] = path_elements[i];
-        merklePath[1][0] = path_elements[i];
-        merklePath[1][1] = levelHashes[i];
+        merklePath[i][0][0] <== levelHashes[i];
+        merklePath[i][0][1] <== path_elements[i];
+        merklePath[i][1][0] <== path_elements[i];
+        merklePath[i][1][1] <== levelHashes[i];
         
-        mux[i] <== MultiMux1(2)(merklePath, path_index[i]);
+        mux[i] <== MultiMux1(2)(merklePath[i], path_index[i]);
         hashers[i] <== Poseidon(2)(mux[i]);
 
         levelHashes[i + 1] <== hashers[i];
