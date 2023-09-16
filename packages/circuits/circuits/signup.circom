@@ -15,14 +15,11 @@ template Signup(FIELD_COUNT) {
     signal input attester_id;
     signal input epoch;
 
-    signal input identity_nullifier;
-    signal input identity_trapdoor;
+    signal input secret;
 
     signal identity_secret;
 
-    (identity_secret, identity_commitment) <== IdentityCommitment()(
-      identity_nullifier,
-      identity_trapdoor);
+    (identity_secret, identity_commitment) <== IdentityCommitment()(secret);
  
     _ <== Num2Bits(48)(epoch);
     _ <== Num2Bits(160)(attester_id);

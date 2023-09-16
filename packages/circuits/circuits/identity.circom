@@ -3,22 +3,20 @@ pragma circom 2.1.0;
 include "./circomlib/circuits/poseidon.circom";
 
 template IdentitySecret() {
-  signal input nullifier;
-  signal input trapdoor;
+  signal input secret;
 
   signal output out;
 
-  out <== Poseidon(2)([nullifier, trapdoor]);
+  out <== Poseidon(1)([secret]);
 }
 
 template IdentityCommitment() {
-  signal input nullifier;
-  signal input trapdoor;
+  signal input secret;
 
-  signal output secret;
-  signal output out;
+  signal output identity_secret;
+  signal output identity_commitment;
 
-  secret <== IdentitySecret()(nullifier, trapdoor);
-  out <== Poseidon(1)([secret]);
+  identity_secret <== IdentitySecret()(secret);
+  identity_commitment <== Poseidon(1)([identity_secret]);
 }
 
