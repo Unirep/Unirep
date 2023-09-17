@@ -180,8 +180,7 @@ const genSignupCircuitInput = (config: {
 }) => {
     const { id, epoch, attesterId } = Object.assign(config)
     const circuitInputs = {
-        identity_nullifier: id.nullifier,
-        identity_trapdoor: id.trapdoor,
+        secret: id.secret,
         epoch,
         attester_id: attesterId,
     }
