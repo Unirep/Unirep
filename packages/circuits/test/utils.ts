@@ -37,19 +37,6 @@ export const combineData = (data0, data1) => {
     return out
 }
 
-const genV4Identity = (id: Identity) => {
-    const nullifier = id.nullifier
-    const secret = poseidon1([id.nullifier])
-    const commitment = poseidon1([poseidon1([id.nullifier])])
-    const newId = {
-        nullifier,
-        secret,
-        commitment,
-    }
-
-    return newId
-}
-
 const genEpochKeyCircuitInput = (config: {
     id: Identity
     tree: utils.IncrementalMerkleTree
@@ -241,7 +228,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         epoch,
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
-        secret: id.nullifier,
+        secret: id.secret,
         external_nullifier: externalNullifier,
     }
 
@@ -254,5 +241,4 @@ export {
     genReputationCircuitInput,
     genProofAndVerify,
     genPreventDoubleActionCircuitInput,
-    genV4Identity,
 }
