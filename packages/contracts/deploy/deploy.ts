@@ -242,6 +242,17 @@ export const deployUnirep = async (
     )
     await lazyMerkleContract.deployed()
 
+    const pairingPath = 'contracts/libraries/Pairing.sol/Pairing.json'
+    const pairingArtifacts = tryPath(pairingPath)
+    const _pairingFactory = new ethers.ContractFactory(
+        pairingArtifacts.abi,
+        pairingArtifacts.bytecode,
+        deployer
+    )
+    const pairingFactory = await GlobalFactory(_pairingFactory)
+    const pairingContract = await retryAsNeeded(() => pairingFactory.deploy())
+    await pairingContract.deployed()
+
     const verifiers = await deployVerifiers(deployer, prover)
 
     console.log('Deploying Unirep')
