@@ -34,8 +34,7 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
         Circuit.signup,
         stringifyBigInts({
             epoch: epoch.toString(),
-            identity_nullifier: id.nullifier,
-            identity_trapdoor: id.trapdoor,
+            secret: id.secret,
             attester_id: attesterId,
         })
     )
