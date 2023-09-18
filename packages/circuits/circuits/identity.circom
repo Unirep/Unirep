@@ -5,8 +5,8 @@ include "./circomlib/circuits/poseidon.circom";
 template IdentityCommitment() {
   signal input secret;
 
-  signal output identity_commitment;
+  signal output commitment;
 
-  identity_commitment <== Poseidon(1)([secret]);
+  commitment <== Poseidon(1)([secret]);
 }
 

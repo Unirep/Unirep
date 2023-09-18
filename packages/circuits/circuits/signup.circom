@@ -8,7 +8,7 @@ include "./hasher.circom";
 
 template Signup(FIELD_COUNT) {
 
-    signal output identity_commitment;
+    signal output commitment;
     signal output state_tree_leaf;
     signal output control;
 
@@ -17,7 +17,7 @@ template Signup(FIELD_COUNT) {
 
     signal input secret;
 
-    identity_commitment <== IdentityCommitment()(secret);
+    commitment <== IdentityCommitment()(secret);
  
     _ <== Num2Bits(48)(epoch);
     _ <== Num2Bits(160)(attester_id);
