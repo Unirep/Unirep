@@ -32,13 +32,19 @@ Control field:
 Inputs:
 - `attester_id`
 - `epoch`
-- `identity_nullifier`
-- `identity_trapdoor`
+- `secret`
 
 Outputs:
-- `identity_commitment`
+- `commitment`
 - `state_tree_leaf`
 - `control`
+
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/signup.circom"; 
+(commitment, state_tree_leaf, control) <== Signup(FIELD_COUNT)(attester_id, epoch, secret);
+```
 
 :::info
 Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
@@ -71,6 +77,23 @@ Outputs:
 - `epoch_key`
 - `state_tree_root`
 - `control`
+
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/epochKey.circom"; 
+(epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
+  state_tree_indexes, 
+  state_tree_elements, 
+  identity_secret,
+  reveal_nonce,
+  attester_id,
+  epoch,
+  nonce,
+  data,
+  sig_data
+);
+```
 
 :::info
 Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
@@ -105,6 +128,20 @@ Inputs:
 Outputs:
 - `epoch_key`
 - `control`
+
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/epochKeyLite.circom"; 
+(control, epoch_key) <== EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH)(
+  identity_secret,
+  reveal_nonce,
+  attester_id,
+  epoch,
+  nonce,
+  sig_data
+);
+```
 
 :::info
 Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
@@ -158,6 +195,30 @@ Outputs:
 - `state_tree_root`
 - `control[2]`
 
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/proveReputation.circom"; 
+(epoch_key, state_tree_root, control) <== ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS)(
+  identity_secret,
+  state_tree_indexes,
+  state_tree_elements,
+  data,
+  prove_graffiti,
+  graffiti,
+  reveal_nonce,
+  attester_id,
+  epoch,
+  nonce,
+  min_rep,
+  max_rep,
+  prove_min_rep,
+  prove_max_rep,
+  prove_zero_rep,
+  sig_data
+);
+```
+
 :::info
 Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
@@ -190,3 +251,31 @@ Outputs:
 - `state_tree_leaf`
 - `epks[EPOCH_KEY_NONCE_PER_EPOCH]`
 
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/userStateTransition.circom"; 
+(history_tree_root, state_tree_leaf, epks) <== UserStateTransition(
+  STATE_TREE_DEPTH,
+  EPOCH_TREE_DEPTH,
+  HISTORY_TREE_DEPTH,
+  EPOCH_KEY_NONCE_PER_EPOCH,
+  FIELD_COUNT,
+  SUM_FIELD_COUNT,
+  REPL_NONCE_BITS
+)(
+  from_epoch,
+  to_epoch,
+  identity_secret,
+  state_tree_indexes,
+  state_tree_elements,
+  history_tree_indices,
+  history_tree_elements,
+  attester_id,
+  data,
+  new_data,
+  epoch_tree_root,
+  epoch_tree_elements,
+  epoch_tree_indices
+);
+```
