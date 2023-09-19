@@ -606,8 +606,7 @@ export default class UserState {
         const epoch = options.epoch ?? this.sync.calcCurrentEpoch(attesterId)
         const circuitInputs = {
             epoch,
-            identity_nullifier: this.id.nullifier,
-            identity_trapdoor: this.id.trapdoor,
+            secret: this.id.secret,
             attester_id: attesterId,
         }
         const results = await this.prover.genProofAndPublicSignals(

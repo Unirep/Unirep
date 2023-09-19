@@ -180,8 +180,7 @@ const genSignupCircuitInput = (config: {
 }) => {
     const { id, epoch, attesterId } = Object.assign(config)
     const circuitInputs = {
-        identity_nullifier: id.nullifier,
-        identity_trapdoor: id.trapdoor,
+        secret: id.secret,
         epoch,
         attester_id: attesterId,
     }
@@ -228,9 +227,8 @@ const genPreventDoubleActionCircuitInput = (config: {
         epoch,
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
-        identity_nullifier: id.nullifier,
+        secret: id.secret,
         external_nullifier: externalNullifier,
-        identity_trapdoor: id.trapdoor,
     }
 
     return utils.stringifyBigInts(circuitInputs)

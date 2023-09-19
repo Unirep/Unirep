@@ -52,8 +52,7 @@ describe('Attester getters', function () {
                 Circuit.signup,
                 stringifyBigInts({
                     epoch,
-                    identity_nullifier: id.nullifier,
-                    identity_trapdoor: id.trapdoor,
+                    secret: id.secret,
                     attester_id: attester.address,
                 })
             )

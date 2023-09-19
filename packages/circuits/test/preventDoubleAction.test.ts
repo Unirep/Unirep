@@ -62,7 +62,7 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = poseidon2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([id.secret, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
 
             const p = new PreventDoubleActionProof(publicSignals, proof)
@@ -117,7 +117,7 @@ describe('Prevent double action circuit', function () {
                 genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = poseidon2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([id.secret, externalNullifier])
             expect(publicSignals[2]).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
@@ -180,7 +180,7 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = poseidon2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([id.secret, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
             expect(publicSignals[4].toString()).to.equal(sigData.toString())
 
@@ -236,7 +236,7 @@ describe('Prevent double action circuit', function () {
                 genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = poseidon2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([id.secret, externalNullifier])
             expect(publicSignals[3]).to.equal(nullifier.toString())
             expect(publicSignals[4].toString()).to.equal(sigData.toString())
 

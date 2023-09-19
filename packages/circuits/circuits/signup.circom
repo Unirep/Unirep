@@ -8,21 +8,16 @@ include "./hasher.circom";
 
 template Signup(FIELD_COUNT) {
 
-    signal output identity_commitment;
+    signal output commitment;
     signal output state_tree_leaf;
     signal output control;
 
     signal input attester_id;
     signal input epoch;
 
-    signal input identity_nullifier;
-    signal input identity_trapdoor;
+    signal input secret;
 
-    signal identity_secret;
-
-    (identity_secret, identity_commitment) <== IdentityCommitment()(
-      identity_nullifier,
-      identity_trapdoor);
+    commitment <== IdentityCommitment()(secret);
  
     _ <== Num2Bits(48)(epoch);
     _ <== Num2Bits(160)(attester_id);
@@ -33,8 +28,7 @@ template Signup(FIELD_COUNT) {
     }
     (state_tree_leaf, control, _) <== StateTreeLeaf(FIELD_COUNT)(
       data,
-      identity_secret, 
+      secret, 
       attester_id, 
       epoch);
 }
-
