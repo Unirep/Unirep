@@ -197,7 +197,7 @@ const genPreventDoubleActionCircuitInput = (config: {
     data?: bigint[]
     sigData?: bigint
     revealNonce?: number
-    externalNullifier: bigint
+    scope: bigint
 }) => {
     const {
         id,
@@ -209,7 +209,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         data: _data,
         sigData,
         revealNonce,
-        externalNullifier,
+        scope,
     } = Object.assign(
         {
             data: [],
@@ -228,7 +228,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
         secret: id.secret,
-        external_nullifier: externalNullifier,
+        scope: scope,
     }
 
     return utils.stringifyBigInts(circuitInputs)
