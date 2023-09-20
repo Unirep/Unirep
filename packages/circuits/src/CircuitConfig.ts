@@ -5,6 +5,8 @@ import {
     CHAIN_ID_BITS,
     REVEAL_NONCE_BITS,
     SNARK_SCALAR_FIELD,
+    REP_BITS,
+    ONE_BIT,
 } from '@unirep/utils'
 
 const defaultConfig = {
@@ -50,29 +52,29 @@ export class CircuitConfig {
     }
 
     static get EPOCH_BITS() {
-        return BigInt(EPOCH_BITS)
+        return EPOCH_BITS
     }
     static get NONCE_BITS() {
-        return BigInt(NONCE_BITS)
+        return NONCE_BITS
     }
     static get ATTESTER_ID_BITS() {
-        return BigInt(ATTESTER_ID_BITS)
+        return ATTESTER_ID_BITS
     }
 
     static get CHAIN_ID_BITS() {
-        return BigInt(CHAIN_ID_BITS)
+        return CHAIN_ID_BITS
     }
 
     static get REVEAL_NONCE_BITS() {
-        return BigInt(REVEAL_NONCE_BITS)
+        return REVEAL_NONCE_BITS
     }
 
     static get REP_BITS() {
-        return BigInt(64)
+        return REP_BITS
     }
 
     static get ONE_BIT() {
-        return BigInt(1)
+        return ONE_BIT
     }
 
     constructor(

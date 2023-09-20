@@ -6,11 +6,13 @@ export const SNARK_SCALAR_FIELD =
 export const F = BigInt(SNARK_SCALAR_FIELD)
 
 export const MAX_EPOCH = 2 ** 48 - 1
-export const NONCE_BITS = 8
-export const ATTESTER_ID_BITS = 160
-export const EPOCH_BITS = 48
-export const CHAIN_ID_BITS = 36
-export const REVEAL_NONCE_BITS = 1
+export const NONCE_BITS = BigInt(8)
+export const ATTESTER_ID_BITS = BigInt(160)
+export const EPOCH_BITS = BigInt(48)
+export const CHAIN_ID_BITS = BigInt(36)
+export const REVEAL_NONCE_BITS = BigInt(1)
+export const REP_BITS = BigInt(64)
+export const ONE_BIT = BigInt(1)
 
 export const genRandomSalt = () => randomf(F)
 
@@ -21,12 +23,18 @@ export const genEpochKey = (
     nonce: bigint | number,
     chainId: bigint | number
 ): bigint => {
-    const field =
-        BigInt(attesterId) +
-        BigInt(2) ** BigInt(ATTESTER_ID_BITS) * BigInt(epoch) +
-        BigInt(2) ** BigInt(ATTESTER_ID_BITS + EPOCH_BITS) * BigInt(nonce) +
-        BigInt(2) ** BigInt(ATTESTER_ID_BITS + EPOCH_BITS + NONCE_BITS) *
-            BigInt(chainId)
+    let accBits = BigInt(0)
+
+    let field = BigInt(attesterId)
+    accBits += ATTESTER_ID_BITS
+
+    field += BigInt(2) ** accBits * BigInt(epoch)
+    accBits += EPOCH_BITS
+
+    field += BigInt(2) ** accBits * BigInt(nonce)
+    accBits += NONCE_BITS
+
+    field += BigInt(2) ** accBits * BigInt(chainId)
     return poseidon2([identitySecret, field])
 }
 
@@ -36,10 +44,14 @@ export const genIdentityHash = (
     epoch: bigint | number,
     chainId: bigint | number
 ): bigint => {
-    const field =
-        BigInt(attesterId) +
-        BigInt(2) ** BigInt(ATTESTER_ID_BITS) * BigInt(epoch) +
-        BigInt(2) ** BigInt(ATTESTER_ID_BITS + EPOCH_BITS) * BigInt(chainId)
+    let accBits = BigInt(0)
+    let field = BigInt(attesterId)
+    accBits += ATTESTER_ID_BITS
+
+    field += BigInt(2) ** accBits * BigInt(epoch)
+    accBits += EPOCH_BITS
+
+    field += BigInt(2) ** accBits * BigInt(chainId)
     return poseidon2([idSecret, field])
 }
 
