@@ -11,10 +11,13 @@ describe('Reputation proof', function () {
     this.timeout(0)
 
     let unirepContract
+    let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        const network = await accounts[0].provider.getNetwork()
+        chainId = network.chainId
     })
 
     {
@@ -61,7 +64,7 @@ describe('Reputation proof', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should reveal epoch key nonce', async () => {
@@ -96,7 +99,7 @@ describe('Reputation proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal(epkNonce)
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should not reveal epoch key nonce', async () => {
@@ -131,7 +134,7 @@ describe('Reputation proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal('0')
-        userState.sync.stop()
+        userState.stop()
     })
 
     // TODO: should prove minRep, maxRep, graffiti
@@ -159,7 +162,13 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const minRep = 1
-        const epochKey = genEpochKey(id.secret, attester.address, epoch, 0)
+        const epochKey = genEpochKey(
+            id.secret,
+            attester.address,
+            epoch,
+            0,
+            chainId
+        )
         const field = userState.sync.settings.sumFieldCount
 
         await unirepContract
@@ -206,7 +215,7 @@ describe('Reputation proof', function () {
         expect(valid).to.be.true
         expect(proof.minRep).to.equal(minRep.toString())
         expect(proof.proveMinRep).to.equal('1')
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should prove maxRep', async () => {
@@ -233,7 +242,13 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const maxRep = 2
-        const epochKey = genEpochKey(id.secret, attester.address, epoch, 0)
+        const epochKey = genEpochKey(
+            id.secret,
+            attester.address,
+            epoch,
+            0,
+            chainId
+        )
         const field = userState.sync.settings.sumFieldCount
 
         await unirepContract
@@ -280,7 +295,7 @@ describe('Reputation proof', function () {
         expect(valid).to.be.true
         expect(proof.maxRep).to.equal(maxRep.toString())
         expect(proof.proveMaxRep).to.equal('1')
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should prove graffiti', async () => {
@@ -307,7 +322,13 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const graffiti = BigInt(12345)
-        const epochKey = genEpochKey(id.secret, attester.address, epoch, 0)
+        const epochKey = genEpochKey(
+            id.secret,
+            attester.address,
+            epoch,
+            0,
+            chainId
+        )
         const field = userState.sync.settings.sumFieldCount
         await unirepContract
             .connect(attester)
@@ -339,12 +360,8 @@ describe('Reputation proof', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        expect(proof.graffiti).to.equal(
-            (
-                graffiti << BigInt(userState.sync.settings.replNonceBits)
-            ).toString()
-        )
+        expect(proof.graffiti).to.equal(graffiti.toString())
         expect(proof.proveGraffiti).to.equal('1')
-        userState.sync.stop()
+        userState.stop()
     })
 })

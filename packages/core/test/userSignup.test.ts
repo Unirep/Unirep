@@ -15,10 +15,13 @@ describe('User Signup', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
+    let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        const network = await accounts[0].provider.getNetwork()
+        chainId = network.chainId
     })
 
     {
@@ -68,7 +71,8 @@ describe('User Signup', function () {
                 id.secret,
                 attester.address,
                 contractEpoch,
-                Array(userState.sync.settings.fieldCount).fill(0)
+                Array(userState.sync.settings.fieldCount).fill(0),
+                chainId
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
@@ -81,7 +85,7 @@ describe('User Signup', function () {
                 )
             expect(stateRootExists).to.be.true
 
-            userState.sync.stop()
+            userState.stop()
         }
 
         // Check GST roots match Unirep state
@@ -125,7 +129,8 @@ describe('User Signup', function () {
         const idHash = genIdentityHash(
             id.secret,
             attester.address,
-            contractEpoch
+            contractEpoch,
+            chainId
         )
 
         await unirepContract
@@ -146,6 +151,6 @@ describe('User Signup', function () {
                 )
             }
         }
-        await userState.sync.stop()
+        userState.stop()
     })
 })
