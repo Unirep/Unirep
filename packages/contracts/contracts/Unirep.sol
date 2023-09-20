@@ -39,6 +39,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
     uint8 public immutable replFieldBits;
+    uint48 public immutable unirepChainId;
     uint256 public immutable defaultDataHash;
 
     uint48 public attestationCount = 1;
@@ -58,6 +59,12 @@ contract Unirep is IUnirep, VerifySignature {
         numEpochKeyNoncePerEpoch = _config.numEpochKeyNoncePerEpoch;
         replNonceBits = _config.replNonceBits;
         replFieldBits = _config.replFieldBits;
+
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        unirepChainId = uint48(id);
 
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
@@ -139,6 +146,8 @@ contract Unirep is IUnirep, VerifySignature {
         // only allow attester to sign up users
         if (uint160(msg.sender) != signals.attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
+        if (signals.chainId != unirepChainId)
+            revert ChainIdNotMatch(signals.chainId);
         // Verify the proof
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
@@ -434,10 +443,11 @@ contract Unirep is IUnirep, VerifySignature {
 
     function decodeSignupControl(
         uint256 control
-    ) public pure returns (uint160 attesterId, uint48 epoch) {
+    ) public pure returns (uint160 attesterId, uint48 epoch, uint48 chainId) {
+        chainId = uint48((control >> (208)) & ((1 << 36) - 1));
         epoch = uint48((control >> 160) & ((1 << 48) - 1));
         attesterId = uint160(control & ((1 << 160) - 1));
-        return (attesterId, epoch);
+        return (attesterId, epoch, chainId);
     }
 
     function decodeSignupSignals(
@@ -447,9 +457,11 @@ contract Unirep is IUnirep, VerifySignature {
         signals.idCommitment = publicSignals[0];
         signals.stateTreeLeaf = publicSignals[1];
         // now decode the control values
-        (signals.attesterId, signals.epoch) = decodeSignupControl(
-            publicSignals[2]
-        );
+        (
+            signals.attesterId,
+            signals.epoch,
+            signals.chainId
+        ) = decodeSignupControl(publicSignals[2]);
         return signals;
     }
 

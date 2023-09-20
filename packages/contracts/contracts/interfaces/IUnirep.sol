@@ -68,6 +68,7 @@ interface IUnirep {
     error InvalidEpochKey();
     error EpochNotMatch();
     error InvalidEpoch(uint256 epoch);
+    error ChainIdNotMatch(uint48 chainId);
 
     error InvalidProof();
     error InvalidHistoryTreeRoot(uint256 historyTreeRoot);
@@ -75,6 +76,7 @@ interface IUnirep {
     struct SignupSignals {
         uint256 stateTreeLeaf;
         uint48 epoch;
+        uint48 chainId;
         uint160 attesterId;
         uint256 idCommitment;
     }
