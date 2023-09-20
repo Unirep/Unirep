@@ -17,7 +17,8 @@ template UserStateTransition(
   SUM_FIELD_COUNT,
   REPL_NONCE_BITS
 ) {
-    assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**8);
+    var NONCE_BITS = 8;
+    assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**NONCE_BITS);
     assert(SUM_FIELD_COUNT < FIELD_COUNT);
 
     signal input from_epoch;

@@ -14,13 +14,20 @@ template EpochKeyHasher() {
   signal input chain_id;
 
   signal output out;
-  out <== Poseidon(2)([
-    identity_secret, 
-    attester_id + 
-    2**ATTESTER_ID_BITS*epoch + 
-    2**(ATTESTER_ID_BITS+EPOCH_BITS)*nonce + 
-    2**(ATTESTER_ID_BITS+EPOCH_BITS+NONCE_BITS)*chain_id
-  ]);
+
+  var acc_bits = 0;
+  var acc_data = attester_id;
+  acc_bits += ATTESTER_ID_BITS;
+
+  acc_data += epoch * 2 ** acc_bits;
+  acc_bits += EPOCH_BITS;
+
+  acc_data += nonce * 2 ** acc_bits;
+  acc_bits += NONCE_BITS;
+
+  acc_data += chain_id * 2 ** acc_bits;
+
+  out <== Poseidon(2)([identity_secret, acc_data]);
 }
 
 template EpochTreeLeaf(FIELD_COUNT) {
@@ -68,10 +75,15 @@ template StateTreeLeaf(FIELD_COUNT) {
     }
   }
 
-  control <== 
-    attester_id + 
-    2**ATTESTER_ID_BITS*epoch + 
-    2**(ATTESTER_ID_BITS+EPOCH_BITS)*chain_id;
+  var acc_bits = 0;
+  var acc_data = attester_id;
+  acc_bits += ATTESTER_ID_BITS;
+
+  acc_data += epoch * 2 ** acc_bits;
+  acc_bits += EPOCH_BITS;
+
+  acc_data += chain_id * 2 ** acc_bits;
+  control <== acc_data;
   data_hash <== hasher[FIELD_COUNT-2];
   signal leaf_identity_hash <== Poseidon(2)([identity_secret, control]);
   out <== Poseidon(2)([leaf_identity_hash, data_hash]);

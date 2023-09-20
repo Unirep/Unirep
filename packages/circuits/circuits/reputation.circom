@@ -62,8 +62,8 @@ template Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT
     prove_zero_rep * (prove_zero_rep - 1) === 0;
 
     // range check
-    _ <== Num2Bits(64)(min_rep);
-    _ <== Num2Bits(64)(max_rep);
+    _ <== Num2Bits(REP_BITS)(min_rep);
+    _ <== Num2Bits(REP_BITS)(max_rep);
     _ <== Num2Bits(253-REPL_NONCE_BITS)(graffiti);
 
     var acc_bits = 0;
