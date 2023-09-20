@@ -25,13 +25,13 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
     signal output control;
 
     signal input secret;
-    signal input external_nullifier;
+    signal input scope;
     signal output nullifier;
 
     signal input data[FIELD_COUNT];
 
     /* 1. Compute nullifier */
-    nullifier <== Poseidon(2)([secret, external_nullifier]);
+    nullifier <== Poseidon(2)([scope, secret]);
 
      /* 2. Compute identity commitment */
     signal commitment;
