@@ -138,12 +138,13 @@ contract UnirepVoting {
         require(unirep.attesterCurrentEpoch(attesterId) > 0);
         ReputationVerifierHelper.ReputationSignals memory signals = helper
             .verifyAndCheck(publicSignals, proof);
-        uint48 epoch = 0; // the voting epoch
-        uint256 stateTreeRoot = signals.stateTreeRoot;
-        unirep.attesterStateTreeRootExists(attesterId, epoch, stateTreeRoot);
+
+        require(signals.epoch > 0, 'invalid epoch to claim prize');
         require(signals.revealNonce == true, 'reveal nonce wrong');
         require(signals.nonce == 1, 'nonce wrong');
-        require(signals.epoch > 0, 'invalid epoch to claim prize');
+        
+        uint256 stateTreeRoot = signals.stateTreeRoot;
+        unirep.attesterStateTreeRootExists(attesterId, signals.epoch, stateTreeRoot);
 
         require(!claimed[signals.epochKey], 'Already claimed');
         if (!foundWinner) {
