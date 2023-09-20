@@ -4,40 +4,33 @@ include "./circomlib/circuits/poseidon.circom";
 include "./epochKey.circom";
 include "./identity.circom";
 
-template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
+template ScopeNullifier(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
 
     // Global state tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
-
     // Global state tree leaf: Identity & user state root
     signal input reveal_nonce;
     signal input attester_id;
     signal input epoch;
     signal input nonce;
-    signal output epoch_key;
-    signal output state_tree_root;
-
-    // Some arbitrary data to endorse
+     // Some arbitrary data to endorse
     signal input sig_data; // public input
-
-    // Optionally reveal nonce, epoch, attester_id
-    signal output control;
-
     signal input secret;
     signal input scope;
-    signal output nullifier;
-
     signal input data[FIELD_COUNT];
+    signal input chain_id;
+
+    signal output epoch_key;
+    signal output state_tree_root;
+    // Optionally reveal nonce, epoch, attester_id
+    signal output control;
+    signal output nullifier;
 
     /* 1. Compute nullifier */
     nullifier <== Poseidon(2)([scope, secret]);
 
-     /* 2. Compute identity commitment */
-    signal commitment;
-    commitment <== IdentityCommitment()(secret);
-
-    /* 3. Check epoch key is valid */
+    /* 2. Check epoch key is valid */
     (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
         state_tree_indexes,
         state_tree_elements,
@@ -47,6 +40,7 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
         epoch,
         nonce,
         data,
-        sig_data
+        sig_data,
+        chain_id
     );
 }

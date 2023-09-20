@@ -33,6 +33,7 @@ for (const { name, prover } of provers) {
                     attester_id: 0,
                     epoch: 0,
                     secret: 0,
+                    chain_id: 0,
                 })
             expect(publicSignals).to.exist
             expect(Array.isArray(publicSignals)).to.be.true
@@ -47,6 +48,7 @@ for (const { name, prover } of provers) {
                     attester_id: 0,
                     epoch: 0,
                     secret: 0,
+                    chain_id: 0,
                 })
             const valid = await prover.verifyProof(
                 'signup',

@@ -19,67 +19,70 @@ const {
     FIELD_COUNT,
 } = CircuitConfig.default
 
+const id = new Identity()
+const fromEpoch = 1
+const toEpoch = 5
+const chainId = 123
+const attesterId = BigInt(2) ** BigInt(159)
+const data = randomData()
+const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
+stateTree.insert(
+    genStateTreeLeaf(id.secret, attesterId, fromEpoch, data, chainId)
+)
+const stateTreeProof = stateTree.createProof(0)
+epochTree.insert(0)
+const epochTreeProof = epochTree.createProof(0)
+const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
+    .fill(null)
+    .map((_, i) =>
+        genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i, chainId)
+    )
+const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
+historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
+const historyTreeProof = historyTree.createProof(0)
+
+const defaultInputs = {
+    from_epoch: fromEpoch,
+    to_epoch: toEpoch,
+    identity_secret: id.secret,
+    state_tree_indexes: stateTreeProof.pathIndices,
+    state_tree_elements: stateTreeProof.siblings,
+    history_tree_indices: historyTreeProof.pathIndices,
+    history_tree_elements: historyTreeProof.siblings,
+    attester_id: attesterId,
+    chain_id: chainId,
+    data,
+    new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
+    epoch_tree_elements: epochKeys.map(() => epochTreeProof.siblings),
+    epoch_tree_indices: epochKeys.map(() => epochTreeProof.pathIndices),
+    epoch_tree_root: epochTree.root,
+}
+
 describe('User state transition', function () {
     this.timeout(300000)
 
     it('should do a user state transition', async () => {
-        const id = new Identity()
-        const fromEpoch = 1
-        const toEpoch = 5
-        const attesterId = BigInt(2) ** BigInt(159)
-        const data = randomData()
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        stateTree.insert(
-            genStateTreeLeaf(id.secret, attesterId, fromEpoch, data)
-        )
-        const stateTreeProof = stateTree.createProof(0)
-        epochTree.insert(0)
-        const epochTreeProof = epochTree.createProof(0)
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
-            )
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const historyTreeProof = historyTree.createProof(0)
         const { isValid, publicSignals, proof } = await genProofAndVerify(
             Circuit.userStateTransition,
-            {
-                from_epoch: fromEpoch,
-                to_epoch: toEpoch,
-                identity_secret: id.secret,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
-                history_tree_indices: historyTreeProof.pathIndices,
-                history_tree_elements: historyTreeProof.siblings,
-                attester_id: attesterId,
-                data,
-                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-                epoch_tree_elements: epochKeys.map(
-                    () => epochTreeProof.siblings
-                ),
-                epoch_tree_indices: epochKeys.map(
-                    () => epochTreeProof.pathIndices
-                ),
-                epoch_tree_root: epochTree.root,
-            }
+            defaultInputs
         )
         expect(isValid, 'invalid proof').to.be.true
-        expect(publicSignals[0]).to.equal(historyTree.root.toString())
-        const newLeaf = genStateTreeLeaf(id.secret, attesterId, toEpoch, data)
-        expect(publicSignals[1]).to.equal(newLeaf.toString())
+
+        const newLeaf = genStateTreeLeaf(
+            id.secret,
+            attesterId,
+            toEpoch,
+            data,
+            chainId
+        )
         const expectedKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(0)
             .map((_, i) => {
-                return genEpochKey(id.secret, attesterId, fromEpoch, i)
+                return genEpochKey(id.secret, attesterId, fromEpoch, i, chainId)
             })
         const ustProof = new UserStateTransitionProof(publicSignals, proof)
         for (let x = 0; x < NUM_EPOCH_KEY_NONCE_PER_EPOCH; x++) {
-            expect(publicSignals[2 + x].toString()).to.equal(
-                expectedKeys[x].toString()
-            )
             expect(ustProof.epochKeys[x].toString()).to.equal(
                 expectedKeys[x].toString()
             )
@@ -94,22 +97,18 @@ describe('User state transition', function () {
 
     it('should do a user state transition with new data', async () => {
         for (let x = 0; x < NUM_EPOCH_KEY_NONCE_PER_EPOCH; x++) {
-            const id = new Identity()
-            const fromEpoch = 1
-            const toEpoch = 5
-            const attesterId = BigInt(1249021895182290)
-            const data = randomData()
             const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                 .fill(null)
                 .map((_, i) =>
-                    genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
+                    genEpochKey(
+                        id.secret,
+                        BigInt(attesterId),
+                        fromEpoch,
+                        i,
+                        chainId
+                    )
                 )
-            const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-            stateTree.insert(
-                genStateTreeLeaf(id.secret, attesterId, fromEpoch, data)
-            )
-            const stateTreeProof = stateTree.createProof(0)
             const newData0 = randomData()
             epochTree.insert(genEpochTreeLeaf(epochKeys[x], newData0))
             const epochTreeProofs = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
@@ -120,18 +119,12 @@ describe('User state transition', function () {
             const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
             historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
             const historyTreeProof = historyTree.createProof(0)
-            const { isValid, publicSignals } = await genProofAndVerify(
+            const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.userStateTransition,
                 {
-                    from_epoch: fromEpoch,
-                    to_epoch: toEpoch,
-                    identity_secret: id.secret,
-                    state_tree_indexes: stateTreeProof.pathIndices,
-                    state_tree_elements: stateTreeProof.siblings,
+                    ...defaultInputs,
                     history_tree_indices: historyTreeProof.pathIndices,
                     history_tree_elements: historyTreeProof.siblings,
-                    attester_id: attesterId,
-                    data,
                     new_data: epochKeys.map((_, i) => {
                         if (i === x) {
                             return newData0
@@ -146,14 +139,21 @@ describe('User state transition', function () {
                 }
             )
             expect(isValid, 'invalid proof').to.be.true
-            expect(publicSignals[0]).to.equal(historyTree.root.toString())
+
+            const ustProof = new UserStateTransitionProof(publicSignals, proof)
+            expect(ustProof.historyTreeRoot.toString()).to.equal(
+                historyTree.root.toString()
+            )
             const newLeaf = genStateTreeLeaf(
                 id.secret,
                 attesterId,
                 toEpoch,
-                combineData(data, newData0)
+                combineData(data, newData0),
+                chainId
             )
-            expect(publicSignals[1]).to.equal(newLeaf.toString())
+            expect(ustProof.stateTreeLeaf.toString()).to.equal(
+                newLeaf.toString()
+            )
             const expectedKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                 .fill(0)
                 .map((_, i) => {
@@ -162,13 +162,20 @@ describe('User state transition', function () {
                             id.secret,
                             attesterId,
                             fromEpoch,
-                            i + NUM_EPOCH_KEY_NONCE_PER_EPOCH
+                            i + NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+                            chainId
                         )
                     }
-                    return genEpochKey(id.secret, attesterId, fromEpoch, i)
+                    return genEpochKey(
+                        id.secret,
+                        attesterId,
+                        fromEpoch,
+                        i,
+                        chainId
+                    )
                 })
             for (let y = 0; y < NUM_EPOCH_KEY_NONCE_PER_EPOCH; y++) {
-                expect(publicSignals[2 + y]).to.equal(
+                expect(ustProof.epochKeys[y].toString()).to.equal(
                     expectedKeys[y].toString()
                 )
             }
@@ -176,41 +183,10 @@ describe('User state transition', function () {
     })
 
     it('should fail to UST with new data and bad inclusion proof', async () => {
-        const id = new Identity()
-        const fromEpoch = 1
-        const toEpoch = 5
-        const attesterId = BigInt(1249021895182290)
-        const data = randomData()
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        stateTree.insert(
-            genStateTreeLeaf(id.secret, attesterId, fromEpoch, data)
-        )
-        const stateTreeProof = stateTree.createProof(0)
-        epochTree.insert(0)
-        const epochTreeProof = epochTree.createProof(0)
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
-            )
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const historyTreeProof = historyTree.createProof(0)
+        const newData = epochKeys.map(() => Array(FIELD_COUNT).fill(1))
         const circuitInputs = {
-            from_epoch: fromEpoch,
-            to_epoch: toEpoch,
-            identity_secret: id.secret,
-            state_tree_indexes: stateTreeProof.pathIndices,
-            state_tree_elements: stateTreeProof.siblings,
-            history_tree_indices: historyTreeProof.pathIndices,
-            history_tree_elements: historyTreeProof.siblings,
-            attester_id: attesterId,
-            data,
-            new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(1)),
-            epoch_tree_elements: epochKeys.map(() => epochTreeProof.siblings),
-            epoch_tree_indices: epochKeys.map(() => epochTreeProof.pathIndices),
-            epoch_tree_root: epochTree.root,
+            ...defaultInputs,
+            new_data: newData,
         }
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.userStateTransition, circuitInputs)
@@ -220,41 +196,10 @@ describe('User state transition', function () {
     })
 
     it('should fail to UST with out of range from epoch', async () => {
-        const id = new Identity()
         const fromEpoch = F + BigInt(1)
-        const toEpoch = 5
-        const attesterId = BigInt(1249021895182290)
-        const data = randomData()
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        stateTree.insert(
-            genStateTreeLeaf(id.secret, attesterId, fromEpoch, data)
-        )
-        const stateTreeProof = stateTree.createProof(0)
-        epochTree.insert(0)
-        const epochTreeProof = epochTree.createProof(0)
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
-            )
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const historyTreeProof = historyTree.createProof(0)
         const circuitInputs = {
+            ...defaultInputs,
             from_epoch: fromEpoch,
-            to_epoch: toEpoch,
-            identity_secret: id.secret,
-            state_tree_indexes: stateTreeProof.pathIndices,
-            state_tree_elements: stateTreeProof.siblings,
-            history_tree_indices: historyTreeProof.pathIndices,
-            history_tree_elements: historyTreeProof.siblings,
-            attester_id: attesterId,
-            data,
-            new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-            epoch_tree_elements: epochKeys.map(() => epochTreeProof.siblings),
-            epoch_tree_indices: epochKeys.map(() => epochTreeProof.pathIndices),
-            epoch_tree_root: epochTree.root,
         }
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.userStateTransition, circuitInputs)
@@ -264,41 +209,10 @@ describe('User state transition', function () {
     })
 
     it('should fail to UST with out of range to epoch', async () => {
-        const id = new Identity()
-        const fromEpoch = 0
         const toEpoch = F + BigInt(2)
-        const attesterId = BigInt(1249021895182290)
-        const data = randomData()
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        stateTree.insert(
-            genStateTreeLeaf(id.secret, attesterId, fromEpoch, data)
-        )
-        const stateTreeProof = stateTree.createProof(0)
-        epochTree.insert(0)
-        const epochTreeProof = epochTree.createProof(0)
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
-            )
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const historyTreeProof = historyTree.createProof(0)
         const circuitInputs = {
-            from_epoch: fromEpoch,
+            ...defaultInputs,
             to_epoch: toEpoch,
-            identity_secret: id.secret,
-            state_tree_indexes: stateTreeProof.pathIndices,
-            state_tree_elements: stateTreeProof.siblings,
-            history_tree_indices: historyTreeProof.pathIndices,
-            history_tree_elements: historyTreeProof.siblings,
-            attester_id: attesterId,
-            data,
-            new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-            epoch_tree_elements: epochKeys.map(() => epochTreeProof.siblings),
-            epoch_tree_indices: epochKeys.map(() => epochTreeProof.pathIndices),
-            epoch_tree_root: epochTree.root,
         }
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.userStateTransition, circuitInputs)
@@ -308,41 +222,23 @@ describe('User state transition', function () {
     })
 
     it('should fail to UST with out of range attesterId', async () => {
-        const id = new Identity()
-        const fromEpoch = 0
-        const toEpoch = 1
         const attesterId = BigInt(2) ** BigInt(160)
-        const data = randomData()
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        stateTree.insert(
-            genStateTreeLeaf(id.secret, attesterId, fromEpoch, data)
-        )
-        const stateTreeProof = stateTree.createProof(0)
-        epochTree.insert(0)
-        const epochTreeProof = epochTree.createProof(0)
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(id.secret, BigInt(attesterId), fromEpoch, i)
-            )
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const historyTreeProof = historyTree.createProof(0)
         const circuitInputs = {
-            from_epoch: fromEpoch,
-            to_epoch: toEpoch,
-            identity_secret: id.secret,
-            state_tree_indexes: stateTreeProof.pathIndices,
-            state_tree_elements: stateTreeProof.siblings,
-            history_tree_indices: historyTreeProof.pathIndices,
-            history_tree_elements: historyTreeProof.siblings,
+            ...defaultInputs,
             attester_id: attesterId,
-            data,
-            new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-            epoch_tree_elements: epochKeys.map(() => epochTreeProof.siblings),
-            epoch_tree_indices: epochKeys.map(() => epochTreeProof.pathIndices),
-            epoch_tree_root: epochTree.root,
+        }
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.userStateTransition, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to UST with out of range chain ID', async () => {
+        const chainId = BigInt(2) ** BigInt(36)
+        const circuitInputs = {
+            ...defaultInputs,
+            chain_id: chainId,
         }
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.userStateTransition, circuitInputs)

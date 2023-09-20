@@ -6,11 +6,11 @@ import { CircuitConfig } from './CircuitConfig'
  */
 export enum Circuit {
     epochKey = 'epochKey',
-    proveReputation = 'proveReputation',
+    reputation = 'reputation',
     userStateTransition = 'userStateTransition',
     signup = 'signup',
     epochKeyLite = 'epochKeyLite',
-    preventDoubleAction = 'preventDoubleAction',
+    scopeNullifier = 'scopeNullifier',
 }
 
 /**

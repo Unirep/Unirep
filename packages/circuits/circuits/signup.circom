@@ -14,13 +14,14 @@ template Signup(FIELD_COUNT) {
 
     signal input attester_id;
     signal input epoch;
-
     signal input secret;
+    signal input chain_id;
 
     commitment <== IdentityCommitment()(secret);
  
     _ <== Num2Bits(48)(epoch);
     _ <== Num2Bits(160)(attester_id);
+    _ <== Num2Bits(36)(chain_id);
 
     signal data[FIELD_COUNT];
     for (var x = 0; x < FIELD_COUNT; x++) {
@@ -30,5 +31,7 @@ template Signup(FIELD_COUNT) {
       data,
       secret, 
       attester_id, 
-      epoch);
+      epoch,
+      chain_id
+   );
 }

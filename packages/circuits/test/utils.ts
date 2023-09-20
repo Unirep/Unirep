@@ -41,12 +41,13 @@ const genEpochKeyCircuitInput = (config: {
     id: Identity
     tree: utils.IncrementalMerkleTree
     leafIndex: number
-    epoch: number
-    nonce: number
+    epoch: number | bigint
+    nonce: number | bigint
     attesterId: number | bigint
     data?: bigint[]
     sigData?: bigint
-    revealNonce?: number
+    revealNonce?: number | bigint
+    chainId?: number | bigint
 }) => {
     const {
         id,
@@ -58,6 +59,7 @@ const genEpochKeyCircuitInput = (config: {
         data: _data,
         sigData,
         revealNonce,
+        chainId,
     } = Object.assign(
         {
             data: [],
@@ -76,6 +78,7 @@ const genEpochKeyCircuitInput = (config: {
         epoch,
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
+        chain_id: chainId ?? 0,
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -94,6 +97,7 @@ const genReputationCircuitInput = (config: {
     proveGraffiti?: boolean | number
     graffiti?: any
     revealNonce?: number
+    chainId: number
 }) => {
     const {
         id,
@@ -109,6 +113,7 @@ const genReputationCircuitInput = (config: {
         proveMaxRep,
         proveZeroRep,
         revealNonce,
+        chainId,
     } = Object.assign(
         {
             minRep: 0,
@@ -129,7 +134,8 @@ const genReputationCircuitInput = (config: {
         id.secret,
         BigInt(attesterId),
         epoch,
-        startBalance as any
+        startBalance as any,
+        chainId ?? 0
     )
     stateTree.insert(hashedLeaf)
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
@@ -151,6 +157,7 @@ const genReputationCircuitInput = (config: {
         prove_zero_rep: proveZeroRep ?? 0,
         reveal_nonce: revealNonce ?? 0,
         sig_data: 0,
+        chain_id: chainId,
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -177,12 +184,14 @@ const genSignupCircuitInput = (config: {
     id: Identity
     epoch: number | bigint
     attesterId: number | bigint
+    chainId: number | bigint
 }) => {
-    const { id, epoch, attesterId } = Object.assign(config)
+    const { id, epoch, attesterId, chainId } = Object.assign(config)
     const circuitInputs = {
         secret: id.secret,
         epoch,
         attester_id: attesterId,
+        chain_id: chainId,
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -191,13 +200,14 @@ const genPreventDoubleActionCircuitInput = (config: {
     id: Identity
     tree: utils.IncrementalMerkleTree
     leafIndex: number
-    epoch: number
-    nonce: number
+    epoch: number | bigint
+    nonce: number | bigint
     attesterId: number | bigint
     data?: bigint[]
     sigData?: bigint
-    revealNonce?: number
+    revealNonce?: number | bigint
     scope: bigint
+    chainId: number | bigint
 }) => {
     const {
         id,
@@ -210,6 +220,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         sigData,
         revealNonce,
         scope,
+        chainId,
     } = Object.assign(
         {
             data: [],
@@ -229,6 +240,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         reveal_nonce: revealNonce ?? 0,
         secret: id.secret,
         scope: scope,
+        chain_id: chainId ?? 0,
     }
 
     return utils.stringifyBigInts(circuitInputs)

@@ -627,7 +627,7 @@ describe('Reputation verifier helper', function () {
         const accounts = await ethers.getSigners()
         repVerifierHelper = await deployVerifierHelper(
             accounts[0],
-            Circuit.proveReputation
+            Circuit.reputation
         )
     })
 
@@ -668,7 +668,7 @@ describe('Reputation verifier helper', function () {
         const merkleProof = stateTree.createProof(index)
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.proveReputation,
+                Circuit.reputation,
                 stringifyBigInts({
                     ...zeroCircuitInputs,
                     identity_secret: id.secret,
@@ -680,7 +680,7 @@ describe('Reputation verifier helper', function () {
                 })
             )
             const v = await defaultProver.verifyProof(
-                Circuit.proveReputation,
+                Circuit.reputation,
                 r.publicSignals,
                 r.proof
             )
@@ -800,7 +800,7 @@ describe('Reputation verifier helper', function () {
         const invalidEpoch = 3333
         const merkleProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.proveReputation,
+            Circuit.reputation,
             stringifyBigInts({
                 ...zeroCircuitInputs,
                 identity_secret: id.secret,
@@ -812,7 +812,7 @@ describe('Reputation verifier helper', function () {
         )
 
         const v = await defaultProver.verifyProof(
-            Circuit.proveReputation,
+            Circuit.reputation,
             r.publicSignals,
             r.proof
         )
@@ -862,7 +862,7 @@ describe('Reputation verifier helper', function () {
 
         const merkleProof = stateTree.createProof(index)
         const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.proveReputation,
+            Circuit.reputation,
             stringifyBigInts({
                 ...zeroCircuitInputs,
                 identity_secret: id.secret,
@@ -903,7 +903,7 @@ describe('Reputation verifier helper', function () {
         {
             const nonce = 0
             const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.proveReputation,
+                Circuit.reputation,
                 stringifyBigInts({
                     ...zeroCircuitInputs,
                     identity_secret: id.secret,
@@ -928,7 +928,7 @@ describe('Reputation verifier helper', function () {
             const nonce = 0
             const randomAddress = randomBits(160)
             const r = await defaultProver.genProofAndPublicSignals(
-                Circuit.proveReputation,
+                Circuit.reputation,
                 stringifyBigInts({
                     ...zeroCircuitInputs,
                     identity_secret: id.secret,

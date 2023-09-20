@@ -1,14 +1,16 @@
 import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
-import { CircuitConfig } from './CircuitConfig'
-
-const { ATTESTER_ID_BITS, NONCE_BITS, EPOCH_BITS } = CircuitConfig
+import {
+    EpochKeyControl,
+    buildEpochKeyControl,
+    decodeEpochKeyControl,
+} from './utils'
 
 /**
  * The prevent double action proof structure that helps to query the public signals
  */
-export class PreventDoubleActionProof extends BaseProof {
+export class ScopeNullifierProof extends BaseProof {
     readonly idx = {
         epochKey: 0,
         stateTreeRoot: 1,
@@ -24,6 +26,7 @@ export class PreventDoubleActionProof extends BaseProof {
     public stateTreeRoot: bigint
     public control: bigint
     public sigData: bigint
+    public chainId: bigint
     public nullifier: bigint
 
     /**
@@ -42,18 +45,17 @@ export class PreventDoubleActionProof extends BaseProof {
         this.control = this.publicSignals[this.idx.control]
         this.sigData = this.publicSignals[this.idx.sigData]
         this.nullifier = this.publicSignals[this.idx.nullifier]
-        this.revealNonce =
-            (BigInt(this.control) >>
-                (ATTESTER_ID_BITS + NONCE_BITS + EPOCH_BITS)) &
-            BigInt(1)
-        this.attesterId =
-            (BigInt(this.control) >> (EPOCH_BITS + NONCE_BITS)) &
-            ((BigInt(1) << ATTESTER_ID_BITS) - BigInt(1))
-        this.epoch =
-            (BigInt(this.control) >> NONCE_BITS) &
-            ((BigInt(1) << EPOCH_BITS) - BigInt(1))
-        this.nonce =
-            BigInt(this.control) & ((BigInt(1) << NONCE_BITS) - BigInt(1))
-        this.circuit = Circuit.preventDoubleAction
+        const { nonce, epoch, attesterId, revealNonce, chainId } =
+            decodeEpochKeyControl(this.control)
+        this.nonce = nonce
+        this.epoch = epoch
+        this.attesterId = attesterId
+        this.revealNonce = revealNonce
+        this.chainId = chainId
+        this.circuit = Circuit.scopeNullifier
+    }
+
+    static buildControl(config: EpochKeyControl) {
+        return buildEpochKeyControl(config)
     }
 }

@@ -1,4 +1,11 @@
-import { SNARK_SCALAR_FIELD } from '@unirep/utils'
+import {
+    EPOCH_BITS,
+    NONCE_BITS,
+    ATTESTER_ID_BITS,
+    CHAIN_ID_BITS,
+    REVEAL_NONCE_BITS,
+    SNARK_SCALAR_FIELD,
+} from '@unirep/utils'
 
 const defaultConfig = {
     STATE_TREE_DEPTH: 17,
@@ -43,13 +50,29 @@ export class CircuitConfig {
     }
 
     static get EPOCH_BITS() {
-        return BigInt(48)
+        return BigInt(EPOCH_BITS)
     }
     static get NONCE_BITS() {
-        return BigInt(8)
+        return BigInt(NONCE_BITS)
     }
     static get ATTESTER_ID_BITS() {
-        return BigInt(160)
+        return BigInt(ATTESTER_ID_BITS)
+    }
+
+    static get CHAIN_ID_BITS() {
+        return BigInt(CHAIN_ID_BITS)
+    }
+
+    static get REVEAL_NONCE_BITS() {
+        return BigInt(REVEAL_NONCE_BITS)
+    }
+
+    static get REP_BITS() {
+        return BigInt(64)
+    }
+
+    static get ONE_BIT() {
+        return BigInt(1)
     }
 
     constructor(

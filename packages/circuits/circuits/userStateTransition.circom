@@ -21,47 +21,45 @@ template UserStateTransition(
     assert(SUM_FIELD_COUNT < FIELD_COUNT);
 
     signal input from_epoch;
-    signal input to_epoch;
-
+    signal input to_epoch; // public
     // State tree leaf: Identity & user state root
     signal input identity_secret;
     // State tree
     signal input state_tree_indexes[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
-
-    signal output history_tree_root;
-    signal output state_tree_leaf;
-
     // History tree
     signal input history_tree_indices[HISTORY_TREE_DEPTH];
     signal input history_tree_elements[HISTORY_TREE_DEPTH];
-
     // Attester to prove reputation from
-    signal input attester_id;
-
+    signal input attester_id;  // public
     // The starting data in fromEpoch
     signal input data[FIELD_COUNT];
-
     // prove what we've received in fromEpoch
     signal input new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT];
-
     // A root to prove against
     signal input epoch_tree_root;
-
     // the inclusion proofs
     signal input epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
     signal input epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH];
+    signal input chain_id;
 
+    signal output history_tree_root;
+    signal output state_tree_leaf;
     signal output epks[EPOCH_KEY_NONCE_PER_EPOCH];
 
-    _ <== Num2Bits(48)(from_epoch);
-    _ <== Num2Bits(48)(to_epoch);
+    var ATTESTER_ID_BITS = 160;
+    var EPOCH_BITS = 48;
+    var CHAIN_ID_BITS = 36;
 
-    signal epoch_check <== GreaterThan(48)([to_epoch, from_epoch]);
+    _ <== Num2Bits(EPOCH_BITS)(from_epoch);
+    _ <== Num2Bits(EPOCH_BITS)(to_epoch);
+
+    signal epoch_check <== GreaterThan(EPOCH_BITS)([to_epoch, from_epoch]);
     epoch_check === 1;
 
     // range check
-    _ <== Num2Bits(160)(attester_id);
+    _ <== Num2Bits(ATTESTER_ID_BITS)(attester_id);
+    _ <== Num2Bits(CHAIN_ID_BITS)(chain_id);
 
 
     /* 1. Check if user exists in the Global State Tree */
@@ -71,7 +69,8 @@ template UserStateTransition(
         data,
         identity_secret,
         attester_id,
-        from_epoch
+        from_epoch,
+        chain_id
     );
 
     signal state_merkletree_root <== MerkleTreeInclusionProof(STATE_TREE_DEPTH)(
@@ -99,7 +98,8 @@ template UserStateTransition(
             identity_secret,
             attester_id,
             from_epoch,
-            i // nonce
+            i, // nonce
+            chain_id
         );
 
         leaf_hashers[i] <== EpochTreeLeaf(FIELD_COUNT)(epoch_key_hashers[i], new_data[i]);
@@ -124,7 +124,8 @@ template UserStateTransition(
             identity_secret,
             attester_id,
             from_epoch,
-            epoch_tree_proof_valid[x] * EPOCH_KEY_NONCE_PER_EPOCH + x // nonce
+            epoch_tree_proof_valid[x] * EPOCH_KEY_NONCE_PER_EPOCH + x, // nonce
+            chain_id
         );
     }
 
@@ -181,7 +182,8 @@ template UserStateTransition(
         final_data[EPOCH_KEY_NONCE_PER_EPOCH - 1],
         identity_secret,
         attester_id,
-        to_epoch
+        to_epoch,
+        chain_id
     );
 
     /* End of check 3 */

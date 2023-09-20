@@ -2,8 +2,9 @@ import { Circuit, Prover } from './circuits'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
 import { CircuitConfig } from './CircuitConfig'
+import { shiftBits } from './utils'
 
-const { ATTESTER_ID_BITS, EPOCH_BITS } = CircuitConfig
+const { ATTESTER_ID_BITS, EPOCH_BITS, CHAIN_ID_BITS } = CircuitConfig
 
 /**
  * The sign up proof structure that helps to query the public signals
@@ -19,6 +20,7 @@ export class SignupProof extends BaseProof {
     public stateTreeLeaf: bigint
     public attesterId: bigint
     public epoch: bigint
+    public chainId: bigint
     public control: bigint
 
     /**
@@ -36,17 +38,20 @@ export class SignupProof extends BaseProof {
             this.publicSignals[this.idx.identityCommitment]
         this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]
         this.control = this.publicSignals[this.idx.control]
-        this.epoch =
-            (BigInt(this.control) >> ATTESTER_ID_BITS) &
-            ((BigInt(1) << EPOCH_BITS) - BigInt(1))
-        this.attesterId =
-            BigInt(this.control) & ((BigInt(1) << ATTESTER_ID_BITS) - BigInt(1))
+        this.chainId = shiftBits(
+            this.control,
+            ATTESTER_ID_BITS + EPOCH_BITS,
+            CHAIN_ID_BITS
+        )
+        this.epoch = shiftBits(this.control, ATTESTER_ID_BITS, EPOCH_BITS)
+        this.attesterId = shiftBits(this.control, BigInt(0), ATTESTER_ID_BITS)
         this.circuit = Circuit.signup
     }
 
-    static buildControl({ attesterId, epoch }: any) {
+    static buildControl({ attesterId, epoch, chainId }: any) {
         let control = BigInt(attesterId)
-        control += BigInt(epoch) << BigInt(160)
+        control += BigInt(epoch) << ATTESTER_ID_BITS
+        control += BigInt(chainId) << (ATTESTER_ID_BITS + EPOCH_BITS)
         return control
     }
 }

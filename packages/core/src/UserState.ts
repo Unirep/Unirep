@@ -582,7 +582,7 @@ export default class UserState {
         }
 
         const results = await this.prover.genProofAndPublicSignals(
-            Circuit.proveReputation,
+            Circuit.reputation,
             stringifyBigInts(circuitInputs)
         )
 
