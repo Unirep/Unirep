@@ -13,6 +13,7 @@ export class ScopeNullifierProof extends BaseProof {
         control: 2,
         nullifier: 3,
         sigData: 4,
+        scope: 5,
     }
     // original data
     public epochKey: string
@@ -20,6 +21,7 @@ export class ScopeNullifierProof extends BaseProof {
     public control: string
     public nullifier: string
     public sigData: string
+    public scope: string
     // decoded data
     public nonce: bigint
     public epoch: bigint
@@ -37,8 +39,9 @@ export class ScopeNullifierProof extends BaseProof {
         this.epochKey = this.publicSignals[this.idx.epochKey]
         this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]
         this.control = this.publicSignals[this.idx.control]
-        this.sigData = this.publicSignals[this.idx.sigData]
         this.nullifier = this.publicSignals[this.idx.nullifier]
+        this.sigData = this.publicSignals[this.idx.sigData]
+        this.scope = this.publicSignals[this.idx.scope]
         const { nonce, epoch, attesterId, revealNonce, chainId } =
             decodeEpochKeyControl(this.control)
         this.nonce = nonce

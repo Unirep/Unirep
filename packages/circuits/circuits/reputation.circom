@@ -31,14 +31,15 @@ template Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT
     signal input attester_id;
     signal input epoch;
     signal input nonce;
+    signal input chain_id;
     // Reputation
     signal input min_rep;
     signal input max_rep;
     signal input prove_min_rep;
     signal input prove_max_rep;
     signal input prove_zero_rep;
+    
     signal input sig_data; // public
-    signal input chain_id;
 
     signal output epoch_key;
     signal output state_tree_root;

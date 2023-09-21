@@ -30,7 +30,7 @@ const chainId = BigInt(1234)
 const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
 const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data, chainId)
 tree.insert(leaf)
-const scope = BigInt(1)
+const scope = BigInt(333)
 const nonce = BigInt(0)
 const revealNonce = BigInt(0)
 const leafIndex = tree.indexOf(leaf)
@@ -84,6 +84,7 @@ describe('Prevent double action circuit', function () {
             )
             const nullifier = poseidon2([scope, id.secret])
             expect(p.nullifier.toString()).to.equal(nullifier.toString())
+            expect(p.scope.toString()).to.equal(scope.toString())
             expect(p.epoch.toString()).to.equal(epoch.toString())
             expect(p.nonce.toString()).to.equal('0')
             expect(p.revealNonce.toString()).to.equal('0')
@@ -121,6 +122,7 @@ describe('Prevent double action circuit', function () {
             )
             expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
             expect(p.sigData.toString()).to.equal('0')
+            expect(p.scope.toString()).to.equal(scope.toString())
             expect(p.nullifier.toString()).to.equal(nullifier.toString())
         }
     })
@@ -147,6 +149,7 @@ describe('Prevent double action circuit', function () {
         )
         expect(p.stateTreeRoot.toString()).to.equal(tree.root.toString())
         expect(p.sigData.toString()).to.equal(sigData.toString())
+        expect(p.scope.toString()).to.equal(scope.toString())
         expect(p.control.toString()).to.equal(
             EpochKeyLiteProof.buildControl({
                 attesterId,
@@ -190,5 +193,6 @@ describe('Prevent double action circuit', function () {
             }).toString()
         )
         expect(p.nullifier.toString()).to.equal(nullifier.toString())
+        expect(p.scope.toString()).to.equal(scope.toString())
     })
 })

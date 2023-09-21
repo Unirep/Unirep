@@ -21,5 +21,5 @@ export const circuitContents = {
     // test circuits
     incrementalMerkleTree: `pragma circom 2.0.0; include "../circuits/incrementalMerkleTree.circom"; \n\ncomponent main = MerkleTreeInclusionProof(${STATE_TREE_DEPTH});`,
     lowerComparators: `pragma circom 2.0.0; include "../circuits/bigComparators.circom"; \n\ncomponent main = LowerLessThan(64);`,
-    scopeNullifier: `pragma circom 2.0.0; include "../circuits/scopeNullifier.circom"; \n\ncomponent main { public [ sig_data ] } = ScopeNullifier(${STATE_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, ${FIELD_COUNT});`,
+    scopeNullifier: `pragma circom 2.0.0; include "../circuits/scopeNullifier.circom"; \n\ncomponent main { public [ sig_data, scope ] } = ScopeNullifier(${STATE_TREE_DEPTH}, ${NUM_EPOCH_KEY_NONCE_PER_EPOCH}, ${FIELD_COUNT});`,
 }

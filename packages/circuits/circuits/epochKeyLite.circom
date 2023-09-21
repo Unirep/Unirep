@@ -5,9 +5,9 @@ include "./circomlib/circuits/comparators.circom";
 include "./hasher.circom";
 
 template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
-    assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**8);
-
     var NONCE_BITS = 8;
+    assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**NONCE_BITS);
+   
     var ATTESTER_ID_BITS = 160;
     var EPOCH_BITS = 48;
     var CHAIN_ID_BITS = 36;

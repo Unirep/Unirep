@@ -17,13 +17,13 @@ template ScopeNullifier(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT
      // Some arbitrary data to endorse
     signal input sig_data; // public input
     signal input secret;
-    signal input scope;
+    signal input scope; // public input
     signal input data[FIELD_COUNT];
     signal input chain_id;
 
     signal output epoch_key;
     signal output state_tree_root;
-    // Optionally reveal nonce, epoch, attester_id
+    // Optionally reveal nonce, epoch, attester_id, chain_id
     signal output control;
     signal output nullifier;
 
