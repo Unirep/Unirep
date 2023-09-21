@@ -13,14 +13,16 @@ export class EpochKeyProof extends BaseProof {
         control: 2,
         data: 3,
     }
+    // original data
     public epochKey: string
     public stateTreeRoot: string
     public control: string
+    public data: string
+    // decoded data
+    public nonce: bigint
     public epoch: bigint
     public attesterId: bigint
-    public nonce: bigint
     public revealNonce: bigint
-    public data: string
     public chainId: bigint
 
     /**

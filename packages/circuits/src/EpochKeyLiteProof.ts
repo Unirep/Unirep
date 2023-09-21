@@ -9,13 +9,15 @@ export class EpochKeyLiteProof extends BaseProof {
         epochKey: 1,
         data: 2,
     }
-    public epochKey: string
+    // original data
     public control: string
+    public epochKey: string
+    public data: string
+    // decoded data
+    public nonce: bigint
     public epoch: bigint
     public attesterId: bigint
-    public nonce: bigint
     public revealNonce: bigint
-    public data: string
     public chainId: bigint
 
     constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {

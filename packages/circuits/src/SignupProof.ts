@@ -13,12 +13,14 @@ export class SignupProof extends BaseProof {
         control: 2,
     }
 
+    // original data
     public identityCommitment: string
     public stateTreeLeaf: string
+    public control: string
+    // decoded data
     public attesterId: bigint
     public epoch: bigint
     public chainId: bigint
-    public control: string
 
     /**
      * @param _publicSignals The public signals of the user sign up proof that can be verified by the prover

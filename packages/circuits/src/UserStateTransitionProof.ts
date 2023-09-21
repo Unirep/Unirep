@@ -17,12 +17,14 @@ export class UserStateTransitionProof extends BaseProof {
         epochKeys: 2,
         control: 5,
     }
+    // original data
     public historyTreeRoot: string
     public stateTreeLeaf: string
     public epochKeys: string[]
-    public toEpoch: bigint
-    public attesterId: bigint
     public control: string
+    // decoded data
+    public attesterId: bigint
+    public toEpoch: bigint
 
     /**
      * @param publicSignals The public signals of the epoch key proof that can be verified by the prover

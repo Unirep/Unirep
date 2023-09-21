@@ -20,23 +20,27 @@ export class ReputationProof extends BaseProof {
         graffiti: 4,
         data: 5,
     }
+    // original data
     public epochKey: string
     public stateTreeRoot: string
     public control0: string
     public control1: string
-    public epoch: bigint
-    public revealNonce: bigint
+    public graffiti: string
+    public data: string
+    // decoded data
+    // control 0
     public nonce: bigint
+    public epoch: bigint
     public attesterId: bigint
+    public revealNonce: bigint
     public chainId: bigint
+    // control 1
+    public minRep: bigint
+    public maxRep: bigint
     public proveMinRep: bigint
     public proveMaxRep: bigint
     public proveZeroRep: bigint
-    public minRep: bigint
-    public maxRep: bigint
     public proveGraffiti: bigint
-    public graffiti: string
-    public data: string
 
     /**
      * @param _publicSignals The public signals of the reputation proof that can be verified by the prover

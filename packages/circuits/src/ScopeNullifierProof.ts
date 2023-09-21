@@ -14,16 +14,18 @@ export class ScopeNullifierProof extends BaseProof {
         nullifier: 3,
         sigData: 4,
     }
-    public revealNonce: bigint
-    public attesterId: bigint
-    public epoch: bigint
-    public nonce: bigint
+    // original data
     public epochKey: string
     public stateTreeRoot: string
     public control: string
-    public sigData: string
-    public chainId: bigint
     public nullifier: string
+    public sigData: string
+    // decoded data
+    public nonce: bigint
+    public epoch: bigint
+    public attesterId: bigint
+    public revealNonce: bigint
+    public chainId: bigint
 
     /**
      * @param publicSignals The public signals of the prevent double action proof that can be verified by the prover
