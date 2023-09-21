@@ -23,7 +23,7 @@ import { Circuit } from '@unirep/circuits'
 
 ## Signup Proof
 
-The signup proof outputs a [state tree](../protocol/trees.md#state-tree) leaf and an [identity commitment](https://semaphore.appliedzkp.org/docs/glossary#identity-commitment) for the user. The state tree leaf will have zero values for all data fields.
+The signup proof outputs a [state tree](../protocol/trees.md#state-tree) leaf and an [identity commitment](https://semaphore.pse.dev/docs/glossary#identity-commitment) for the user. The state tree leaf will have zero values for all data fields.
 
 Control field:
 

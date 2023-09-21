@@ -52,7 +52,7 @@ constructor(
 
 ## commitment
 
-The [Semaphore](https://semaphore.appliedzkp.org/) identity commitment of the user.
+The [Semaphore](https://semaphore.pse.dev/) identity commitment of the user.
 
 ```ts
 state.commitment: bigint
@@ -60,7 +60,7 @@ state.commitment: bigint
 
 ## id
 
-The [Semaphore](https://semaphore.appliedzkp.org/) identity of the user.
+The [Semaphore](https://semaphore.pse.dev/) identity of the user.
 
 ```ts
 state.id: Identity
@@ -116,7 +116,7 @@ state.stop(): void
 
 ## hasSignedUp
 
-Query the current database if the [Semaphore](https://semaphore.appliedzkp.org/) identity commitment is stored.
+Query the current database if the [Semaphore](https://semaphore.pse.dev/) identity commitment is stored.
 
 ```ts
 state.hasSignedUp(attesterId?: bigint | string): Promise<boolean>

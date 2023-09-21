@@ -196,7 +196,7 @@ contract App {
 ## 👤 User sign up
 
 The attester can now start signing up users. Users of this application should provide a [signup proof](circuits-api/circuits.md#signup-proof) which includes:
-1. Proving the user owns a [Semaphore identity](https://semaphore.appliedzkp.org/)
+1. Proving the user owns a [Semaphore identity](https://semaphore.pse.dev/)
 2. Proving the user has initialized [data](protocol/data.md)
 3. Proving the user wants to sign up to this attester (proving attester ID)
 

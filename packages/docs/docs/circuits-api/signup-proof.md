@@ -14,7 +14,7 @@ const data = new SignupProof(publicSignals, proof)
 
 ## identityCommitment
 
-The [identity commitment](https://semaphore.appliedzkp.org/docs/glossary#identity-commitment) for the user signing up.
+The [identity commitment](https://semaphore.pse.dev/docs/glossary#identity-commitment) for the user signing up.
 
 ```ts
 this.identityCommitment
