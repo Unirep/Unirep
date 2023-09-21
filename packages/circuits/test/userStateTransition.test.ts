@@ -46,7 +46,7 @@ const defaultInputs = {
     from_epoch: fromEpoch,
     to_epoch: toEpoch,
     identity_secret: id.secret,
-    state_tree_indexes: stateTreeProof.pathIndices,
+    state_tree_indeces: stateTreeProof.pathIndices,
     state_tree_elements: stateTreeProof.siblings,
     history_tree_indices: historyTreeProof.pathIndices,
     history_tree_elements: historyTreeProof.siblings,

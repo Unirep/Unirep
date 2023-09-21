@@ -10,7 +10,7 @@ include "./hasher.circom";
 
 template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     // Global state tree
-    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_indeces[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
     // Global state tree leaf: Identity & user state root
     signal input identity_secret;
@@ -43,7 +43,7 @@ template EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
 
     state_tree_root <== MerkleTreeInclusionProof(STATE_TREE_DEPTH)(
         leaf,
-        state_tree_indexes,
+        state_tree_indeces,
         state_tree_elements
     );
 

@@ -7,7 +7,7 @@ include "./identity.circom";
 template ScopeNullifier(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
 
     // Global state tree
-    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_indeces[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
     // Global state tree leaf: Identity & user state root
     signal input reveal_nonce;
@@ -32,7 +32,7 @@ template ScopeNullifier(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT
 
     /* 2. Check epoch key is valid */
     (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
-        state_tree_indexes,
+        state_tree_indeces,
         state_tree_elements,
         secret,
         reveal_nonce,

@@ -26,7 +26,7 @@ template UserStateTransition(
     // State tree leaf: Identity & user state root
     signal input identity_secret;
     // State tree
-    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_indeces[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
     // History tree
     signal input history_tree_indices[HISTORY_TREE_DEPTH];
@@ -77,7 +77,7 @@ template UserStateTransition(
 
     signal state_merkletree_root <== MerkleTreeInclusionProof(STATE_TREE_DEPTH)(
         leaf_hasher,
-        state_tree_indexes,
+        state_tree_indeces,
         state_tree_elements
     );
 
