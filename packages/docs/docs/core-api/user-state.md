@@ -82,6 +82,14 @@ The prover object.
 state.prover: Prover
 ```
 
+## chainId
+
+The current chain ID of UniRep contract.
+
+```ts
+state.chainId: number
+```
+
 ## start
 
 Convenience accessor for synchronizer [`start`](./synchronizer.md#start).
@@ -153,7 +161,7 @@ state.parseReplData(replData: bigint): <{data: bigint, nonce: bigint}>
 Get the data for a user up to and including the provided epoch. By default data up to and including the current epoch is returned.
 
 :::tip
-If you want to make a proof of data make sure to use [`getProvableData`](#getprovabledata). Data can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#prove-reputation-proof).
+If you want to make a proof of data make sure to use [`getProvableData`](#getprovabledata). Data can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#reputation-proof).
 :::
 
 ```ts

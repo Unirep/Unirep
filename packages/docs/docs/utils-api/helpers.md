@@ -37,6 +37,7 @@ genEpochKey(
     attesterId: bigint | string,
     epoch: bigint | number,
     nonce: bigint | number,
+    chainId: bigint | number
 ): bigint
 ```
 
@@ -44,7 +45,7 @@ genEpochKey(
 
 Calculate an identity hash for a user. It is used for user signup. The state tree leaf should follow the format: <br/>
 `stateTreeLeaf = H(identityHash, H(data))` where <br/>
-`identityHash = H(identitySecret, attesterId + (epoch << 160))`.
+`identityHash = H(identitySecret, attesterId + (epoch << 160) + (chainId << 208))`.
 
 :::info
 See [state tree](../protocol/trees.md#state-tree) for more details.
@@ -56,7 +57,8 @@ import { genIdentityHash } from '@unirep/utils'
 genIdentityHash(
     idSecret: bigint,
     attesterId: bigint | string,
-    epoch: bigint | number
+    epoch: bigint | number,
+    chainId: bigint | number
 ): bigint
 ```
 
@@ -71,7 +73,8 @@ genStateTreeLeaf(
     idSecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
-    data: (bigint | string | number)[]
+    data: (bigint | string | number)[],
+    chainId: bigint | number
 ): bigint
 ```
 

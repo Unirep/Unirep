@@ -111,11 +111,13 @@ const id = new Identity()
 const attesterId = '0x1234'
 const epoch = 0
 const nonce = 0
+const chainId = 1
 const epochKey = genEpochKey(
     id.secret,
     attesterId,
     epoch,
-    nonce
+    nonce,
+    chainId
 )
 ```
 
@@ -127,10 +129,12 @@ import { genIdentityHash } from '@unirep/utils'
 const id = new Identity()
 const attesterId = '0x1234'
 const epoch = 0
+const chainId = 1
 const idHash = genIdentityHash(
     id.secret,
     attesterId,
-    epoch
+    epoch,
+    chainId
 )
 ```
 
@@ -144,11 +148,13 @@ const attesterId = '0x1234'
 const epoch = 0
 const FIELD_COUNT = 6
 const data = Array(FIELD_COUNT).fill(0)
+const chainId = 1
 const leaf = genStateTreeLeaf(
     id.secret,
     attesterId,
     epoch,
-    data
+    data,
+    chainId
 )
 ```
 

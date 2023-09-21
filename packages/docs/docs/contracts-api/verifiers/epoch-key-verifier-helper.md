@@ -92,12 +92,13 @@ function decodeEpochKeySignals(uint256[] memory publicSignals)
 
 ```sol
 struct EpochKeySignals {
-    bool revealNonce;
+    uint256 epochKey;
+    uint256 stateTreeRoot;
     uint8 nonce;
     uint48 epoch;
     uint160 attesterId;
-    uint256 stateTreeRoot;
-    uint256 epochKey;
+    bool revealNonce;
+    uint48 chainId;
     uint256 data;
 }
 ```

@@ -576,7 +576,7 @@ const data = await userState.getProvableData()
 ```
 
 :::info
-See [`reputationProof`](circuits-api/circuits.md#prove-reputation-proof) for more information.
+See [`reputationProof`](circuits-api/circuits.md#reputation-proof) for more information.
 :::
 
 ### Other users and attesters verify the proof

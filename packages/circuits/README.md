@@ -140,23 +140,23 @@ template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     signal input attester_id;
     signal input epoch;
     signal input nonce;
+    signal input chain_id;
 
     signal output epoch_key;
-    signal output state_tree_root;    
+    signal output state_tree_root;   
 
-    component epoch_key_template = EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT);
-    for (var x = 0; x < STATE_TREE_DEPTH; x++) {
-      epoch_key_template.state_tree_indeces[x] <== state_tree_indeces[x];
-      epoch_key_template.state_tree_elements[x] <== state_tree_elements[x];
-    }
-    epoch_key_template.identity_secret <== identity_secret;
-    epoch_key_template.reveal_nonce <== reveal_nonce;
-    epoch_key_template.attester_id <== attester_id;
-    epoch_key_template.epoch <== epoch;
-    epoch_key_template.nonce <== nonce;
-    epoch_key_template.sig_data <== sig_data;
-    control <== epoch_key_template.control;
-    epoch_key <== epoch_key_template.epoch_key;
+    (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
+        state_tree_indeces, 
+        state_tree_elements, 
+        identity_secret,
+        reveal_nonce,
+        attester_id,
+        epoch,
+        nonce,
+        data,
+        sig_data,
+        chain_id
+    );
 
     // add your customized circuits
     ...
@@ -190,7 +190,7 @@ const { proof, publicSignals } = await prover.genProofAndPublicSignals(
     circuitInputs
 )
 const data = new SignupProof(publicSignals, proof)
-const idCommitment = data.identityCommitment
+const identityCommitment = data.identityCommitment
 ```
 
 ## 🙌🏻 Join our community
