@@ -158,14 +158,14 @@ describe('User State Transition', function () {
         const { publicSignals, proof } = p
 
         const _proof = [...proof]
-        _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
+        _proof[0] = (BigInt(proof[0]) + BigInt(1)).toString()
         await expect(
             unirepContract
                 .connect(attester)
                 .userStateTransition(publicSignals, _proof)
         ).to.be.reverted
         const _publicSignals = [...publicSignals]
-        _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
+        _publicSignals[0] = (BigInt(publicSignals[0]) + BigInt(1)).toString()
         await expect(
             unirepContract
                 .connect(attester)
@@ -308,6 +308,45 @@ describe('User State Transition', function () {
                 stateTreeLeaf,
                 epochKeys[0]
             )
+    })
+
+    it('should decode user state transition signals', async () => {
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.userStateTransition,
+            stringifyBigInts(circuitInputs)
+        )
+        const {
+            publicSignals,
+            attesterId,
+            toEpoch,
+            control,
+            historyTreeRoot,
+            stateTreeLeaf,
+            epochKeys,
+        } = new UserStateTransitionProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        const controlOut =
+            await unirepContract.decodeUserStateTransitionControl(control)
+
+        expect(controlOut['attesterId'].toString()).equal(attesterId.toString())
+        expect(controlOut['toEpoch'].toString()).equal(toEpoch.toString())
+
+        const signals = await unirepContract.decodeUserStateTransitionSignals(
+            publicSignals
+        )
+        expect(signals['historyTreeRoot'].toString()).equal(historyTreeRoot)
+        expect(signals['stateTreeLeaf'].toString()).equal(stateTreeLeaf)
+
+        const numEpochKeyNoncePerEpoch =
+            await unirepContract.numEpochKeyNoncePerEpoch()
+        for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            expect(signals['epochKeys'][i].toString()).equal(epochKeys[i])
+        }
+        expect(signals['attesterId'].toString()).equal(attesterId.toString())
+        expect(signals['toEpoch'].toString()).equal(toEpoch.toString())
     })
 
     it('should do multiple user state transitions', async () => {

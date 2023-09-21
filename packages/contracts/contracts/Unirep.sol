@@ -152,7 +152,11 @@ contract Unirep is IUnirep, VerifySignature {
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
 
-        _userSignUp(signals.epoch, signals.idCommitment, signals.stateTreeLeaf);
+        _userSignUp(
+            signals.epoch,
+            signals.identityCommitment,
+            signals.stateTreeLeaf
+        );
     }
 
     function _userSignUp(
@@ -340,54 +344,51 @@ contract Unirep is IUnirep, VerifySignature {
         // Verify the proof
         if (!userStateTransitionVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();
-        uint256 attesterSignalIndex = 3 + numEpochKeyNoncePerEpoch;
-        uint256 toEpochIndex = 2 + numEpochKeyNoncePerEpoch;
-        if (publicSignals[attesterSignalIndex] >= type(uint160).max)
-            revert AttesterInvalid();
-        uint160 attesterId = uint160(publicSignals[attesterSignalIndex]);
-        updateEpochIfNeeded(attesterId);
-        AttesterData storage attester = attesters[attesterId];
+        UserStateTransitionSignals
+            memory signals = decodeUserStateTransitionSignals(publicSignals);
+        if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
+        updateEpochIfNeeded(signals.attesterId);
+        AttesterData storage attester = attesters[signals.attesterId];
         // verify that the transition nullifier hasn't been used
         // just use the first outputted EPK as the nullifier
-        if (usedNullifiers[publicSignals[2]])
-            revert NullifierAlreadyUsed(publicSignals[2]);
-        usedNullifiers[publicSignals[2]] = true;
-
-        uint256 toEpoch = publicSignals[toEpochIndex];
+        if (usedNullifiers[signals.epochKeys[0]])
+            revert NullifierAlreadyUsed(signals.epochKeys[0]);
+        usedNullifiers[signals.epochKeys[0]] = true;
 
         // verify that we're transition to the current epoch
-        if (attester.currentEpoch != toEpoch) revert EpochNotMatch();
+        if (attester.currentEpoch != signals.toEpoch) revert EpochNotMatch();
 
         for (uint8 x = 0; x < numEpochKeyNoncePerEpoch; x++) {
             if (
-                attester.epkData[publicSignals[2 + x]].epoch < toEpoch &&
-                attester.epkData[publicSignals[2 + x]].leaf != 0
+                attester.epkData[signals.epochKeys[x]].epoch <
+                signals.toEpoch &&
+                attester.epkData[signals.epochKeys[x]].leaf != 0
             ) {
                 revert EpochKeyNotProcessed();
             }
         }
 
         // make sure from state tree root is valid
-        if (!attester.historyTreeRoots[publicSignals[0]])
-            revert InvalidHistoryTreeRoot(publicSignals[0]);
+        if (!attester.historyTreeRoots[signals.historyTreeRoot])
+            revert InvalidHistoryTreeRoot(signals.historyTreeRoot);
 
         // update the current state tree
         emit StateTreeLeaf(
             attester.currentEpoch,
-            attesterId,
+            signals.attesterId,
             attester.stateTree.numberOfLeaves,
-            publicSignals[1]
+            signals.stateTreeLeaf
         );
         emit UserStateTransitioned(
             attester.currentEpoch,
-            attesterId,
+            signals.attesterId,
             attester.stateTree.numberOfLeaves,
-            publicSignals[1],
-            publicSignals[2]
+            signals.stateTreeLeaf,
+            signals.epochKeys[0]
         );
         uint256 root = ReusableMerkleTree.insert(
             attester.stateTree,
-            publicSignals[1]
+            signals.stateTreeLeaf
         );
         attester.stateTreeRoots[attester.currentEpoch][root] = true;
     }
@@ -454,7 +455,7 @@ contract Unirep is IUnirep, VerifySignature {
         uint256[] calldata publicSignals
     ) public pure returns (SignupSignals memory) {
         SignupSignals memory signals;
-        signals.idCommitment = publicSignals[0];
+        signals.identityCommitment = publicSignals[0];
         signals.stateTreeLeaf = publicSignals[1];
         // now decode the control values
         (
@@ -462,6 +463,33 @@ contract Unirep is IUnirep, VerifySignature {
             signals.epoch,
             signals.chainId
         ) = decodeSignupControl(publicSignals[2]);
+        return signals;
+    }
+
+    function decodeUserStateTransitionControl(
+        uint256 control
+    ) public pure returns (uint160 attesterId, uint48 toEpoch) {
+        toEpoch = uint48((control >> 160) & ((1 << 48) - 1));
+        attesterId = uint160(control & ((1 << 160) - 1));
+        return (attesterId, toEpoch);
+    }
+
+    function decodeUserStateTransitionSignals(
+        uint256[] calldata publicSignals
+    ) public view returns (UserStateTransitionSignals memory) {
+        UserStateTransitionSignals memory signals;
+        signals.historyTreeRoot = publicSignals[0];
+        signals.stateTreeLeaf = publicSignals[1];
+        signals.epochKeys = new uint[](numEpochKeyNoncePerEpoch);
+
+        for (uint8 i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            signals.epochKeys[i] = publicSignals[2 + i];
+        }
+        // now decode the control values
+        (
+            signals.attesterId,
+            signals.toEpoch
+        ) = decodeUserStateTransitionControl(publicSignals[5]);
         return signals;
     }
 

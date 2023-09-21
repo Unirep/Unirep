@@ -5,6 +5,7 @@ import { Identity } from '@semaphore-protocol/identity'
 import {
     F,
     genRandomSalt,
+    genStateTreeLeaf,
     IncrementalMerkleTree,
     stringifyBigInts,
 } from '@unirep/utils'
@@ -19,8 +20,12 @@ import {
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 import { deployVerifierHelper } from '../deploy'
-const { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT } =
-    CircuitConfig.default
+const {
+    STATE_TREE_DEPTH,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    FIELD_COUNT,
+    REPL_NONCE_BITS,
+} = CircuitConfig.default
 
 function randomBits(bit: number) {
     return genRandomSalt() % (BigInt(2) ** BigInt(bit) - BigInt(1))
@@ -31,15 +36,18 @@ describe('Epoch key lite verifier helper', function () {
 
     let epochKeyLiteVerifierHelper
     let chainId
-    let attester
     const id = new Identity()
+    const sigData = 1234
+    const epoch = 352
+    const nonce = 2
+    const revealNonce = 1
     let circuitInputs = {
         identity_secret: id.secret,
-        sig_data: 0,
-        epoch: 0,
-        nonce: 0,
+        sig_data: sigData,
+        epoch,
+        nonce,
         attester_id: 0,
-        reveal_nonce: 0,
+        reveal_nonce: revealNonce,
         chain_id: 0,
     }
 
@@ -84,14 +92,31 @@ describe('Epoch key lite verifier helper', function () {
                 r.proof
             )
             expect(v).to.be.true
-            const { publicSignals, proof } = new EpochKeyLiteProof(
-                r.publicSignals,
-                r.proof
-            )
-            await epochKeyLiteVerifierHelper.verifyAndCheck(
+            const { publicSignals, proof, ...proofData } =
+                new EpochKeyLiteProof(r.publicSignals, r.proof)
+            const signals = await epochKeyLiteVerifierHelper.verifyAndCheck(
                 publicSignals,
                 proof
             )
+
+            expect(signals.nonce.toString()).to.equal(
+                proofData.nonce.toString()
+            )
+            expect(signals.epoch.toString()).to.equal(
+                proofData.epoch.toString()
+            )
+            expect(signals.attesterId.toString()).to.equal(
+                proofData.attesterId.toString()
+            )
+            expect(signals.revealNonce).to.equal(true)
+
+            expect(signals.chainId.toString()).to.equal(
+                proofData.chainId.toString()
+            )
+            expect(signals.epochKey.toString()).to.equal(
+                proofData.epochKey.toString()
+            )
+            expect(signals.data.toString()).to.equal(proofData.data.toString())
         }
     })
 
@@ -119,6 +144,9 @@ describe('Epoch key lite verifier helper', function () {
                 attesterId.toString()
             )
             expect(decodedControl.revealNonce).to.equal(true)
+            expect(decodedControl.chainId.toString()).to.equal(
+                chainId.toString()
+            )
         }
 
         // should not reveal nonce
@@ -144,6 +172,9 @@ describe('Epoch key lite verifier helper', function () {
                 attesterId.toString()
             )
             expect(decodedControl.revealNonce).to.equal(false)
+            expect(decodedControl.chainId.toString()).to.equal(
+                chainId.toString()
+            )
         }
     })
 
@@ -166,7 +197,7 @@ describe('Epoch key lite verifier helper', function () {
 
         {
             const _publicSignals = [...publicSignals]
-            _publicSignals[idx.epochKey] = F
+            _publicSignals[idx.epochKey] = F.toString()
             await expect(
                 epochKeyLiteVerifierHelper.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(
@@ -174,6 +205,34 @@ describe('Epoch key lite verifier helper', function () {
                 'InvalidEpochKey'
             )
         }
+    })
+
+    it('should fail to verify an epoch key lite proof with invalid chain id', async () => {
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.epochKeyLite,
+            stringifyBigInts({
+                ...circuitInputs,
+                chain_id: 123,
+            })
+        )
+
+        const v = await defaultProver.verifyProof(
+            Circuit.epochKeyLite,
+            r.publicSignals,
+            r.proof
+        )
+        expect(v).to.be.true
+        const { publicSignals, proof } = new EpochKeyLiteProof(
+            r.publicSignals,
+            r.proof
+        )
+
+        await expect(
+            epochKeyLiteVerifierHelper.verifyAndCheck(publicSignals, proof)
+        ).to.be.revertedWithCustomError(
+            epochKeyLiteVerifierHelper,
+            'ChainIdNotMatch'
+        )
     })
 
     it('should fail to verify an epoch key lite proof with invalid proof', async () => {
@@ -194,7 +253,7 @@ describe('Epoch key lite verifier helper', function () {
         )
         {
             const _proof = [...proof]
-            _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
+            _proof[0] = (BigInt(proof[0]) + BigInt(1)).toString()
             await expect(
                 epochKeyLiteVerifierHelper.verifyAndCheck(publicSignals, _proof)
             ).to.be.reverted
@@ -202,7 +261,9 @@ describe('Epoch key lite verifier helper', function () {
 
         {
             const _publicSignals = [...publicSignals]
-            _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
+            _publicSignals[0] = (
+                BigInt(publicSignals[0]) + BigInt(1)
+            ).toString()
             await expect(
                 epochKeyLiteVerifierHelper.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(
@@ -264,8 +325,8 @@ describe('Epoch key verifier helper', function () {
 
     let epochKeyVerifierHelper
     const id = new Identity()
-    const epoch = 0
-    const data = 0
+    const epoch = 5352
+    const data = 234333
     let chainId
     let circuitInputs = {
         state_tree_elements: [0],
@@ -346,42 +407,23 @@ describe('Epoch key verifier helper', function () {
                 r.proof
             )
             expect(v).to.be.true
-            const { publicSignals, proof, ...proofFields } = new EpochKeyProof(
+            const { publicSignals, proof } = new EpochKeyProof(
                 r.publicSignals,
                 r.proof
             )
-            const signals = await epochKeyVerifierHelper.verifyAndCheck(
-                publicSignals,
-                proof
-            )
-            expect(signals.epochKey.toString()).to.equal(
-                proofFields.epochKey.toString()
-            )
-            expect(signals.stateTreeRoot.toString()).to.equal(
-                proofFields.stateTreeRoot.toString()
-            )
-            expect(signals.data.toString()).to.equal(
-                proofFields.data.toString()
-            )
-            expect(signals.attesterId.toString()).to.equal(
-                proofFields.attesterId.toString()
-            )
-            expect(signals.epoch.toString()).to.equal(
-                proofFields.epoch.toString()
-            )
-            expect(signals.nonce.toString()).to.equal(
-                proofFields.nonce.toString()
-            )
+            await epochKeyVerifierHelper.verifyAndCheck(publicSignals, proof)
         }
     })
 
     it('should decode public signals', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
+            const revealNonce = 1
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.epochKey,
                 stringifyBigInts({
                     ...circuitInputs,
                     nonce,
+                    reveal_nonce: revealNonce,
                 })
             )
 
@@ -401,16 +443,16 @@ describe('Epoch key verifier helper', function () {
             expect(signals.stateTreeRoot.toString()).to.equal(
                 proof.stateTreeRoot.toString()
             )
-            expect(signals.data.toString()).to.equal(proof.data.toString())
+            expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
+            expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
+            expect(signals.revealNonce).to.equal(Boolean(revealNonce))
             expect(signals.attesterId.toString()).to.equal(
                 proof.attesterId.toString()
             )
-            expect(signals.epoch.toString()).to.equal(proof.epoch.toString())
-            expect(signals.nonce.toString()).to.equal(proof.nonce.toString())
-            await epochKeyVerifierHelper.verifyAndCheck(
-                proof.publicSignals,
-                proof.proof
+            expect(signals.chainId.toString()).to.equal(
+                proof.chainId.toString()
             )
+            expect(signals.data.toString()).to.equal(proof.data.toString())
         }
     })
 
@@ -432,7 +474,7 @@ describe('Epoch key verifier helper', function () {
 
         {
             const _publicSignals = [...publicSignals]
-            _publicSignals[idx.epochKey] = F
+            _publicSignals[idx.epochKey] = F.toString()
             await expect(
                 epochKeyVerifierHelper.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(
@@ -440,6 +482,33 @@ describe('Epoch key verifier helper', function () {
                 'InvalidEpochKey'
             )
         }
+    })
+
+    it('should fail to verify an epoch key proof with invalid chain id', async () => {
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.epochKey,
+            stringifyBigInts({
+                ...circuitInputs,
+                chain_id: 123,
+            })
+        )
+        const v = await defaultProver.verifyProof(
+            Circuit.epochKey,
+            r.publicSignals,
+            r.proof
+        )
+        expect(v).to.be.true
+        const { publicSignals, proof } = new EpochKeyProof(
+            r.publicSignals,
+            r.proof
+        )
+
+        await expect(
+            epochKeyVerifierHelper.verifyAndCheck(publicSignals, proof)
+        ).to.be.revertedWithCustomError(
+            epochKeyVerifierHelper,
+            'ChainIdNotMatch'
+        )
     })
 
     it('should fail to verify an epoch key proof with invalid proof', async () => {
@@ -468,7 +537,9 @@ describe('Epoch key verifier helper', function () {
 
         {
             const _publicSignals = [...publicSignals]
-            _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
+            _publicSignals[0] = (
+                BigInt(publicSignals[0]) + BigInt(1)
+            ).toString()
             await expect(
                 epochKeyVerifierHelper.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(
@@ -511,13 +582,16 @@ describe('Reputation verifier helper', function () {
 
     const id = new Identity()
     const epoch = 0
+    const sigData = 696969
+    const graffiti = BigInt(234524)
+    const data = [0, 0, 0, 0, BigInt(graffiti) << BigInt(REPL_NONCE_BITS), 0]
     let circuitInputs = {
         identity_secret: id.secret,
         state_tree_indexes: [0],
         state_tree_elements: [0],
-        data: Array(FIELD_COUNT).fill(0),
-        prove_graffiti: 0,
-        graffiti: 0,
+        data,
+        prove_graffiti: 1,
+        graffiti,
         reveal_nonce: false,
         attester_id: 0,
         epoch,
@@ -527,7 +601,7 @@ describe('Reputation verifier helper', function () {
         prove_min_rep: 0,
         prove_max_rep: 0,
         prove_zero_rep: 0,
-        sig_data: 696969,
+        sig_data: sigData,
         chain_id: 0,
     }
 
@@ -545,21 +619,13 @@ describe('Reputation verifier helper', function () {
         chainId = network.chainId
 
         // sign up a user
-        const r = await defaultProver.genProofAndPublicSignals(
-            Circuit.signup,
-            stringifyBigInts({
-                epoch: epoch.toString(),
-                secret: id.secret,
-                attester_id: attester.address,
-                chain_id: chainId,
-            })
+        const leaf = genStateTreeLeaf(
+            id.secret,
+            attester.address,
+            epoch,
+            data,
+            chainId
         )
-        const { stateTreeLeaf: leaf } = new SignupProof(
-            r.publicSignals,
-            r.proof,
-            defaultProver
-        )
-
         const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         stateTree.insert(leaf)
@@ -610,20 +676,44 @@ describe('Reputation verifier helper', function () {
             expect(signals.stateTreeRoot.toString()).to.equal(
                 proofFields.stateTreeRoot.toString()
             )
-            expect(signals.maxRep.toString()).to.equal(
-                proofFields.maxRep.toString()
-            )
-            expect(signals.minRep.toString()).to.equal(
-                proofFields.minRep.toString()
-            )
-            expect(signals.attesterId.toString()).to.equal(
-                proofFields.attesterId.toString()
+            expect(signals.nonce.toString()).to.equal(
+                proofFields.nonce.toString()
             )
             expect(signals.epoch.toString()).to.equal(
                 proofFields.epoch.toString()
             )
-            expect(signals.nonce.toString()).to.equal(
-                proofFields.nonce.toString()
+            expect(signals.attesterId.toString()).to.equal(
+                proofFields.attesterId.toString()
+            )
+            expect(signals.revealNonce).to.equal(
+                Boolean(proofFields.revealNonce)
+            )
+            expect(signals.chainId.toString()).to.equal(
+                proofFields.chainId.toString()
+            )
+            expect(signals.minRep.toString()).to.equal(
+                proofFields.minRep.toString()
+            )
+            expect(signals.maxRep.toString()).to.equal(
+                proofFields.maxRep.toString()
+            )
+            expect(signals.proveMinRep).to.equal(
+                Boolean(proofFields.proveMinRep)
+            )
+            expect(signals.proveMaxRep).to.equal(
+                Boolean(proofFields.proveMaxRep)
+            )
+            expect(signals.proveZeroRep).to.equal(
+                Boolean(proofFields.proveZeroRep)
+            )
+            expect(signals.proveGraffiti).to.equal(
+                Boolean(proofFields.proveGraffiti)
+            )
+            expect(signals.graffiti.toString()).to.equal(
+                proofFields.graffiti.toString()
+            )
+            expect(signals.data.toString()).to.equal(
+                proofFields.data.toString()
             )
         }
     })
@@ -708,7 +798,7 @@ describe('Reputation verifier helper', function () {
 
         {
             const _publicSignals = [...publicSignals]
-            _publicSignals[idx.epochKey] = F
+            _publicSignals[idx.epochKey] = F.toString()
             await expect(
                 repVerifierHelper.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(
@@ -716,6 +806,31 @@ describe('Reputation verifier helper', function () {
                 'InvalidEpochKey'
             )
         }
+    })
+
+    it('should fail to verify a reputation proof with invalid chain id', async () => {
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.reputation,
+            stringifyBigInts({
+                ...circuitInputs,
+                chain_id: 123,
+            })
+        )
+
+        const v = await defaultProver.verifyProof(
+            Circuit.reputation,
+            r.publicSignals,
+            r.proof
+        )
+        expect(v).to.be.true
+        const { publicSignals, proof } = new ReputationProof(
+            r.publicSignals,
+            r.proof
+        )
+
+        await expect(
+            repVerifierHelper.verifyAndCheck(publicSignals, proof)
+        ).to.be.revertedWithCustomError(repVerifierHelper, 'ChainIdNotMatch')
     })
 
     it('should fail to verify a reputation proof with invalid proof', async () => {
@@ -730,7 +845,7 @@ describe('Reputation verifier helper', function () {
         )
         {
             const _proof = [...proof]
-            _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
+            _proof[0] = (BigInt(proof[0]) + BigInt(1)).toString()
             await expect(
                 repVerifierHelper.verifyAndCheck(publicSignals, _proof)
             ).to.be.reverted
@@ -738,7 +853,9 @@ describe('Reputation verifier helper', function () {
 
         {
             const _publicSignals = [...publicSignals]
-            _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
+            _publicSignals[0] = (
+                BigInt(publicSignals[0]) + BigInt(1)
+            ).toString()
             await expect(
                 repVerifierHelper.verifyAndCheck(_publicSignals, proof)
             ).to.be.revertedWithCustomError(repVerifierHelper, 'InvalidProof')

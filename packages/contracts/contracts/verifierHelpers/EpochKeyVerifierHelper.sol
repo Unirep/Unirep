@@ -16,10 +16,11 @@ contract EpochKeyVerifierHelper is BaseVerifierHelper {
         signals.data = publicSignals[3];
         // now decode the control values
         (
-            signals.revealNonce,
-            signals.attesterId,
+            signals.nonce,
             signals.epoch,
-            signals.nonce
+            signals.attesterId,
+            signals.revealNonce,
+            signals.chainId
         ) = super.decodeEpochKeyControl(publicSignals[2]);
 
         if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
@@ -35,8 +36,9 @@ contract EpochKeyVerifierHelper is BaseVerifierHelper {
         EpochKeySignals memory signals = decodeEpochKeySignals(publicSignals);
 
         bool valid = verifier.verifyProof(publicSignals, proof);
-
         if (!valid) revert InvalidProof();
+
+        if (signals.chainId != chainid) revert ChainIdNotMatch(signals.chainId);
 
         return signals;
     }

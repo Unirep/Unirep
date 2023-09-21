@@ -178,6 +178,55 @@ describe('User Signup', function () {
         }
     })
 
+    it('should decode signup signals', async () => {
+        await unirepContract
+            .updateEpochIfNeeded(attester.address)
+            .then((t) => t.wait())
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                ...circuitInputs,
+                epoch,
+            })
+        )
+        {
+            const {
+                publicSignals,
+                control,
+                identityCommitment,
+                attesterId,
+                epoch,
+                chainId,
+                stateTreeLeaf,
+            } = new SignupProof(r.publicSignals, r.proof, defaultProver)
+
+            const controlOut = await unirepContract.decodeSignupControl(control)
+            expect(controlOut['attesterId'].toString()).equal(
+                attesterId.toString()
+            )
+            expect(controlOut['epoch'].toString()).equal(epoch.toString())
+            expect(controlOut['chainId'].toString()).equal(chainId.toString())
+
+            const signals = await unirepContract.decodeSignupSignals(
+                publicSignals
+            )
+            expect(signals['attesterId'].toString()).equal(
+                attesterId.toString()
+            )
+            expect(signals['epoch'].toString()).equal(epoch.toString())
+            expect(signals['chainId'].toString()).equal(chainId.toString())
+            expect(signals['stateTreeLeaf'].toString()).equal(
+                stateTreeLeaf.toString()
+            )
+            expect(signals['identityCommitment'].toString()).equal(
+                identityCommitment.toString()
+            )
+        }
+    })
+
     it('double sign up should fail', async () => {
         await unirepContract
             .updateEpochIfNeeded(attester.address)
