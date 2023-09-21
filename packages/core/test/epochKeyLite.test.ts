@@ -2,18 +2,35 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
-import { deployUnirep } from '@unirep/contracts/deploy'
+import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
 
 import { EPOCH_LENGTH, genUserState } from './utils'
+import { Circuit } from '@unirep/circuits'
+
+const checkSignals = (signals, proof) => {
+    expect(signals.epochKey.toString()).equal(proof.epochKey.toString())
+
+    expect(signals.nonce.toString()).equal(proof.nonce.toString())
+    expect(signals.epoch.toString()).equal(proof.epoch.toString())
+    expect(signals.attesterId.toString()).equal(proof.attesterId.toString())
+    expect(signals.revealNonce).equal(Boolean(proof.revealNonce))
+    expect(signals.chainId.toString()).equal(proof.chainId.toString())
+    expect(signals.data.toString()).equal(proof.data.toString())
+}
 
 describe('Epoch key Lite proof', function () {
     this.timeout(0)
 
     let unirepContract
+    let epochKeyLiteVerifierHelper
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        epochKeyLiteVerifierHelper = await deployVerifierHelper(
+            accounts[0],
+            Circuit.epochKeyLite
+        )
     })
 
     {
@@ -56,6 +73,12 @@ describe('Epoch key Lite proof', function () {
         const proof = await userState.genEpochKeyLiteProof()
         const valid = await proof.verify()
         expect(valid).to.be.true
+
+        const signals = await epochKeyLiteVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
         userState.stop()
     })
 
@@ -90,6 +113,12 @@ describe('Epoch key Lite proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal(nonce)
+
+        const signals = await epochKeyLiteVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
         userState.stop()
     })
 
@@ -124,6 +153,12 @@ describe('Epoch key Lite proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal('0')
+
+        const signals = await epochKeyLiteVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
         userState.stop()
     })
 
@@ -156,6 +191,12 @@ describe('Epoch key Lite proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.data).to.equal(data.toString())
+
+        const signals = await epochKeyLiteVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
         userState.stop()
     })
 
@@ -188,6 +229,12 @@ describe('Epoch key Lite proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.epoch).to.equal(epoch.toString())
+
+        const signals = await epochKeyLiteVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
         userState.stop()
     })
 })
