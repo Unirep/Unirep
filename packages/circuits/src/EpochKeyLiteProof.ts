@@ -1,11 +1,7 @@
-import { Circuit, Prover } from './circuits'
+import { Circuit, Prover, EpochKeyControl } from './type'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
-import {
-    EpochKeyControl,
-    buildEpochKeyControl,
-    decodeEpochKeyControl,
-} from './utils'
+import { buildEpochKeyControl, decodeEpochKeyControl } from './utils'
 
 export class EpochKeyLiteProof extends BaseProof {
     readonly idx = {
@@ -13,21 +9,17 @@ export class EpochKeyLiteProof extends BaseProof {
         epochKey: 1,
         data: 2,
     }
-    public epochKey: bigint
-    public control: bigint
+    public epochKey: string
+    public control: string
     public epoch: bigint
     public attesterId: bigint
     public nonce: bigint
     public revealNonce: bigint
-    public data: bigint
+    public data: string
     public chainId: bigint
 
-    constructor(
-        _publicSignals: (bigint | string)[],
-        _proof: SnarkProof,
-        prover?: Prover
-    ) {
-        super(_publicSignals, _proof, prover)
+    constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {
+        super(publicSignals, proof, prover)
         this.epochKey = this.publicSignals[this.idx.epochKey]
         this.control = this.publicSignals[this.idx.control]
         this.data = this.publicSignals[this.idx.data]

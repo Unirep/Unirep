@@ -22,7 +22,7 @@ template UserStateTransition(
     assert(SUM_FIELD_COUNT < FIELD_COUNT);
 
     signal input from_epoch;
-    signal input to_epoch; // public
+    signal input to_epoch;
     // State tree leaf: Identity & user state root
     signal input identity_secret;
     // State tree
@@ -32,7 +32,7 @@ template UserStateTransition(
     signal input history_tree_indices[HISTORY_TREE_DEPTH];
     signal input history_tree_elements[HISTORY_TREE_DEPTH];
     // Attester to prove reputation from
-    signal input attester_id;  // public
+    signal input attester_id;
     // The starting data in fromEpoch
     signal input data[FIELD_COUNT];
     // prove what we've received in fromEpoch
@@ -47,6 +47,7 @@ template UserStateTransition(
     signal output history_tree_root;
     signal output state_tree_leaf;
     signal output epks[EPOCH_KEY_NONCE_PER_EPOCH];
+    signal output control;
 
     var ATTESTER_ID_BITS = 160;
     var EPOCH_BITS = 48;
@@ -188,4 +189,18 @@ template UserStateTransition(
     );
 
     /* End of check 3 */
+
+    /* 4. Calculate the new control */
+    /**
+    * 160 bits attester_id
+    * 48 bits to_epoch
+    */
+    var acc_bits = 0;
+    var acc_data = attester_id;
+    acc_bits += ATTESTER_ID_BITS;
+
+    acc_data += to_epoch * 2 ** acc_bits;
+    control <== acc_data;
+
+    /* End of check 4 */
 }

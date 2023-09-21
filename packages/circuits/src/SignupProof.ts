@@ -1,10 +1,7 @@
-import { Circuit, Prover } from './circuits'
+import { Circuit, Prover } from './type'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
-import { CircuitConfig } from './CircuitConfig'
-import { shiftBits } from './utils'
-
-const { ATTESTER_ID_BITS, EPOCH_BITS, CHAIN_ID_BITS } = CircuitConfig
+import { buildSignupControl, decodeSignupControl } from './utils'
 
 /**
  * The sign up proof structure that helps to query the public signals
@@ -16,42 +13,37 @@ export class SignupProof extends BaseProof {
         control: 2,
     }
 
-    public identityCommitment: bigint
-    public stateTreeLeaf: bigint
+    public identityCommitment: string
+    public stateTreeLeaf: string
     public attesterId: bigint
     public epoch: bigint
     public chainId: bigint
-    public control: bigint
+    public control: string
 
     /**
      * @param _publicSignals The public signals of the user sign up proof that can be verified by the prover
      * @param _proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
-    constructor(
-        _publicSignals: (bigint | string)[],
-        _proof: SnarkProof,
-        prover?: Prover
-    ) {
+    constructor(_publicSignals: string[], _proof: SnarkProof, prover?: Prover) {
         super(_publicSignals, _proof, prover)
         this.identityCommitment =
             this.publicSignals[this.idx.identityCommitment]
         this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]
         this.control = this.publicSignals[this.idx.control]
-        this.chainId = shiftBits(
-            this.control,
-            ATTESTER_ID_BITS + EPOCH_BITS,
-            CHAIN_ID_BITS
-        )
-        this.epoch = shiftBits(this.control, ATTESTER_ID_BITS, EPOCH_BITS)
-        this.attesterId = shiftBits(this.control, BigInt(0), ATTESTER_ID_BITS)
+        const { chainId, epoch, attesterId } = decodeSignupControl(this.control)
+        this.chainId = chainId
+        this.epoch = epoch
+        this.attesterId = attesterId
         this.circuit = Circuit.signup
     }
 
     static buildControl({ attesterId, epoch, chainId }: any) {
-        let control = BigInt(attesterId)
-        control += BigInt(epoch) << ATTESTER_ID_BITS
-        control += BigInt(chainId) << (ATTESTER_ID_BITS + EPOCH_BITS)
+        const control = buildSignupControl({
+            attesterId: BigInt(attesterId),
+            epoch: BigInt(epoch),
+            chainId: BigInt(chainId),
+        })
         return control
     }
 }

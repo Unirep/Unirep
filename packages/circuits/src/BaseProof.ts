@@ -1,10 +1,9 @@
 import {
-    Circuit,
     formatProofForVerifierContract,
     formatProofForSnarkjsVerification,
-    Prover,
-} from './circuits'
+} from './utils'
 import { SnarkProof } from '@unirep/utils'
+import { Circuit, Prover } from './type'
 
 /**
  * The basic proof structure that is used in unirep protocol
@@ -13,8 +12,8 @@ export class BaseProof {
     readonly _snarkProof: SnarkProof
     protected circuit?: Circuit
 
-    readonly publicSignals: bigint[]
-    public proof: bigint[]
+    readonly publicSignals: string[]
+    public proof: string[]
     public prover?: Prover
 
     /**
@@ -23,13 +22,12 @@ export class BaseProof {
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        publicSignals: (bigint | string)[],
-        proof: SnarkProof | (bigint | string)[],
+        publicSignals: string[],
+        proof: SnarkProof | string[],
         prover?: Prover
     ) {
         if (Array.isArray(proof)) {
-            // assume it's formatted for verifier contract
-            this.proof = proof.map((v) => BigInt(v))
+            this.proof = proof
             this._snarkProof = formatProofForSnarkjsVerification(
                 proof.map((p) => p.toString())
             )
@@ -41,7 +39,7 @@ export class BaseProof {
         } else {
             throw new Error('Invalid proof supplied')
         }
-        this.publicSignals = publicSignals.map((v) => BigInt(v))
+        this.publicSignals = publicSignals
         this.prover = prover
     }
 
@@ -58,7 +56,7 @@ export class BaseProof {
         }
         return this.prover.verifyProof(
             this.circuit,
-            this.publicSignals.map((n) => BigInt(n.toString())),
+            this.publicSignals,
             this._snarkProof
         )
     }

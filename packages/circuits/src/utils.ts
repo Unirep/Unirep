@@ -1,32 +1,61 @@
 import { CircuitConfig } from './CircuitConfig'
+import { SnarkProof } from '@unirep/utils'
+import {
+    EpochKeyControl,
+    Field,
+    ReputationControl,
+    SignupControl,
+    UserStateTransitionControl,
+} from './type'
 
-export type EpochKeyControl = {
-    nonce: bigint
-    epoch: bigint
-    attesterId: bigint
-    revealNonce: bigint
-    chainId: bigint
+/**
+ * Format snark proof for verifier smart contract
+ * @param proof The proof of `SnarkProof` type
+ * @returns An one dimensional array of stringified proof data
+ */
+export const formatProofForVerifierContract = (proof: SnarkProof): string[] => {
+    return [
+        proof.pi_a[0],
+        proof.pi_a[1],
+        proof.pi_b[0][1],
+        proof.pi_b[0][0],
+        proof.pi_b[1][1],
+        proof.pi_b[1][0],
+        proof.pi_c[0],
+        proof.pi_c[1],
+    ].map((x) => x.toString())
 }
 
-export type ReputationControl = {
-    minRep: bigint
-    maxRep: bigint
-    proveMinRep: bigint
-    proveMaxRep: bigint
-    proveZeroRep: bigint
-    proveGraffiti: bigint
+/**
+ * Format an one dimensional array for `snarkjs` verification
+ * @param proof The string array of the proof
+ * @returns The `SnarkProof` type proof data
+ */
+export const formatProofForSnarkjsVerification = (
+    proof: Field[]
+): SnarkProof => {
+    return {
+        pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')],
+        pi_b: [
+            [BigInt(proof[3]), BigInt(proof[2])],
+            [BigInt(proof[5]), BigInt(proof[4])],
+            [BigInt('1'), BigInt('0')],
+        ],
+        pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')],
+    }
 }
 
 export const shiftBits = (
-    data: bigint,
+    data: string,
     shiftBits: bigint,
     variableBits: bigint
 ): bigint => {
-    return (data >> shiftBits) & ((BigInt(1) << variableBits) - BigInt(1))
+    const _data = BigInt(data)
+    return (_data >> shiftBits) & ((BigInt(1) << variableBits) - BigInt(1))
 }
 
 export const decodeEpochKeyControl = (
-    control: bigint,
+    control: string,
     config: any = CircuitConfig
 ): EpochKeyControl => {
     const {
@@ -57,7 +86,7 @@ export const decodeEpochKeyControl = (
 }
 
 export const decodeReputationControl = (
-    control: bigint,
+    control: string,
     config: any = CircuitConfig
 ) => {
     const { REP_BITS, ONE_BIT } = config
@@ -88,6 +117,42 @@ export const decodeReputationControl = (
         proveMaxRep,
         proveZeroRep,
         proveGraffiti,
+    }
+}
+
+export const decodeUserStateTransitionControl = (
+    control: string,
+    config: any = CircuitConfig
+): UserStateTransitionControl => {
+    const { ATTESTER_ID_BITS, EPOCH_BITS } = config
+    let accBits = BigInt(0)
+    const attesterId = shiftBits(control, accBits, ATTESTER_ID_BITS)
+    accBits += ATTESTER_ID_BITS
+
+    const toEpoch = shiftBits(control, accBits, EPOCH_BITS)
+    return {
+        attesterId,
+        toEpoch,
+    }
+}
+
+export const decodeSignupControl = (
+    control: string,
+    config: any = CircuitConfig
+): SignupControl => {
+    const { ATTESTER_ID_BITS, EPOCH_BITS, CHAIN_ID_BITS } = config
+    let accBits = BigInt(0)
+    const attesterId = shiftBits(control, accBits, ATTESTER_ID_BITS)
+    accBits += ATTESTER_ID_BITS
+
+    const epoch = shiftBits(control, accBits, EPOCH_BITS)
+    accBits += EPOCH_BITS
+
+    const chainId = shiftBits(control, accBits, CHAIN_ID_BITS)
+    return {
+        attesterId,
+        epoch,
+        chainId,
     }
 }
 
@@ -149,6 +214,43 @@ export const buildReputationControl = (
     accBits += ONE_BIT
 
     control += proveGraffiti << accBits
+
+    return control
+}
+
+export const buildUserStateTransitionControl = (
+    params: UserStateTransitionControl,
+    config: any = CircuitConfig
+): bigint => {
+    const { attesterId, toEpoch } = params
+    const { ATTESTER_ID_BITS } = config
+    let control = BigInt(0)
+    let accBits = BigInt(0)
+
+    control += BigInt(attesterId)
+    accBits += ATTESTER_ID_BITS
+
+    control += BigInt(toEpoch) << accBits
+
+    return control
+}
+
+export const buildSignupControl = (
+    params: SignupControl,
+    config: any = CircuitConfig
+): bigint => {
+    const { attesterId, epoch, chainId } = params
+    const { ATTESTER_ID_BITS, EPOCH_BITS } = config
+    let control = BigInt(0)
+    let accBits = BigInt(0)
+
+    control += BigInt(attesterId)
+    accBits += ATTESTER_ID_BITS
+
+    control += BigInt(epoch) << accBits
+    accBits += EPOCH_BITS
+
+    control += BigInt(chainId) << accBits
 
     return control
 }

@@ -1,5 +1,34 @@
-import { SnarkProof } from '@unirep/utils'
 import { CircuitConfig } from './CircuitConfig'
+
+export type Field = bigint | string
+
+export type EpochKeyControl = {
+    nonce: bigint
+    epoch: bigint
+    attesterId: bigint
+    revealNonce: bigint
+    chainId: bigint
+}
+
+export type ReputationControl = {
+    minRep: bigint
+    maxRep: bigint
+    proveMinRep: bigint
+    proveMaxRep: bigint
+    proveZeroRep: bigint
+    proveGraffiti: bigint
+}
+
+export type UserStateTransitionControl = {
+    attesterId: bigint
+    toEpoch: bigint
+}
+
+export type SignupControl = {
+    attesterId: bigint
+    epoch: bigint
+    chainId: bigint
+}
 
 /**
  * Name of the circuits that are used in Unirep protocol
@@ -52,41 +81,4 @@ export interface Prover {
     getVKey: (name: string | Circuit) => Promise<any>
 
     getConfig?: () => CircuitConfig
-}
-
-/**
- * Format snark proof for verifier smart contract
- * @param proof The proof of `SnarkProof` type
- * @returns An one dimensional array of stringified proof data
- */
-export const formatProofForVerifierContract = (proof: SnarkProof): string[] => {
-    return [
-        proof.pi_a[0],
-        proof.pi_a[1],
-        proof.pi_b[0][1],
-        proof.pi_b[0][0],
-        proof.pi_b[1][1],
-        proof.pi_b[1][0],
-        proof.pi_c[0],
-        proof.pi_c[1],
-    ].map((x) => x.toString())
-}
-
-/**
- * Format an one dimensional array for `snarkjs` verification
- * @param proof The string array of the proof
- * @returns The `SnarkProof` type proof data
- */
-export const formatProofForSnarkjsVerification = (
-    proof: (bigint | string)[]
-): SnarkProof => {
-    return {
-        pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')],
-        pi_b: [
-            [BigInt(proof[3]), BigInt(proof[2])],
-            [BigInt(proof[5]), BigInt(proof[4])],
-            [BigInt('1'), BigInt('0')],
-        ],
-        pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')],
-    }
 }

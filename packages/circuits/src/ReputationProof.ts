@@ -1,4 +1,4 @@
-import { Circuit, Prover } from './circuits'
+import { Circuit, Prover } from './type'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
 import {
@@ -20,10 +20,10 @@ export class ReputationProof extends BaseProof {
         graffiti: 4,
         data: 5,
     }
-    public epochKey: bigint
-    public stateTreeRoot: bigint
-    public control0: bigint
-    public control1: bigint
+    public epochKey: string
+    public stateTreeRoot: string
+    public control0: string
+    public control1: string
     public epoch: bigint
     public revealNonce: bigint
     public nonce: bigint
@@ -35,20 +35,16 @@ export class ReputationProof extends BaseProof {
     public minRep: bigint
     public maxRep: bigint
     public proveGraffiti: bigint
-    public graffiti: bigint
-    public data: bigint
+    public graffiti: string
+    public data: string
 
     /**
      * @param _publicSignals The public signals of the reputation proof that can be verified by the prover
      * @param _proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
-    constructor(
-        _publicSignals: (bigint | string)[],
-        _proof: SnarkProof,
-        prover?: Prover
-    ) {
-        super(_publicSignals, _proof, prover)
+    constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {
+        super(publicSignals, proof, prover)
         this.epochKey = this.publicSignals[this.idx.epochKey]
         this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]
         this.control0 = this.publicSignals[this.idx.control0]
