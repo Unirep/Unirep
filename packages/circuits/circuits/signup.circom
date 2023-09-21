@@ -10,7 +10,7 @@ template Signup(FIELD_COUNT) {
 
    signal input attester_id;
    signal input epoch;
-   signal input secret;
+   signal input identity_secret;
    signal input chain_id;
 
    signal output commitment;
@@ -21,7 +21,7 @@ template Signup(FIELD_COUNT) {
    var EPOCH_BITS = 48;
    var CHAIN_ID_BITS = 36;
 
-   commitment <== IdentityCommitment()(secret);
+   commitment <== IdentityCommitment()(identity_secret);
  
    _ <== Num2Bits(EPOCH_BITS)(epoch);
    _ <== Num2Bits(ATTESTER_ID_BITS)(attester_id);
@@ -33,7 +33,7 @@ template Signup(FIELD_COUNT) {
    }
    (state_tree_leaf, control, _) <== StateTreeLeaf(FIELD_COUNT)(
       data,
-      secret, 
+      identity_secret, 
       attester_id, 
       epoch,
       chain_id

@@ -39,7 +39,7 @@ export const genEpochKey = (
 }
 
 export const genIdentityHash = (
-    idSecret: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     chainId: bigint | number
@@ -52,23 +52,23 @@ export const genIdentityHash = (
     accBits += EPOCH_BITS
 
     field += BigInt(2) ** accBits * BigInt(chainId)
-    return poseidon2([idSecret, field])
+    return poseidon2([identitySecret, field])
 }
 
 export const genStateTreeLeaf = (
-    idSecret: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     data: (bigint | string | number)[],
     chainId: bigint | number
 ): bigint => {
-    // leaf = H(H(idSecret, attesterId, epoch, chainId), H(data))
+    // leaf = H(H(identitySecret, attesterId, epoch, chainId), H(data))
     let hashchain = BigInt(data[0])
     for (const d of data.slice(1)) {
         hashchain = poseidon2([hashchain, d])
     }
     const leafIdentityHash = genIdentityHash(
-        idSecret,
+        identitySecret,
         attesterId,
         epoch,
         chainId

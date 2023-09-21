@@ -22,7 +22,7 @@ const epoch = 0
 const id = new Identity()
 let circuitInputs = {
     epoch,
-    secret: id.secret,
+    identity_secret: id.secret,
     chain_id: 0,
     attester_id: 0,
 }
@@ -120,7 +120,7 @@ describe('User Signup', function () {
                     stringifyBigInts({
                         ...circuitInputs,
                         epoch,
-                        secret,
+                        identity_secret: secret,
                     })
                 )
                 const { publicSignals, proof } = new SignupProof(

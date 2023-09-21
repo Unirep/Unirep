@@ -663,7 +663,7 @@ export default class UserState {
         const epoch = options.epoch ?? this.sync.calcCurrentEpoch(attesterId)
         const circuitInputs = {
             epoch,
-            secret: this.id.secret,
+            identity_secret: this.id.secret,
             attester_id: attesterId,
             chain_id: this.chainId,
         }

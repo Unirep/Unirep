@@ -34,7 +34,7 @@ Control field:
 Inputs:
 - `attester_id`
 - `epoch`
-- `secret`
+- `identity_secret`
 - `chain_id`
 
 Outputs:
@@ -50,7 +50,7 @@ Interface:
   Signup(FIELD_COUNT)(
     attester_id, 
     epoch, 
-    secret, 
+    identity_secret, 
     chain_id
   );
 ```
@@ -335,7 +335,7 @@ Inputs:
 - `epoch`
 - `nonce`
 - `sig_data` (public)
-- `secret`
+- `identity_secret`
 - `scope` (public)
 - `data[FIELD_COUNT]`
 - `chain_id`
@@ -358,7 +358,7 @@ Interface:
   epoch,
   nonce,
   sig_data,
-  secret,
+  identity_secret,
   scope,
   data,
   chain_id

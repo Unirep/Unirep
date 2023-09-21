@@ -188,7 +188,7 @@ const genSignupCircuitInput = (config: {
 }) => {
     const { id, epoch, attesterId, chainId } = Object.assign(config)
     const circuitInputs = {
-        secret: id.secret,
+        identity_secret: id.secret,
         epoch,
         attester_id: attesterId,
         chain_id: chainId,
@@ -238,7 +238,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         epoch,
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
-        secret: id.secret,
+        identity_secret: id.secret,
         scope: scope,
         chain_id: chainId ?? 0,
     }

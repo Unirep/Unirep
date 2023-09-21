@@ -55,7 +55,7 @@ See [state tree](../protocol/trees.md#state-tree) for more details.
 import { genIdentityHash } from '@unirep/utils'
 
 genIdentityHash(
-    idSecret: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     chainId: bigint | number
@@ -70,7 +70,7 @@ Calculate a [state tree](../protocol/trees.md#state-tree) leaf for a user.
 import { genStateTreeLeaf } from '@unirep/utils'
 
 genStateTreeLeaf(
-    idSecret: bigint,
+    identitySecret: bigint,
     attesterId: bigint | string,
     epoch: bigint | number,
     data: (bigint | string | number)[],

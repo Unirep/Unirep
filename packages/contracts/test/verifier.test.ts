@@ -357,7 +357,7 @@ describe('Epoch key verifier helper', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch: epoch.toString(),
-                secret: id.secret,
+                identity_secret: id.secret,
                 attester_id: attesterId,
                 chain_id: chainId,
             })

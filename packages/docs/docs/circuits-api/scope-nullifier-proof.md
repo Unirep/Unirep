@@ -86,7 +86,7 @@ this.scope
 
 ## nullifier
 
-The nullifier for the proof, which is computed by `hash(scope, secret)` in circuit
+The nullifier for the proof, which is computed by `hash(scope, identitySecret)` in circuit
 
 ```ts
 this.nullifier
