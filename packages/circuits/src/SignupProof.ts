@@ -23,12 +23,12 @@ export class SignupProof extends BaseProof {
     public chainId: bigint
 
     /**
-     * @param _publicSignals The public signals of the user sign up proof that can be verified by the prover
-     * @param _proof The proof that can be verified by the prover
+     * @param publicSignals The public signals of the user sign up proof that can be verified by the prover
+     * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
-    constructor(_publicSignals: string[], _proof: SnarkProof, prover?: Prover) {
-        super(_publicSignals, _proof, prover)
+    constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {
+        super(publicSignals, proof, prover)
         this.identityCommitment =
             this.publicSignals[this.idx.identityCommitment]
         this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]

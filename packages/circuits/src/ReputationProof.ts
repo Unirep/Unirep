@@ -43,8 +43,8 @@ export class ReputationProof extends BaseProof {
     public proveGraffiti: bigint
 
     /**
-     * @param _publicSignals The public signals of the reputation proof that can be verified by the prover
-     * @param _proof The proof that can be verified by the prover
+     * @param publicSignals The public signals of the reputation proof that can be verified by the prover
+     * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {

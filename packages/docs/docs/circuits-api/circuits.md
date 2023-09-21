@@ -7,11 +7,11 @@ A circuits enum is exported from the package.
 ```ts
 enum Circuit {
   epochKey,
-  proveReputation,
+  reputation,
   userStateTransition,
   signup,
   epochKeyLite,
-  preventDoubleAction
+  scopeNullifier
 }
 ```
 
@@ -26,13 +26,16 @@ import { Circuit } from '@unirep/circuits'
 The signup proof outputs a [state tree](../protocol/trees.md#state-tree) leaf and an [identity commitment](https://semaphore.appliedzkp.org/docs/glossary#identity-commitment) for the user. The state tree leaf will have zero values for all data fields.
 
 Control field:
-- 48 bits `epoch`
-- 160 bits `attester_id`
+
+| chain id | epoch | attester id |
+| :--: | :--: | :--: |
+| 36 bits | 48 bits | 160 bits |
 
 Inputs:
 - `attester_id`
 - `epoch`
 - `secret`
+- `chain_id`
 
 Outputs:
 - `commitment`
@@ -43,7 +46,13 @@ Interface:
 ```js
 // pragma circom 2.1.0;
 // include "PATH/node_modules/@unirep/circuits/circuits/signup.circom"; 
-(commitment, state_tree_leaf, control) <== Signup(FIELD_COUNT)(attester_id, epoch, secret);
+(commitment, state_tree_leaf, control) <== 
+  Signup(FIELD_COUNT)(
+    attester_id, 
+    epoch, 
+    secret, 
+    chain_id
+  );
 ```
 
 :::info
@@ -52,26 +61,30 @@ Control fields are used to encode many small values into a single field element.
 
 ## Epoch Key Proof
 
-The epoch key proof allows a user to prove control of an epoch key in a certain epoch. This proof calculates two things: merkle inclusion of a state leaf against the current state root, and an epoch key. A data value can be included and endorsed by this proof.
+The epoch key proof allows a user to prove control of an epoch key in a certain epoch. This proof calculates tree things: 
+1. Merkle inclusion of a state leaf against the current state root
+2. An epoch key
+3. A data value can be included and endorsed by this proof.
 
 The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
 
 Control field:
-- 8 bits `nonce`
-- 48 bits `epoch`
-- 160 bits `attester_id`
-- 1 bit `reveal_nonce`
+
+| chain id| reveal nonce | attester id | epoch | nonce |
+| :--: | :--: | :--: | :--: | :--: |
+| 36 bits| 1 bits| 160 bits | 48 bits | 8 bits |
 
 Inputs:
-- `nonce`
-- `epoch`
-- `attester_id`
-- `reveal_nonce`
-- `data[FIELD_COUNT]`
-- `state_tree_indexes[STATE_TREE_DEPTH]`
+- `state_tree_indeces[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `identity_secret`
+- `reveal_nonce`
+- `attester_id`
+- `epoch`
+- `nonce`
+- `data[FIELD_COUNT]`
 - `sig_data` (public)
+- `chain_id`
 
 Outputs:
 - `epoch_key`
@@ -83,7 +96,7 @@ Interface:
 // pragma circom 2.1.0;
 // include "PATH/node_modules/@unirep/circuits/circuits/epochKey.circom"; 
 (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
-  state_tree_indexes, 
+  state_tree_indeces, 
   state_tree_elements, 
   identity_secret,
   reveal_nonce,
@@ -91,7 +104,8 @@ Interface:
   epoch,
   nonce,
   data,
-  sig_data
+  sig_data,
+  chain_id
 );
 ```
 
@@ -101,7 +115,7 @@ Control fields are used to encode many small values into a single field element.
 
 ## Epoch Key Lite Proof
 
-The epoch key lite proof allows a user to prove control of an epoch key. Unlike the epoch key proof, this proof does not perform a state tree inclusion. A data value can be included and endorsed by this proof.
+The epoch key lite proof allows a user to prove control of an epoch key. Unlike the epoch key proof, this proof *does not perform a state tree inclusion*. A data value can be included and endorsed by this proof.
 
 The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
 
@@ -112,22 +126,24 @@ Instead this proof is more useful for proving control of keys from past epochs.
 :::
 
 Control field:
-- 8 bits `nonce`
-- 48 bits `epoch`
-- 160 bits `attester_id`
-- 1 bit `reveal_nonce`
+
+| chain id| reveal nonce | attester id | epoch | nonce |
+| :--: | :--: | :--: | :--: | :--: |
+| 36 bits| 1 bits| 160 bits | 48 bits | 8 bits |
 
 Inputs:
-- `nonce`
-- `epoch`
-- `attester_id`
-- `reveal_nonce`
-- `sig_data` (public)
 - `identity_secret`
+- `reveal_nonce`
+- `attester_id`
+- `epoch`
+- `nonce`
+- `sig_data` (public)
+- `chain_id`
+
 
 Outputs:
-- `epoch_key`
 - `control`
+- `epoch_key`
 
 Interface: 
 ```js
@@ -139,7 +155,8 @@ Interface:
   attester_id,
   epoch,
   nonce,
-  sig_data
+  sig_data,
+  chain_id
 );
 ```
 
@@ -147,11 +164,14 @@ Interface:
 Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
-## Prove Reputation Proof
+## Reputation Proof
 
 The prove reputation proof allows a user to prove a reputation balance in the [state tree](../protocol/trees#state-tree). The user is not able to prove reputation received in the current epoch. The user can optionally prove some minimum amount of reputation, maximum amount of reputation, net zero reputation (e.g. `posRep == negRep`), and their graffiti.
 
-In this proof, we assign `data[0] = posRep`, `data[1] = negRep`, `data[SUM_FIELD_COUNT] = graffiti`.
+In this proof, we assign 
+- `data[0] = posRep`
+- `data[1] = negRep`
+- `data[SUM_FIELD_COUNT] = graffiti`.
 
 :::info
 See [data in UniRep protocol](../protocol/data.md) for more information.
@@ -165,29 +185,34 @@ The proof could allow a user to accidentally publish their overall reputation (i
 The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
 
 Control field 0:
-- 8 bits `nonce`
-- 48 bits `epoch`
-- 160 bits `attester_id`
-- 1 bit `reveal_nonce`
+
+| chain id| reveal nonce | attester id | epoch | nonce |
+| :--: | :--: | :--: | :--: | :--: |
+| 36 bits| 1 bits| 160 bits | 48 bits | 8 bits |
 
 Control field 1:
-- 64 bits `min_rep`
-- 64 bits `max_rep`
-- 1 bit `prove_min_rep`
-- 1 bit `prove_max_rep`
-- 1 bit `prove_zero_rep`
-- 1 bit `prove_graffiti`
+
+| prove graffiti | prove zero rep| prove max rep | prove min rep | max rep | min rep |
+| :--: | :--: | :--: | :--: | :--: | :--: |
+| 1 bit | 1 bit| 1 bit | 1 bit | 64 bits | 64 bits |
 
 Inputs:
 - `identity_secret`
-- `graffiti` (public)
-- `state_tree_indexes[STATE_TREE_DEPTH]`
+- `state_tree_indeces[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `data[FIELD_COUNT]`
-- `nonce`
-- `epoch`
-- `attester_id`
+- `prove_graffiti`
+- `graffiti` (public)
 - `reveal_nonce`
+- `attester_id`
+- `epoch`
+- `nonce`
+- `chain_id`
+- `min_rep`
+- `max_rep`
+- `prove_min_rep`
+- `prove_max_rep`
+- `prove_zero_rep`
 - `sig_data` (public)
 
 Outputs:
@@ -198,10 +223,10 @@ Outputs:
 Interface: 
 ```js
 // pragma circom 2.1.0;
-// include "PATH/node_modules/@unirep/circuits/circuits/proveReputation.circom"; 
-(epoch_key, state_tree_root, control) <== ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS)(
+// include "PATH/node_modules/@unirep/circuits/circuits/reputation.circom"; 
+(epoch_key, state_tree_root, control) <== Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS)(
   identity_secret,
-  state_tree_indexes,
+  state_tree_indeces,
   state_tree_elements,
   data,
   prove_graffiti,
@@ -210,6 +235,7 @@ Interface:
   attester_id,
   epoch,
   nonce,
+  chain_id,
   min_rep,
   max_rep,
   prove_min_rep,
@@ -231,31 +257,40 @@ Once it has proved inclusion it sums the reputation values stored in the leaves.
 
 <!-- TODO: add a graphic for this -->
 
+Control field:
+
+| to epoch | attester id | 
+| :--: | :--: | 
+| 48 bits| 160 bits | 
+
+
 Inputs:
-- `identity_secret`
 - `from_epoch`
-- `to_epoch` (public)
-- `attester_id` (public)
-- `epoch_tree_root`
-- `state_tree_indexes[STATE_TREE_DEPTH]`
+- `to_epoch`
+- `identity_secret`
+- `state_tree_indeces[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
-- `data[FIELD_COUNT]`
-- `new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT]`
-- `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
-- `epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
 - `history_tree_indices[HISTORY_TREE_DEPTH]`
 - `history_tree_elements[HISTORY_TREE_DEPTH]`
+- `attester_id`
+- `data[FIELD_COUNT]`
+- `new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT]`
+- `epoch_tree_root`
+- `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
+- `epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
+- `chain_id`
 
 Outputs:
 - `history_tree_root`
 - `state_tree_leaf`
 - `epks[EPOCH_KEY_NONCE_PER_EPOCH]`
+- `control`
 
 Interface: 
 ```js
 // pragma circom 2.1.0;
 // include "PATH/node_modules/@unirep/circuits/circuits/userStateTransition.circom"; 
-(history_tree_root, state_tree_leaf, epks) <== UserStateTransition(
+(history_tree_root, state_tree_leaf, epks, control) <== UserStateTransition(
   STATE_TREE_DEPTH,
   EPOCH_TREE_DEPTH,
   HISTORY_TREE_DEPTH,
@@ -267,7 +302,7 @@ Interface:
   from_epoch,
   to_epoch,
   identity_secret,
-  state_tree_indexes,
+  state_tree_indeces,
   state_tree_elements,
   history_tree_indices,
   history_tree_elements,
@@ -276,6 +311,60 @@ Interface:
   new_data,
   epoch_tree_root,
   epoch_tree_elements,
-  epoch_tree_indices
+  epoch_tree_indices,
+  chain_id
 );
 ```
+
+## Scope Nullifier Proof
+
+The scope nullifier proof will prevents users from doing the same action within a scope again. It checks if the user has already signed up in a UniRep attester and outputs a scope nullifier.
+The nullifier will be computed by `hash(scope, secret)`
+
+Control field:
+
+| chain id| reveal nonce | attester id | epoch | nonce |
+| :--: | :--: | :--: | :--: | :--: |
+| 36 bits| 1 bits| 160 bits | 48 bits | 8 bits |
+
+Inputs:
+- `state_tree_indeces[STATE_TREE_DEPTH]`
+- `state_tree_elements[STATE_TREE_DEPTH]`
+- `reveal_nonce`
+- `attester_id`
+- `epoch`
+- `nonce`
+- `sig_data` (public)
+- `secret`
+- `scope` (public)
+- `data[FIELD_COUNT]`
+- `chain_id`
+
+Outputs:
+- `epoch_key`
+- `state_tree_root`
+- `control`
+- `nullifier`
+
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/scopeNullifier.circom"; 
+(epoch_key, state_tree_root, control, nullifier) <== ScopeNullifier(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
+  state_tree_indeces, 
+  state_tree_elements,
+  reveal_nonce, 
+  attester_id,
+  epoch,
+  nonce,
+  sig_data,
+  secret,
+  scope,
+  data,
+  chain_id
+);
+```
+
+:::info
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+:::

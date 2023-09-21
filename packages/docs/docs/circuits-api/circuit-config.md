@@ -13,8 +13,19 @@ const {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     FIELD_COUNT,
     SUM_FIELD_COUNT,
-    REPL_NONCE_BITS, 
+    REPL_NONCE_BITS,
+    SNARK_SCALAR_FIELD
 } = CircuitConfig.default
+
+const {
+    EPOCH_BITS,
+    NONCE_BITS,
+    ATTESTER_ID_BITS,
+    CHAIN_ID_BITS,
+    REVEAL_NONCE_BITS,
+    REP_BITS,
+    ONE_BIT
+} = CircuitConfig
 ```
 
 :::info
