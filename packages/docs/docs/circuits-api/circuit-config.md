@@ -14,10 +14,7 @@ const {
     FIELD_COUNT,
     SUM_FIELD_COUNT,
     REPL_NONCE_BITS,
-    SNARK_SCALAR_FIELD
-} = CircuitConfig.default
-
-const {
+    SNARK_SCALAR_FIELD,
     EPOCH_BITS,
     NONCE_BITS,
     ATTESTER_ID_BITS,
@@ -25,7 +22,7 @@ const {
     REVEAL_NONCE_BITS,
     REP_BITS,
     ONE_BIT
-} = CircuitConfig
+} = CircuitConfig.default
 ```
 
 :::info
