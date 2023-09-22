@@ -1,12 +1,16 @@
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { genEpochKey } from '@unirep/utils'
-import randomf from 'randomf'
 import { Circuit, CircuitConfig, ReputationProof } from '../src'
 import { genReputationCircuitInput, genProofAndVerify } from './utils'
 
-const { SUM_FIELD_COUNT, NUM_EPOCH_KEY_NONCE_PER_EPOCH, REPL_NONCE_BITS } =
-    CircuitConfig.default
+const {
+    SUM_FIELD_COUNT,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    REPL_NONCE_BITS,
+    ATTESTER_ID_BITS,
+    REP_BITS,
+} = CircuitConfig.default
 
 const id = new Identity()
 const epoch = 20
@@ -504,7 +508,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range attesterId', async () => {
-        const attesterId = BigInt(2) ** BigInt(160)
+        const attesterId = BigInt(2) ** ATTESTER_ID_BITS
         const circuitInputs = genReputationCircuitInput({
             ...config,
             attesterId,
@@ -582,7 +586,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range minRep', async () => {
-        const minRep = BigInt(2) ** BigInt(64)
+        const minRep = BigInt(2) ** REP_BITS
         const circuitInputs = genReputationCircuitInput({
             ...config,
             minRep,
@@ -595,7 +599,7 @@ describe('Prove reputation from attester circuit', function () {
     })
 
     it('should fail to prove an out of range maxRep', async () => {
-        const maxRep = BigInt(2) ** BigInt(64)
+        const maxRep = BigInt(2) ** REP_BITS
         const circuitInputs = genReputationCircuitInput({
             ...config,
             maxRep,

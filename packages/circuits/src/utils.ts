@@ -56,7 +56,7 @@ export const shiftBits = (
 
 export const decodeEpochKeyControl = (
     control: string,
-    config: any = CircuitConfig
+    config: CircuitConfig = CircuitConfig.default
 ): EpochKeyControl => {
     const {
         NONCE_BITS,
@@ -87,7 +87,7 @@ export const decodeEpochKeyControl = (
 
 export const decodeReputationControl = (
     control: string,
-    config: any = CircuitConfig
+    config: CircuitConfig = CircuitConfig.default
 ) => {
     const { REP_BITS, ONE_BIT } = config
 
@@ -122,7 +122,7 @@ export const decodeReputationControl = (
 
 export const decodeUserStateTransitionControl = (
     control: string,
-    config: any = CircuitConfig
+    config: CircuitConfig = CircuitConfig.default
 ): UserStateTransitionControl => {
     const { ATTESTER_ID_BITS, EPOCH_BITS } = config
     let accBits = BigInt(0)
@@ -138,7 +138,7 @@ export const decodeUserStateTransitionControl = (
 
 export const decodeSignupControl = (
     control: string,
-    config: any = CircuitConfig
+    config: CircuitConfig = CircuitConfig.default
 ): SignupControl => {
     const { ATTESTER_ID_BITS, EPOCH_BITS, CHAIN_ID_BITS } = config
     let accBits = BigInt(0)
@@ -158,7 +158,7 @@ export const decodeSignupControl = (
 
 export const buildEpochKeyControl = (
     params: EpochKeyControl,
-    config: any = CircuitConfig
+    config: CircuitConfig = CircuitConfig.default
 ): bigint => {
     const { chainId, revealNonce, attesterId, epoch, nonce } = params
     const { NONCE_BITS, EPOCH_BITS, ATTESTER_ID_BITS, REVEAL_NONCE_BITS } =
@@ -185,7 +185,7 @@ export const buildEpochKeyControl = (
 
 export const buildReputationControl = (
     params: ReputationControl,
-    config: any = CircuitConfig
+    config: CircuitConfig = CircuitConfig.default
 ): bigint => {
     const {
         minRep,
@@ -220,7 +220,7 @@ export const buildReputationControl = (
 
 export const buildUserStateTransitionControl = (
     params: UserStateTransitionControl,
-    config: any = CircuitConfig
+    config: CircuitConfig = CircuitConfig.default
 ): bigint => {
     const { attesterId, toEpoch } = params
     const { ATTESTER_ID_BITS } = config
@@ -237,7 +237,7 @@ export const buildUserStateTransitionControl = (
 
 export const buildSignupControl = (
     params: SignupControl,
-    config: any = CircuitConfig
+    config: CircuitConfig = CircuitConfig.default
 ): bigint => {
     const { attesterId, epoch, chainId } = params
     const { ATTESTER_ID_BITS, EPOCH_BITS } = config

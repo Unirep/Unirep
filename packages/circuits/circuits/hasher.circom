@@ -15,6 +15,13 @@ template EpochKeyHasher() {
 
   signal output out;
 
+  /**
+  * control structure
+  * 160 bits attester id
+  * 48 bits epoch
+  * 8 bits nonce
+  * 36 bit chain id
+  **/
   var acc_bits = 0;
   var acc_data = attester_id;
   acc_bits += ATTESTER_ID_BITS;
@@ -75,6 +82,12 @@ template StateTreeLeaf(FIELD_COUNT) {
     }
   }
 
+  /**
+  * control structure
+  * 160 bits attester id
+  * 48 bits epoch
+  * 36 bit chain id
+  **/
   var acc_bits = 0;
   var acc_data = attester_id;
   acc_bits += ATTESTER_ID_BITS;

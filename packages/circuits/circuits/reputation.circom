@@ -45,13 +45,31 @@ template Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT
     signal output state_tree_root;
     signal output control[2];
 
+    var MAX_SAFE_BITS = 253;
     // control[0]
+    /**
+     * Control structure
+     * 8 bits nonce
+     * 48 bits epoch
+     * 160 bits attester id
+     * 1 bit reveal nonce
+     * 36 bit chain id
+     **/
     var NONCE_BITS = 8;
     var EPOCH_BITS = 48;
     var ATTESTER_ID_BITS = 160;
     var REVEAL_NONCE_BITS = 1;
     var CHAIN_ID_BITS = 36;
     // control[1]
+    /**
+     * Control structure
+     * 64 bits min rep
+     * 64 bits max rep
+     * 1 bit prove min rep
+     * 1 bit prove max rep
+     * 1 bit prove zero rep
+     * 1 bit prove graffiti
+     **/
     var REP_BITS = 64;
     var ONE_BIT = 1;
 
@@ -65,7 +83,7 @@ template Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT
     // range check
     _ <== Num2Bits(REP_BITS)(min_rep);
     _ <== Num2Bits(REP_BITS)(max_rep);
-    _ <== Num2Bits(253-REPL_NONCE_BITS)(graffiti);
+    _ <== Num2Bits(MAX_SAFE_BITS-REPL_NONCE_BITS)(graffiti);
 
     var acc_bits = 0;
     var control1 = min_rep;
@@ -145,7 +163,7 @@ template Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT
 
     signal if_not_check_graffiti <== IsZero()(prove_graffiti);
     signal graffiti_data;
-    (graffiti_data, _) <== ExtractBits(REPL_NONCE_BITS, 253-REPL_NONCE_BITS)(data[SUM_FIELD_COUNT]);
+    (graffiti_data, _) <== ExtractBits(REPL_NONCE_BITS, MAX_SAFE_BITS-REPL_NONCE_BITS)(data[SUM_FIELD_COUNT]);
     signal repl_field_equal <== IsEqual()([graffiti, graffiti_data]);
     signal check_graffiti <== OR()(if_not_check_graffiti, repl_field_equal);
     check_graffiti === 1;

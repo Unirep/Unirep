@@ -17,6 +17,8 @@ const {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     STATE_TREE_DEPTH,
     FIELD_COUNT,
+    ATTESTER_ID_BITS,
+    CHAIN_ID_BITS,
 } = CircuitConfig.default
 
 const id = new Identity()
@@ -222,7 +224,7 @@ describe('User state transition', function () {
     })
 
     it('should fail to UST with out of range attesterId', async () => {
-        const attesterId = BigInt(2) ** BigInt(160)
+        const attesterId = BigInt(2) ** ATTESTER_ID_BITS
         const circuitInputs = {
             ...defaultInputs,
             attester_id: attesterId,
@@ -235,7 +237,7 @@ describe('User state transition', function () {
     })
 
     it('should fail to UST with out of range chain ID', async () => {
-        const chainId = BigInt(2) ** BigInt(36)
+        const chainId = BigInt(2) ** CHAIN_ID_BITS
         const circuitInputs = {
             ...defaultInputs,
             chain_id: chainId,

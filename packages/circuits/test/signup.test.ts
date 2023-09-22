@@ -4,7 +4,8 @@ import { genStateTreeLeaf } from '@unirep/utils'
 import { Circuit, CircuitConfig, SignupProof } from '../src'
 import { genProofAndVerify, genSignupCircuitInput } from './utils'
 
-const { FIELD_COUNT } = CircuitConfig.default
+const { FIELD_COUNT, ATTESTER_ID_BITS, EPOCH_BITS, CHAIN_ID_BITS } =
+    CircuitConfig.default
 
 const id = new Identity()
 const epoch = 35234
@@ -48,7 +49,7 @@ describe('Signup circuits', function () {
     })
 
     it('should fail to prove an out of range attesterId', async () => {
-        const attesterId = BigInt(1) << BigInt(160)
+        const attesterId = BigInt(1) << ATTESTER_ID_BITS
         const circuitInputs = genSignupCircuitInput({
             ...config,
             attesterId,
@@ -61,10 +62,23 @@ describe('Signup circuits', function () {
     })
 
     it('should fail to prove an out of range epoch', async () => {
-        const epoch = BigInt(1) << BigInt(48)
+        const epoch = BigInt(1) << EPOCH_BITS
         const circuitInputs = genSignupCircuitInput({
             ...config,
             epoch,
+        })
+        await new Promise<void>((rs, rj) => {
+            genProofAndVerify(Circuit.signup, circuitInputs)
+                .then(() => rj())
+                .catch(() => rs())
+        })
+    })
+
+    it('should fail to prove an out of chain id', async () => {
+        const chainId = BigInt(1) << CHAIN_ID_BITS
+        const circuitInputs = genSignupCircuitInput({
+            ...config,
+            chainId,
         })
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.signup, circuitInputs)

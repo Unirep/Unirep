@@ -2,10 +2,16 @@ import { Identity } from '@semaphore-protocol/identity'
 import * as utils from '@unirep/utils'
 import { poseidon1 } from 'poseidon-lite'
 
-import { Circuit, SNARK_SCALAR_FIELD, CircuitConfig } from '../src'
+import { Circuit, SNARK_SCALAR_FIELD } from '../src'
+import CircuitConfig from '../src/CircuitConfig'
 import { defaultProver } from '../provers/defaultProver'
-const { STATE_TREE_DEPTH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS } =
-    CircuitConfig.default
+const {
+    STATE_TREE_DEPTH,
+    SUM_FIELD_COUNT,
+    FIELD_COUNT,
+    REPL_NONCE_BITS,
+    MAX_SAFE_BITS,
+} = CircuitConfig
 
 export const randomData = () => [
     ...Array(SUM_FIELD_COUNT)
@@ -16,7 +22,7 @@ export const randomData = () => [
         .map(
             () =>
                 poseidon1([Math.floor(Math.random() * 199191919)]) %
-                BigInt(2) ** BigInt(253)
+                BigInt(2) ** MAX_SAFE_BITS
         ),
 ]
 

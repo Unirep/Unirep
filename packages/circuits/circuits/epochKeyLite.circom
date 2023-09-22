@@ -5,13 +5,14 @@ include "./circomlib/circuits/comparators.circom";
 include "./hasher.circom";
 
 template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
+    
     var NONCE_BITS = 8;
-    assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**NONCE_BITS);
-   
     var ATTESTER_ID_BITS = 160;
     var EPOCH_BITS = 48;
     var CHAIN_ID_BITS = 36;
     var REVEAL_NONCE_BITS = 1;
+
+    assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**NONCE_BITS);
 
     // inputs
     signal input identity_secret;
@@ -31,9 +32,10 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     /**
      * Control structure
      * 8 bits nonce
-     * 64 bits epoch
-     * 160 bits attester_id
+     * 48 bits epoch
+     * 160 bits attester id
      * 1 bit reveal nonce
+     * 36 bit chain id
      **/
 
     // check that reveal_nonce is 0 or 1

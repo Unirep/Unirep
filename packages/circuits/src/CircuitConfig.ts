@@ -30,6 +30,15 @@ export class CircuitConfig {
 
     SNARK_SCALAR_FIELD: string
 
+    MAX_SAFE_BITS: bigint = BigInt(253)
+    EPOCH_BITS: bigint = EPOCH_BITS
+    NONCE_BITS: bigint = NONCE_BITS
+    ATTESTER_ID_BITS: bigint = ATTESTER_ID_BITS
+    CHAIN_ID_BITS: bigint = CHAIN_ID_BITS
+    REVEAL_NONCE_BITS: bigint = REVEAL_NONCE_BITS
+    REP_BITS: bigint = REP_BITS
+    ONE_BIT: bigint = ONE_BIT
+
     static get default() {
         return new CircuitConfig(defaultConfig)
     }
@@ -48,33 +57,7 @@ export class CircuitConfig {
     }
 
     get REPL_FIELD_BITS() {
-        return 253 - this.REPL_NONCE_BITS
-    }
-
-    static get EPOCH_BITS() {
-        return EPOCH_BITS
-    }
-    static get NONCE_BITS() {
-        return NONCE_BITS
-    }
-    static get ATTESTER_ID_BITS() {
-        return ATTESTER_ID_BITS
-    }
-
-    static get CHAIN_ID_BITS() {
-        return CHAIN_ID_BITS
-    }
-
-    static get REVEAL_NONCE_BITS() {
-        return REVEAL_NONCE_BITS
-    }
-
-    static get REP_BITS() {
-        return REP_BITS
-    }
-
-    static get ONE_BIT() {
-        return ONE_BIT
+        return Number(this.MAX_SAFE_BITS) - this.REPL_NONCE_BITS
     }
 
     constructor(

@@ -5,7 +5,6 @@ export const SNARK_SCALAR_FIELD =
     '21888242871839275222246405745257275088548364400416034343698204186575808495617'
 export const F = BigInt(SNARK_SCALAR_FIELD)
 
-export const MAX_EPOCH = 2 ** 48 - 1
 export const NONCE_BITS = BigInt(8)
 export const ATTESTER_ID_BITS = BigInt(160)
 export const EPOCH_BITS = BigInt(48)
@@ -13,6 +12,7 @@ export const CHAIN_ID_BITS = BigInt(36)
 export const REVEAL_NONCE_BITS = BigInt(1)
 export const REP_BITS = BigInt(64)
 export const ONE_BIT = BigInt(1)
+export const MAX_EPOCH = 2 ** Number(EPOCH_BITS) - 1
 
 export const genRandomSalt = () => randomf(F)
 

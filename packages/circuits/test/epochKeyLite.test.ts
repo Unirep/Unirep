@@ -6,7 +6,12 @@ import { defaultProver } from '../provers/defaultProver'
 
 import { genProofAndVerify } from './utils'
 
-const { NUM_EPOCH_KEY_NONCE_PER_EPOCH } = CircuitConfig.default
+const {
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+    EPOCH_BITS,
+    ATTESTER_ID_BITS,
+    CHAIN_ID_BITS,
+} = CircuitConfig.default
 
 const attesterId = BigInt(10210)
 const epoch = BigInt(120958)
@@ -171,7 +176,7 @@ describe('Epoch key lite circuits', function () {
     })
 
     it('should fail to prove a chain ID that is above max chain ID', async () => {
-        const chainId = BigInt(1) << BigInt(36)
+        const chainId = BigInt(1) << CHAIN_ID_BITS
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.epochKeyLite, {
                 ...circuitInputs,
@@ -195,7 +200,7 @@ describe('Epoch key lite circuits', function () {
     })
 
     it('should fail to prove an out of range epoch', async () => {
-        const epoch = BigInt(2) ** BigInt(64)
+        const epoch = BigInt(2) ** EPOCH_BITS
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.epochKeyLite, {
                 ...circuitInputs,
@@ -207,7 +212,7 @@ describe('Epoch key lite circuits', function () {
     })
 
     it('should fail to prove an out of range attesterId', async () => {
-        const attesterId = BigInt(2) ** BigInt(160)
+        const attesterId = BigInt(2) ** ATTESTER_ID_BITS
         await new Promise<void>((rs, rj) => {
             genProofAndVerify(Circuit.epochKeyLite, {
                 ...circuitInputs,

@@ -25,6 +25,10 @@ const {
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     FIELD_COUNT,
     REPL_NONCE_BITS,
+    ATTESTER_ID_BITS,
+    EPOCH_BITS,
+    NONCE_BITS,
+    REP_BITS,
 } = CircuitConfig.default
 
 function randomBits(bit: number) {
@@ -121,13 +125,13 @@ describe('Epoch key lite verifier helper', function () {
     })
 
     it('should decode public signals', async () => {
+        const epoch = randomBits(Number(EPOCH_BITS))
+        const nonce = randomBits(Number(NONCE_BITS))
+        const attesterId = randomBits(Number(ATTESTER_ID_BITS))
+
         // should reveal nonce
         {
-            const epoch = randomBits(48)
-            const nonce = randomBits(8)
-            const attesterId = randomBits(160)
             const revealNonce = BigInt(1)
-
             const control = EpochKeyLiteProof.buildControl({
                 attesterId,
                 epoch,
@@ -151,11 +155,7 @@ describe('Epoch key lite verifier helper', function () {
 
         // should not reveal nonce
         {
-            const epoch = randomBits(48)
-            const nonce = randomBits(8)
-            const attesterId = randomBits(160)
             const revealNonce = BigInt(0)
-
             const control = EpochKeyLiteProof.buildControl({
                 attesterId,
                 epoch,
@@ -719,9 +719,9 @@ describe('Reputation verifier helper', function () {
     })
 
     it('should decode public signals', async () => {
-        const epoch = randomBits(64)
-        const nonce = randomBits(8)
-        const attesterId = randomBits(160)
+        const epoch = randomBits(Number(EPOCH_BITS))
+        const nonce = randomBits(Number(NONCE_BITS))
+        const attesterId = randomBits(Number(ATTESTER_ID_BITS))
         const revealNonce = false
 
         for (let proveMinRep = 0; proveMinRep < 2; proveMinRep++) {
@@ -732,8 +732,8 @@ describe('Reputation verifier helper', function () {
                         proveGraffiti < 2;
                         proveGraffiti++
                     ) {
-                        const maxRep = randomBits(64)
-                        const minRep = randomBits(64)
+                        const maxRep = randomBits(Number(REP_BITS))
+                        const minRep = randomBits(Number(REP_BITS))
                         const control = ReputationProof.buildControl({
                             attesterId,
                             epoch,
@@ -885,7 +885,7 @@ describe('Reputation verifier helper', function () {
             ).to.not.be.reverted
         }
         {
-            const randomAddress = randomBits(160)
+            const randomAddress = randomBits(Number(ATTESTER_ID_BITS))
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.reputation,
                 stringifyBigInts({
