@@ -39,7 +39,7 @@ contract Unirep is IUnirep, VerifySignature {
     uint8 public immutable numEpochKeyNoncePerEpoch;
     uint8 public immutable replNonceBits;
     uint8 public immutable replFieldBits;
-    uint48 public immutable unirepChainId;
+    uint48 public immutable chainid;
     uint256 public immutable defaultDataHash;
 
     uint48 public attestationCount = 1;
@@ -64,7 +64,7 @@ contract Unirep is IUnirep, VerifySignature {
         assembly {
             id := chainid()
         }
-        unirepChainId = uint48(id);
+        chainid = uint48(id);
 
         // Set the verifier contracts
         signupVerifier = _signupVerifier;
@@ -146,8 +146,7 @@ contract Unirep is IUnirep, VerifySignature {
         // only allow attester to sign up users
         if (uint160(msg.sender) != signals.attesterId)
             revert AttesterIdNotMatch(uint160(msg.sender));
-        if (signals.chainId != unirepChainId)
-            revert ChainIdNotMatch(signals.chainId);
+        if (signals.chainId != chainid) revert ChainIdNotMatch(signals.chainId);
         // Verify the proof
         if (!signupVerifier.verifyProof(publicSignals, proof))
             revert InvalidProof();

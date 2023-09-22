@@ -82,7 +82,7 @@ Please make sure the signature is signed through the correct attester.
 ## 0x4c4783a8
 - `ChainIdNotMatch(uint48 chainId)`<br/>
     The chain id in the proof does not match the current unirep contract.
-    Check if [`unirepChainId()`](./unirep-sol.md#unirepchainid) matches your circuit inputs.
+    Check if [`chainid()`](./unirep-sol.md#chainid) matches your circuit inputs.
 
 ## 0x09bde339
 - `InvalidProof()`<br/>

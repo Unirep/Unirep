@@ -48,7 +48,7 @@ let circuitInputs = {
 
 const signupUser = async (id, unirepContract, attesterId, account) => {
     const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
-    const chainId = await unirepContract.unirepChainId()
+    const chainId = await unirepContract.chainid()
     const r = await defaultProver.genProofAndPublicSignals(
         Circuit.signup,
         stringifyBigInts({
@@ -86,7 +86,7 @@ describe('User State Transition', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-        chainId = await unirepContract.unirepChainId()
+        chainId = await unirepContract.chainid()
         // generate circuit inputs
         attester = accounts[1]
         await unirepContract

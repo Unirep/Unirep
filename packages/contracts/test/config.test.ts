@@ -68,7 +68,7 @@ describe('Config', function () {
         const replFieldBits = await unirepContract.replFieldBits()
         expect(REPL_FIELD_BITS).equal(replFieldBits)
 
-        const chainId = await unirepContract.unirepChainId()
+        const chainId = await unirepContract.chainid()
         expect(CHAIN_ID).equal(chainId)
     })
 

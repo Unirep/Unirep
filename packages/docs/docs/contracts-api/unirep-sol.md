@@ -378,12 +378,12 @@ How many data bits are in a replacement data field.
 function replFieldBits() public view returns (uint8)
 ```
 
-## unirepChainId
+## chainid
 
 Current chain ID of the UniRep contract.
 
 ```sol
-function unirepChainId() public view returns (uint48)
+function chainid() public view returns (uint48)
 ```
 
 
