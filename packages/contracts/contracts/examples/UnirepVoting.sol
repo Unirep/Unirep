@@ -16,7 +16,7 @@ enum Option {
 
 contract UnirepVoting {
     Unirep public unirep;
-    ReputationVerifierHelper public helper;
+    ReputationVerifierHelper public repHelper;
     EpochKeyVerifierHelper public epochKeyHelper;
 
     int[] public scores;
@@ -33,7 +33,7 @@ contract UnirepVoting {
 
     constructor(
         Unirep _unirep,
-        ReputationVerifierHelper _helper,
+        ReputationVerifierHelper _repHelper,
         EpochKeyVerifierHelper _epochKeyHelper,
         VotingPrizeNFT _nft,
         uint8 _numTeams,
@@ -42,8 +42,10 @@ contract UnirepVoting {
         // set unirep address
         unirep = _unirep;
 
-        // set verifier address
-        helper = _helper;
+        // set reputation verifier
+        repHelper = _repHelper;
+
+        // set epoch key verifier helper
         epochKeyHelper = _epochKeyHelper;
 
         nft = _nft;
@@ -55,7 +57,7 @@ contract UnirepVoting {
         scores = new int[](numTeams);
         projectData = new uint[][](numTeams);
         for (uint i; i < numTeams; i++) {
-            projectData[i] = new uint256[](4);
+            projectData[i] = new uint256[](2);
         }
     }
 
@@ -136,7 +138,7 @@ contract UnirepVoting {
     ) public {
         uint160 attesterId = uint160(address(this));
         require(unirep.attesterCurrentEpoch(attesterId) > 0);
-        ReputationVerifierHelper.ReputationSignals memory signals = helper
+        ReputationVerifierHelper.ReputationSignals memory signals = repHelper
             .verifyAndCheck(publicSignals, proof);
 
         require(signals.epoch > 0, 'invalid epoch to claim prize');

@@ -1,11 +1,12 @@
 //@ts-ignore
 import { ethers } from 'hardhat'
 import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
-import { SQLiteConnector } from 'anondb/node'
-import { schema, UserState } from '@unirep/core'
-
 import { Identity } from '@semaphore-protocol/identity'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import {
+    UnirepVoting__factory,
+    VotingPrizeNFT__factory,
+} from '@unirep/contracts/typechain'
+import {} from '@unirep/contracts/typechain/contracts/UnirepVoting.sol'
 
 import {
     genProofAndVerify,
@@ -13,20 +14,18 @@ import {
 } from '@unirep/circuits/test/utils'
 import { Circuit, ReputationProof } from '@unirep/circuits'
 import { assert, expect } from 'chai'
+import { genUserState } from './utils'
 
 async function genUserStateInternal(id, app) {
     // generate a user state
-    const db = await SQLiteConnector.create(schema, ':memory:')
     const unirepAddress = await app.unirep()
     const attesterId = BigInt(app.address)
-    const userState = new UserState({
-        db,
-        attesterId,
+    const userState = await genUserState(
+        ethers.provider,
         unirepAddress,
-        provider: ethers.provider,
         id,
-        prover: defaultProver,
-    })
+        attesterId
+    )
     await userState.sync.start()
     await userState.waitForSync()
     return userState
@@ -67,14 +66,14 @@ describe('Voting', function () {
             deployer,
             Circuit.epochKey
         )
-        const nftF = await ethers.getContractFactory('VotingPrizeNFT')
+        const nftF = new VotingPrizeNFT__factory(deployer)
         nft = await nftF.deploy(
             'ipfs://QmNtYnjqeqWbRGC4R7fd9DCXWnQF87ufv7S2zGULtbSpLA'
         )
         await nft.deployed()
 
-        const VotingF = await ethers.getContractFactory('UnirepVoting')
-        voting = await VotingF.deploy(
+        const votingF = new UnirepVoting__factory(deployer)
+        voting = await votingF.deploy(
             unirep.address,
             reputationVerifierHelper.address,
             epochKeyVerifierHelper.address,
