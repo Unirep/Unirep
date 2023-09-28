@@ -1,5 +1,5 @@
 ---
-title: Unirep contract deployment
+title: UniRep contract deployment
 ---
 
 ## deployUnirep

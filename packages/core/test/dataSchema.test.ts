@@ -1,6 +1,6 @@
 // @ts-ignore
 import { expect } from 'chai'
-import { Attestation, DataSchema, SchemaField } from '../src/DataSchema'
+import { DataSchema, SchemaField } from '../src/DataSchema'
 import { poseidon1 } from 'poseidon-lite'
 
 const smallRandom = (x: number) => Math.floor(Math.random() * x)

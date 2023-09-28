@@ -5,7 +5,7 @@ import {
     genEpochKey,
     genStateTreeLeaf,
 } from '@unirep/utils'
-import { poseidon1, poseidon2 } from 'poseidon-lite'
+import { poseidon2 } from 'poseidon-lite'
 import {
     Circuit,
     CircuitConfig,
@@ -26,7 +26,7 @@ const { STATE_TREE_DEPTH, NUM_EPOCH_KEY_NONCE_PER_EPOCH } =
 describe('Prevent double action circuit', function () {
     this.timeout(300000)
 
-    it('should prove epoch key membership with external nullifier', async () => {
+    it('should prove epoch key membership with nullifier', async () => {
         for (let nonce = 0; nonce < NUM_EPOCH_KEY_NONCE_PER_EPOCH; nonce++) {
             const attesterId = BigInt(10210)
             const epoch = 120958
@@ -35,7 +35,7 @@ describe('Prevent double action circuit', function () {
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
-            const externalNullifier = BigInt(1)
+            const scope = BigInt(1)
             const circuitInputs = genPreventDoubleActionCircuitInput({
                 id,
                 tree,
@@ -44,7 +44,7 @@ describe('Prevent double action circuit', function () {
                 nonce,
                 attesterId,
                 data,
-                externalNullifier,
+                scope,
             })
             const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.preventDoubleAction,
@@ -62,7 +62,7 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = poseidon2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([scope, id.secret])
             expect(publicSignals[3]).to.equal(nullifier.toString())
 
             const p = new PreventDoubleActionProof(publicSignals, proof)
@@ -96,7 +96,7 @@ describe('Prevent double action circuit', function () {
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
-            const externalNullifier = BigInt(1)
+            const scope = BigInt(1)
             const circuitInputs = genPreventDoubleActionCircuitInput({
                 id,
                 tree,
@@ -106,7 +106,7 @@ describe('Prevent double action circuit', function () {
                 attesterId,
                 data,
                 revealNonce,
-                externalNullifier,
+                scope,
             })
             const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.preventDoubleAction,
@@ -117,7 +117,7 @@ describe('Prevent double action circuit', function () {
                 genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = poseidon2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([scope, id.secret])
             expect(publicSignals[2]).to.equal(
                 EpochKeyLiteProof.buildControl({
                     attesterId,
@@ -152,7 +152,7 @@ describe('Prevent double action circuit', function () {
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
-            const externalNullifier = BigInt(1)
+            const scope = BigInt(1)
             const circuitInputs = genPreventDoubleActionCircuitInput({
                 id,
                 tree,
@@ -162,7 +162,7 @@ describe('Prevent double action circuit', function () {
                 attesterId,
                 sigData,
                 data,
-                externalNullifier,
+                scope,
             })
             const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.preventDoubleAction,
@@ -180,7 +180,7 @@ describe('Prevent double action circuit', function () {
                     nonce,
                 }).toString()
             )
-            const nullifier = poseidon2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([scope, id.secret])
             expect(publicSignals[3]).to.equal(nullifier.toString())
             expect(publicSignals[4].toString()).to.equal(sigData.toString())
 
@@ -215,7 +215,7 @@ describe('Prevent double action circuit', function () {
             const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
             tree.insert(leaf)
-            const externalNullifier = BigInt(1)
+            const scope = BigInt(1)
             const circuitInputs = genPreventDoubleActionCircuitInput({
                 id,
                 tree,
@@ -225,7 +225,7 @@ describe('Prevent double action circuit', function () {
                 attesterId,
                 data,
                 sigData,
-                externalNullifier,
+                scope,
             })
             const { isValid, publicSignals, proof } = await genProofAndVerify(
                 Circuit.preventDoubleAction,
@@ -236,7 +236,7 @@ describe('Prevent double action circuit', function () {
                 genEpochKey(id.secret, attesterId, epoch, nonce).toString()
             )
             expect(publicSignals[1]).to.equal(tree.root.toString())
-            const nullifier = poseidon2([id.nullifier, externalNullifier])
+            const nullifier = poseidon2([scope, id.secret])
             expect(publicSignals[3]).to.equal(nullifier.toString())
             expect(publicSignals[4].toString()).to.equal(sigData.toString())
 
@@ -278,7 +278,7 @@ describe('Prevent double action circuit', function () {
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
         tree.insert(leaf)
-        const externalNullifier = BigInt(1)
+        const scope = BigInt(1)
         const circuitInputs = genPreventDoubleActionCircuitInput({
             id,
             tree,
@@ -287,7 +287,7 @@ describe('Prevent double action circuit', function () {
             nonce,
             attesterId,
             data,
-            externalNullifier,
+            scope,
         })
         circuitInputs.data[0] = 21908
         const { isValid, publicSignals } = await genProofAndVerify(
@@ -310,7 +310,7 @@ describe('Prevent double action circuit', function () {
         const tree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const leaf = genStateTreeLeaf(id.secret, attesterId, epoch, data)
         tree.insert(leaf)
-        const externalNullifier = BigInt(1)
+        const scope = BigInt(1)
         const circuitInputs = genPreventDoubleActionCircuitInput({
             id,
             tree,
@@ -319,7 +319,7 @@ describe('Prevent double action circuit', function () {
             nonce,
             attesterId,
             data,
-            externalNullifier,
+            scope,
         })
 
         circuitInputs.attester_id = 2171828

@@ -3,12 +3,11 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { genStateTreeLeaf } from '@unirep/utils'
-import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { bootstrapAttestations, bootstrapUsers } from './test'
 
 import { Synchronizer } from '../src'
-import { genUserState, compareDB, genUnirepState } from './utils'
+import { genUserState, compareDB, genUnirepState, EPOCH_LENGTH } from './utils'
 
 let synchronizer: Synchronizer
 

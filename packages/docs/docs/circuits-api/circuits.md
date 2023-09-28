@@ -11,6 +11,7 @@ enum Circuit {
   userStateTransition,
   signup,
   epochKeyLite,
+  preventDoubleAction
 }
 ```
 
@@ -22,7 +23,7 @@ import { Circuit } from '@unirep/circuits'
 
 ## Signup Proof
 
-The signup proof outputs a state tree leaf and an identity commitment for the user. The state tree leaf will have zero values for all data fields.
+The signup proof outputs a [state tree](../protocol/trees.md#state-tree) leaf and an [identity commitment](https://semaphore.appliedzkp.org/docs/glossary#identity-commitment) for the user. The state tree leaf will have zero values for all data fields.
 
 Control field:
 - 48 bits `epoch`
@@ -31,16 +32,22 @@ Control field:
 Inputs:
 - `attester_id`
 - `epoch`
-- `identity_nullifier`
-- `identity_trapdoor`
+- `secret`
 
 Outputs:
-- `identity_commitment`
+- `commitment`
 - `state_tree_leaf`
 - `control`
 
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/signup.circom"; 
+(commitment, state_tree_leaf, control) <== Signup(FIELD_COUNT)(attester_id, epoch, secret);
+```
+
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## Epoch Key Proof
@@ -71,8 +78,25 @@ Outputs:
 - `state_tree_root`
 - `control`
 
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/epochKey.circom"; 
+(epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
+  state_tree_indexes, 
+  state_tree_elements, 
+  identity_secret,
+  reveal_nonce,
+  attester_id,
+  epoch,
+  nonce,
+  data,
+  sig_data
+);
+```
+
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## Epoch Key Lite Proof
@@ -105,8 +129,22 @@ Outputs:
 - `epoch_key`
 - `control`
 
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/epochKeyLite.circom"; 
+(control, epoch_key) <== EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH)(
+  identity_secret,
+  reveal_nonce,
+  attester_id,
+  epoch,
+  nonce,
+  sig_data
+);
+```
+
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## Prove Reputation Proof
@@ -121,7 +159,7 @@ See [data in UniRep protocol](../protocol/data.md) for more information.
 
 :::danger
 **Please avoid assigning the `min_rep = data[0] - data[1]` or `max_rep = data[1] - data[0]`.**<br/>
-The proof could allow a user to accidentally publish their overall reputation (i.e. `data[0]-data[1]`). Depending on the circumstances (such as the length of the attestation history) this could revel a user’s epoch key(s) as well.
+The proof could allow a user to accidentally publish their overall reputation (i.e. `data[0]-data[1]`). Depending on the circumstances (such as the length of the attestation history) this could reveal a user’s epoch key(s) as well.
 :::
 
 The `nonce` used to calculate the epoch key may optionally be revealed. This can be used to prevent users from executing an action multiple times using different epoch keys.
@@ -157,8 +195,32 @@ Outputs:
 - `state_tree_root`
 - `control[2]`
 
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/proveReputation.circom"; 
+(epoch_key, state_tree_root, control) <== ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS)(
+  identity_secret,
+  state_tree_indexes,
+  state_tree_elements,
+  data,
+  prove_graffiti,
+  graffiti,
+  reveal_nonce,
+  attester_id,
+  epoch,
+  nonce,
+  min_rep,
+  max_rep,
+  prove_min_rep,
+  prove_max_rep,
+  prove_zero_rep,
+  sig_data
+);
+```
+
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## User State Transition Proof
@@ -167,7 +229,7 @@ The user state transition proof allows a user to prove how much reputation they 
 
 Once it has proved inclusion it sums the reputation values stored in the leaves. Then it takes the replacement values with the highest timestamps and outputs a new state tree leaf for the next epoch.
 
-TODO: add a graphic for this
+<!-- TODO: add a graphic for this -->
 
 Inputs:
 - `identity_secret`
@@ -179,7 +241,7 @@ Inputs:
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `data[FIELD_COUNT]`
 - `new_data[EPOCH_KEY_NONCE_PER_EPOCH][FIELD_COUNT]`
-- `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH][EPOCH_TREE_ARITY]`
+- `epoch_tree_elements[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
 - `epoch_tree_indices[EPOCH_KEY_NONCE_PER_EPOCH][EPOCH_TREE_DEPTH]`
 - `history_tree_indices[HISTORY_TREE_DEPTH]`
 - `history_tree_elements[HISTORY_TREE_DEPTH]`
@@ -187,5 +249,33 @@ Inputs:
 Outputs:
 - `history_tree_root`
 - `state_tree_leaf`
-- `epoch_keys[EPOCH_KEY_NONCE_PER_EPOCH]`
+- `epks[EPOCH_KEY_NONCE_PER_EPOCH]`
 
+Interface: 
+```js
+// pragma circom 2.1.0;
+// include "PATH/node_modules/@unirep/circuits/circuits/userStateTransition.circom"; 
+(history_tree_root, state_tree_leaf, epks) <== UserStateTransition(
+  STATE_TREE_DEPTH,
+  EPOCH_TREE_DEPTH,
+  HISTORY_TREE_DEPTH,
+  EPOCH_KEY_NONCE_PER_EPOCH,
+  FIELD_COUNT,
+  SUM_FIELD_COUNT,
+  REPL_NONCE_BITS
+)(
+  from_epoch,
+  to_epoch,
+  identity_secret,
+  state_tree_indexes,
+  state_tree_elements,
+  history_tree_indices,
+  history_tree_elements,
+  attester_id,
+  data,
+  new_data,
+  epoch_tree_root,
+  epoch_tree_elements,
+  epoch_tree_indices
+);
+```

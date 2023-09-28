@@ -35,12 +35,12 @@
                         },
                         {
                             "type": "doc",
-                            "label": "2. Deploy Unirep contract",
+                            "label": "2. Deploy UniRep contract",
                             "id": "getting-started/start-with-cli-commands/deploy-unirep-contract"
                         },
                         {
                             "type": "doc",
-                            "label": "3. User generates semaphore identity",
+                            "label": "3. User generates Semaphore identity",
                             "id": "getting-started/start-with-cli-commands/user-generates-semaphore-identity"
                         },
                         {
@@ -219,7 +219,7 @@
                     "items": [
                         {
                             "type": "doc",
-                            "label": "Deploy Unirep Contract",
+                            "label": "Deploy UniRep Contract",
                             "id": "cli/deploy-unirep-contract"
                         },
                         {
@@ -277,7 +277,7 @@
             "items": [
                 {
                     "type": "doc",
-                    "label": "Unirep Social",
+                    "label": "UniRep Social",
                     "id": "applications/unirep-social"
                 }
             ]

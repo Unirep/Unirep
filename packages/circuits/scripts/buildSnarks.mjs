@@ -89,6 +89,8 @@ for (const name of circuits) {
         console.log(
             `Generated ${zkey.split('/').pop()} and ${vkOut.split('/').pop()}`
         )
+        const info = await snarkjs.r1cs.info(circuitOut)
+        console.log(`Circuit constraints: ${info.nConstraints}`)
     }
     if (!wasmOutFileExists) await copyAtomic(wasmOut, wasmOutFinal)
     if (!vkeyOutFileExists) await copyAtomic(vkOutBuild, vkOut)

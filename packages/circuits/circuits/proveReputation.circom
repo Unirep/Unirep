@@ -9,7 +9,6 @@ pragma circom 2.0.0;
 
 include "./circomlib/circuits/comparators.circom";
 include "./circomlib/circuits/gates.circom";
-include "./circomlib/circuits/poseidon.circom";
 include "./bigComparators.circom";
 include "./incrementalMerkleTree.circom";
 include "./epochKey.circom";
@@ -67,121 +66,71 @@ template ProveReputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_
     prove_max_rep * (prove_max_rep - 1) === 0;
     prove_zero_rep * (prove_zero_rep - 1) === 0;
 
-    // then range check the others
-    component min_rep_bits = Num2Bits(64);
-    min_rep_bits.in <== min_rep;
-
-    component max_rep_bits = Num2Bits(64);
-    max_rep_bits.in <== max_rep;
+    // range check
+    _ <== Num2Bits(64)(min_rep);
+    _ <== Num2Bits(64)(max_rep);
 
     control[1] <== prove_graffiti * 2 ** 131 + prove_zero_rep * 2 ** 130 + prove_max_rep * 2**129 + prove_min_rep * 2**128 + max_rep * 2**64 + min_rep;
 
     /* 1a. Do the epoch key proof, state tree membership */
 
-    component epoch_range_check = Num2Bits(48);
-    epoch_range_check.in <== epoch;
+    // range check
+    _ <== Num2Bits(48)(epoch);
+    _ <== Num2Bits(160)(attester_id);
 
-    component attester_id_check = Num2Bits(160);
-    attester_id_check.in <== attester_id;
-
-    component epoch_key_prover = EpochKey(
-      STATE_TREE_DEPTH,
-      EPOCH_KEY_NONCE_PER_EPOCH,
-      FIELD_COUNT
+    (epoch_key, state_tree_root, control[0]) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
+        state_tree_indexes,
+        state_tree_elements,
+        identity_secret,
+        reveal_nonce,
+        attester_id,
+        epoch,
+        nonce,
+        data,
+        sig_data
     );
-    epoch_key_prover.identity_secret <== identity_secret;
-    epoch_key_prover.reveal_nonce <== reveal_nonce;
-    epoch_key_prover.attester_id <== attester_id;
-    epoch_key_prover.epoch <== epoch;
-    epoch_key_prover.nonce <== nonce;
-    epoch_key_prover.sig_data <== sig_data;
-    for (var i = 0; i < STATE_TREE_DEPTH; i++) {
-        epoch_key_prover.state_tree_indexes[i] <== state_tree_indexes[i];
-        epoch_key_prover.state_tree_elements[i] <== state_tree_elements[i];
-    }
-    for (var i = 0; i < FIELD_COUNT; i++) {
-        epoch_key_prover.data[i] <== data[i];
-    }
-
-    control[0] <== epoch_key_prover.control;
-    epoch_key <== epoch_key_prover.epoch_key;
-    state_tree_root <== epoch_key_prover.state_tree_root;
 
     /* End of check 1a */
 
     /* 2. Check if user has reputation greater than min_rep */
     // if proving min_rep > 0, check if data[0] >= data[1] + min_rep
 
-    component data_0_check = Num2Bits(64);
-    data_0_check.in <== data[0];
+    // range check
+    _ <== Num2Bits(64)(data[0]);
+    _ <== Num2Bits(64)(data[1]);
 
-    component data_1_check = Num2Bits(64);
-    data_1_check.in <== data[1];
-
-    component min_rep_check = GreaterEqThan(66);
-    min_rep_check.in[0] <== data[0];
-    min_rep_check.in[1] <== data[1] + min_rep;
-
-    component if_not_prove_min_rep = IsZero();
-    if_not_prove_min_rep.in <== prove_min_rep;
-
-    component output_rep_check = OR();
-    output_rep_check.a <== if_not_prove_min_rep.out;
-    output_rep_check.b <== min_rep_check.out;
-
-    output_rep_check.out === 1;
+    signal min_rep_check <== GreaterEqThan(66)([data[0], data[1] + min_rep]);
+    signal if_not_prove_min_rep <== IsZero()(prove_min_rep);
+    signal output_rep_check <== OR()(if_not_prove_min_rep, min_rep_check);
+    output_rep_check === 1;
 
     /* End of check 2 */
 
     /* 3. Check if user has reputation less than max_rep */
     // if proving max_rep > 0, check if data[1] >= data[0] + max_rep
 
-    component max_rep_check = GreaterEqThan(66);
-    max_rep_check.in[0] <== data[1];
-    max_rep_check.in[1] <== data[0] + max_rep;
-
-    component if_not_prove_max_rep = IsZero();
-    if_not_prove_max_rep.in <== prove_max_rep;
-
-    component max_rep_check_out = OR();
-    max_rep_check_out.a <== if_not_prove_max_rep.out;
-    max_rep_check_out.b <== max_rep_check.out;
-
-    max_rep_check_out.out === 1;
+    signal max_rep_check <== GreaterEqThan(66)([data[1], data[0] + max_rep]);
+    signal if_not_prove_max_rep <== IsZero()(prove_max_rep);
+    signal max_rep_check_out <== OR()(if_not_prove_max_rep, max_rep_check);
+    max_rep_check_out === 1;
 
     /* End of check 3 */
 
     /* 4. Check if user has net 0 reputation */
 
-    component zero_rep_check = IsEqual();
-    zero_rep_check.in[0] <== data[0];
-    zero_rep_check.in[1] <== data[1];
-
-    component if_not_prove_zero_rep = IsZero();
-    if_not_prove_zero_rep.in <== prove_zero_rep;
-
-    component zero_rep_check_out = OR();
-    zero_rep_check_out.a <== if_not_prove_zero_rep.out;
-    zero_rep_check_out.b <== zero_rep_check.out;
-
-    zero_rep_check_out.out === 1;
+    signal zero_rep_check <== IsEqual()([data[0], data[1]]);
+    signal if_not_prove_zero_rep <== IsZero()(prove_zero_rep);
+    signal zero_rep_check_out <== OR()(if_not_prove_zero_rep, zero_rep_check);
+    zero_rep_check_out === 1;
 
     /* End of check 4 */
 
     /* 3. Prove the graffiti if needed */
 
-    component if_not_check_graffiti = IsZero();
-    if_not_check_graffiti.in <== prove_graffiti;
-
-    component repl_field_equal = replFieldEqual(REPL_NONCE_BITS);
-    repl_field_equal.in[0] <== graffiti;
-    repl_field_equal.in[1] <== data[SUM_FIELD_COUNT];
-
-    component check_graffiti = OR();
-    check_graffiti.a <== if_not_check_graffiti.out;
-    check_graffiti.b <== repl_field_equal.out;
-
-    check_graffiti.out === 1;
+    signal if_not_check_graffiti <== IsZero()(prove_graffiti);
+    signal repl_field_equal <== replFieldEqual(REPL_NONCE_BITS)([graffiti, data[SUM_FIELD_COUNT]]);
+    signal check_graffiti <== OR()(if_not_check_graffiti, repl_field_equal);
+    check_graffiti === 1;
 
     /* End of check 3 */
 }

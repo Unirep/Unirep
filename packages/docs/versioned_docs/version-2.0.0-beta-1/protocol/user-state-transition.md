@@ -33,7 +33,7 @@ After a user performs user state transition, they can:
 * A new state tree leaf is computed using the summed `posRep`, `negRep`, `graffiti`, and `timestamp` values.
 * See the [State Tree](trees.md) documentation for the full state tree structure.
 
-#### 5. Call unirep smart contract to insert a new state tree leaf
+#### 5. Call UniRep smart contract to insert a new state tree leaf
 
 * User will attach a [User State Transition Proof](../circuits-api/circuits#user-state-transition-proof) to call [`userStateTransition()`](https://github.com/Unirep/Unirep/blob/f3502e1a551f63ab44b73444b60ead8731d45167/packages/contracts/contracts/Unirep.sol#L559). This proof and public signals will be verified onchain.
 * The new state tree leaf will be inserted into the state tree of the latest epoch.

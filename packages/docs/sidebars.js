@@ -23,6 +23,11 @@ const sidebars = {
             id: 'welcome',
         },
         {
+            type: 'doc',
+            label: '🏗️ What Can I Build With UniRep?',
+            id: 'what-can-i-build',
+        },
+        {
             type: 'category',
             label: '🚀 Getting Started',
             items: [
@@ -90,6 +95,11 @@ const sidebars = {
             ],
         },
         {
+            type: 'doc',
+            label: '📌 Subgraph',
+            id: 'subgraph',
+        },
+        {
             type: 'category',
             label: '@unirep/core',
             items: [
@@ -119,6 +129,11 @@ const sidebars = {
             type: 'category',
             label: '@unirep/contracts',
             items: [
+                {
+                    type: 'doc',
+                    label: 'Installation',
+                    id: 'contracts-api/installation',
+                },
                 {
                     type: 'category',
                     label: 'Verifiers',
@@ -162,6 +177,16 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
+                    label: 'IUnirep.sol',
+                    id: 'contracts-api/iunirep-sol',
+                },
+                {
+                    type: 'doc',
+                    label: 'ABIs',
+                    id: 'contracts-api/abis',
+                },
+                {
+                    type: 'doc',
                     label: 'Helpers',
                     id: 'contracts-api/helpers',
                 },
@@ -178,8 +203,18 @@ const sidebars = {
             items: [
                 {
                     type: 'doc',
+                    label: 'Installation',
+                    id: 'circuits-api/installation',
+                },
+                {
+                    type: 'doc',
                     label: 'Circuits',
                     id: 'circuits-api/circuits',
+                },
+                {
+                    type: 'doc',
+                    label: 'Config',
+                    id: 'circuits-api/circuit-config',
                 },
                 {
                     type: 'doc',
@@ -234,33 +269,13 @@ const sidebars = {
             items: [
                 {
                     type: 'doc',
-                    label: 'constants',
-                    id: 'utils-api/constants',
-                },
-                {
-                    type: 'doc',
-                    label: 'hash()',
-                    id: 'utils-api/hashes',
+                    label: 'installation',
+                    id: 'utils-api/installation',
                 },
                 {
                     type: 'doc',
                     label: 'types',
                     id: 'utils-api/types',
-                },
-                {
-                    type: 'link',
-                    label: 'genEpochKey()',
-                    href: '/docs/utils-api/hashes#genepochkey',
-                },
-                {
-                    type: 'link',
-                    label: 'genEpochNullifier()',
-                    href: '/docs/utils-api/hashes#genepochnullifier',
-                },
-                {
-                    type: 'link',
-                    label: 'genStateTreeLeaf()',
-                    href: '/docs/utils-api/hashes#genstatetreeleaf',
                 },
                 {
                     type: 'doc',
@@ -269,8 +284,8 @@ const sidebars = {
                 },
                 {
                     type: 'doc',
-                    label: 'SparseMerkleTree',
-                    id: 'utils-api/sparse-tree',
+                    label: 'Helpers',
+                    id: 'utils-api/helpers',
                 },
             ],
         },

@@ -4,7 +4,7 @@ title: UniRep contract helpers
 
 ## getUnirepContract
 
-Connect to a Unirep contract with a given Unirep address.
+Connect to a UniRep contract with a given UniRep address.
 
 ```ts
 import { getUnirepContract } from '@unirep/contracts'
@@ -24,12 +24,12 @@ import { genSignature } from '@unirep/contracts'
 
 // generate the signature
 const signature = genSignature(
-    address,     // the address of unirep contract
+    address,     // the address of UniRep contract
     signer,      // the signer of the attester
     epochLength, // the epoch length of the attester
 )
 
-// sign up with unirep contract
+// sign up with UniRep contract
 const tx = await unirep.attesterSignUpViaRelayer(
     signer.address,
     epochLength,

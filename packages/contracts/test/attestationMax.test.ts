@@ -1,14 +1,13 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { SNARK_SCALAR_FIELD, CircuitConfig } from '@unirep/circuits'
-import { F, genEpochTreeLeaf } from '@unirep/utils'
+import { CircuitConfig } from '@unirep/circuits'
 import { poseidon1 } from 'poseidon-lite'
 
-import { EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH } from './config'
 import { deployUnirep } from '../deploy'
 
-const { FIELD_COUNT, SUM_FIELD_COUNT, REPL_FIELD_BITS } = CircuitConfig.default
+const { SUM_FIELD_COUNT, REPL_FIELD_BITS } = CircuitConfig.default
 
 const EPOCH_TREE_DEPTH = 3
 

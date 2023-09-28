@@ -9,9 +9,7 @@ import {
 } from '@unirep/utils'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUserState, genUnirepState } from './utils'
-
-const EPOCH_LENGTH = 1000
+import { genUserState, genUnirepState, EPOCH_LENGTH } from './utils'
 
 describe('User Signup', function () {
     this.timeout(30 * 60 * 1000)

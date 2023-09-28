@@ -63,7 +63,7 @@ const privateKey = 'YOUR/PRIVATE/KEY'
 const provider = 'YOUR/ETH/PROVIDER'
 const deployer = new ethers.Wallet(privateKey, provider)
 
-// deploy unirep contract
+// deploy UniRep contract
 const unirepContract = await deployUnirep(deployer)
 ```
 
@@ -81,7 +81,7 @@ const privateKey = 'YOUR/PRIVATE/KEY'
 const provider = 'YOUR/ETH/PROVIDER'
 const deployer = new ethers.Wallet(privateKey, provider)
 
-// deploy unirep contract
+// deploy UniRep contract
 const unirepContract = await deployUnirep(deployer)
 ```
 
@@ -150,7 +150,7 @@ The app builder must sign up with `Unirep.sol` as an attester. There are two way
 Connect a wallet with a private key and a provider, and then call [`attesterSignUp`](contracts-api/unirep-sol.md#attestersignup) in `Unirep.sol`.
 
 ```ts
-// deploy or connect to a unirep smart contract
+// deploy or connect to a UniRep smart contract
 const unirepContract = getUnirepContract(address, provider)
 // attester wallet
 const attester = new ethers.Wallet(privateKey, provider)
@@ -194,7 +194,7 @@ contract App {
 ## 👤 User sign up
 
 TThe attester can now start signing up users. Users of this application should provide a [signup proof](circuits-api/circuits.md#signup-proof) which includes:
-1. Proving the user owns a [semaphore identity](https://semaphore.appliedzkp.org/)
+1. Proving the user owns a [Semaphore identity](https://semaphore.appliedzkp.org/)
 2. Proving the user has initialized [data](protocol/data.md)
 3. Proving the user wants to sign up to this attester (proving attester ID)
 

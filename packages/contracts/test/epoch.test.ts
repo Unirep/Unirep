@@ -6,7 +6,7 @@ import { CircuitConfig } from '@unirep/circuits'
 
 const { STATE_TREE_DEPTH, EPOCH_TREE_DEPTH } = CircuitConfig.default
 
-import { EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH } from './config'
 import { deployUnirep } from '../deploy'
 
 describe('Epoch', function () {

@@ -1,9 +1,8 @@
-pragma circom 2.0.0;
+pragma circom 2.1.0;
 
 include "./circomlib/circuits/bitify.circom";
 include "./circomlib/circuits/comparators.circom";
-include "./circomlib/circuits/poseidon.circom";
-include "./leafHasher.circom";
+include "./hasher.circom";
 
 template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
     assert(EPOCH_KEY_NONCE_PER_EPOCH < 2**8);
@@ -39,27 +38,21 @@ template EpochKeyLite(EPOCH_KEY_NONCE_PER_EPOCH) {
 
     // then range check the others
 
-    component attester_id_check = Num2Bits(ATTESTER_ID_BITS);
-    attester_id_check.in <== attester_id;
+    _ <== Num2Bits(ATTESTER_ID_BITS)(attester_id);
 
-    component epoch_bits = Num2Bits(EPOCH_BITS);
-    epoch_bits.in <== epoch;
+    _ <== Num2Bits(EPOCH_BITS)(epoch);
 
-    component nonce_range_check = Num2Bits(NONCE_BITS);
-    nonce_range_check.in <== nonce;
+    _ <== Num2Bits(NONCE_BITS)(nonce);
 
-    component nonce_lt = LessThan(NONCE_BITS);
-    nonce_lt.in[0] <== nonce;
-    nonce_lt.in[1] <== EPOCH_KEY_NONCE_PER_EPOCH;
-    nonce_lt.out === 1;
+    signal nonce_lt <== LessThan(NONCE_BITS)([nonce, EPOCH_KEY_NONCE_PER_EPOCH]);
+    nonce_lt === 1;
 
     control <== reveal_nonce * 2**(NONCE_BITS + EPOCH_BITS + ATTESTER_ID_BITS) + attester_id * 2**(NONCE_BITS + EPOCH_BITS) + epoch * 2**NONCE_BITS + reveal_nonce * nonce;
 
-    component epoch_key_hasher = EpochKeyHasher();
-    epoch_key_hasher.identity_secret <== identity_secret;
-    epoch_key_hasher.attester_id <== attester_id;
-    epoch_key_hasher.epoch <== epoch;
-    epoch_key_hasher.nonce <== nonce;
-
-    epoch_key <== epoch_key_hasher.out;
+    epoch_key <== EpochKeyHasher()(
+        identity_secret,
+        attester_id,
+        epoch,
+        nonce
+    );
 }

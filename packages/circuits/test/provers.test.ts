@@ -32,8 +32,7 @@ for (const { name, prover } of provers) {
                 await prover.genProofAndPublicSignals('signup', {
                     attester_id: 0,
                     epoch: 0,
-                    identity_nullifier: 0,
-                    identity_trapdoor: 0,
+                    secret: 0,
                 })
             expect(publicSignals).to.exist
             expect(Array.isArray(publicSignals)).to.be.true
@@ -47,8 +46,7 @@ for (const { name, prover } of provers) {
                 await prover.genProofAndPublicSignals('signup', {
                     attester_id: 0,
                     epoch: 0,
-                    identity_nullifier: 0,
-                    identity_trapdoor: 0,
+                    secret: 0,
                 })
             const valid = await prover.verifyProof(
                 'signup',

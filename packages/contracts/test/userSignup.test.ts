@@ -13,11 +13,10 @@ import {
 import { Circuit, SignupProof, CircuitConfig } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH, SUM_FIELD_COUNT } from '../src'
+import { EPOCH_LENGTH } from './config'
 import { deployUnirep } from '../deploy'
 
-const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_FIELD_BITS, REPL_NONCE_BITS } =
-    CircuitConfig.default
+const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_FIELD_BITS } = CircuitConfig.default
 
 describe('User Signup', function () {
     this.timeout(300000)
@@ -52,8 +51,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch: 0,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                secret: id.secret,
                 attester_id: attester.address,
             })
         )
@@ -82,8 +80,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch: 0,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                secret: id.secret,
                 attester_id: attester.address,
             })
         )
@@ -114,8 +111,7 @@ describe('User Signup', function () {
                     Circuit.signup,
                     stringifyBigInts({
                         epoch,
-                        identity_nullifier: id.nullifier,
-                        identity_trapdoor: id.trapdoor,
+                        secret: id.secret,
                         attester_id: attester.address,
                     })
                 )
@@ -189,8 +185,7 @@ describe('User Signup', function () {
                 Circuit.signup,
                 stringifyBigInts({
                     epoch,
-                    identity_nullifier: id.nullifier,
-                    identity_trapdoor: id.trapdoor,
+                    secret: id.secret,
                     attester_id: attester.address,
                 })
             )
@@ -209,8 +204,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                secret: id.secret,
                 attester_id: attester.address,
             })
         )
@@ -236,8 +230,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                secret: id.secret,
                 attester_id: BigInt(unregisteredAttester.address),
             })
         )
@@ -262,8 +255,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch: wrongEpoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                secret: id.secret,
                 attester_id: attester.address,
             })
         )
@@ -289,8 +281,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                secret: id.secret,
                 attester_id: attester.address,
             })
         )
@@ -317,8 +308,7 @@ describe('User Signup', function () {
             Circuit.signup,
             stringifyBigInts({
                 epoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                secret: id.secret,
                 attester_id: attester.address,
             })
         )

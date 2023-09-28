@@ -1,9 +1,9 @@
 // @ts-ignore
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
-import { EPOCH_LENGTH, Unirep } from '@unirep/contracts'
+import { Unirep } from '@unirep/contracts'
 import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
-import { genUnirepState, genUserState } from './utils'
+import { EPOCH_LENGTH, genUnirepState, genUserState } from './utils'
 import { Identity } from '@semaphore-protocol/identity'
 import { schema } from '../src/schema'
 import { SQLiteConnector } from 'anondb/node'
@@ -356,7 +356,7 @@ describe('Synchronizer watch multiple attesters', function () {
         for (let i = 0; i < 2; i++) {
             const toEpoch = 1
             const attesterId = BigInt(accounts[i].address).toString()
-            const { publicSignals, proof, epochKeys } =
+            const { publicSignals, proof, epochKeys, historyTreeRoot } =
                 await userState.genUserStateTransitionProof({
                     attesterId,
                     toEpoch,
@@ -370,6 +370,10 @@ describe('Synchronizer watch multiple attesters', function () {
                 nullifier: epochKeys[0].toString(),
             })
             expect(userCount).to.equal(1)
+            const historyTree = await userState.sync.genHistoryTree(attesterId)
+            expect(historyTree.root.toString()).to.equal(
+                historyTreeRoot.toString()
+            )
         }
 
         // get data

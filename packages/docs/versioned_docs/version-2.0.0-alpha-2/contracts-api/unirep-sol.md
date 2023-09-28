@@ -108,7 +108,7 @@ function attesterEpochRemainingTime(
 Verify a reputation proof and validate the public signals against the onchain state. This function will revert if any inputs are out of range, otherwise a boolean value is returned.
 
 :::caution
-This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
 ```sol
@@ -123,7 +123,7 @@ function verifyReputationProof(
 Verify an epoch key proof and validate the public signals against the onchain state. This function will revert if any inputs are out of range, otherwise a boolean value is returned.
 
 :::caution
-This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
 ```sol
@@ -135,7 +135,7 @@ function verifyEpochKeyProof(
 
 ## epochKeyVerifier
 
-A contract address for an epoch key proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for an epoch key proof verifier. See [IVerifier](iverifier-sol.md) for more info.
 
 :::danger
 Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
@@ -153,7 +153,7 @@ bool valid = unirep.epochKeyVerifier.verifyProof(publicSignals, proof);
 
 ## signupVerifier
 
-A contract address for a signup proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for a signup proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 ```sol
 IVerifier public immutable signupVerifier;
@@ -161,7 +161,7 @@ IVerifier public immutable signupVerifier;
 
 ## reputationVerifier
 
-A contract address for a reputation proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for a reputation proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 :::danger
 Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyReputationProof`](#verifyreputationproof) function unless you know what you are doing.
@@ -173,7 +173,7 @@ IVerifier public immutable reputationVerifier;
 
 ## userStateTransitionVerifier
 
-A contract address for a user state transition proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for a user state transition proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 ```sol
 IVerifier public immutable userStateTransitionVerifier;
@@ -181,7 +181,7 @@ IVerifier public immutable userStateTransitionVerifier;
 
 ## aggregateEpochKeysVerifier
 
-A contract address for an aggregate epoch keys proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for an aggregate epoch keys proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 ```sol
 IVerifier public immutable aggregateEpochKeysVerifier;

@@ -5,18 +5,13 @@ import { SNARK_SCALAR_FIELD, CircuitConfig } from '@unirep/circuits'
 import { F, genEpochTreeLeaf } from '@unirep/utils'
 import { poseidon1 } from 'poseidon-lite'
 
-import { EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH } from './config'
 import { deployUnirep } from '../deploy'
 
 import randomf from 'randomf'
 
-const {
-    FIELD_COUNT,
-    EPOCH_TREE_DEPTH,
-    SUM_FIELD_COUNT,
-    REPL_FIELD_BITS,
-    REPL_NONCE_BITS,
-} = CircuitConfig.default
+const { FIELD_COUNT, SUM_FIELD_COUNT, REPL_FIELD_BITS, REPL_NONCE_BITS } =
+    CircuitConfig.default
 
 describe('Attestations', function () {
     this.timeout(120000)

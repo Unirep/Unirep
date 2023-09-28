@@ -1,5 +1,3 @@
-export * from './config'
-
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import { ethers } from 'ethers'
 
@@ -19,7 +17,7 @@ export { Unirep, UnirepFactory }
 
 /**
  * Generate attester sign up signature
- * @param unirepAddress The address of unirep smart contract
+ * @param unirepAddress The address of UniRep smart contract
  * @param attesterAddress The address of the attester
  * @param epochLength Epoch length of the attester
  * @returns An sign up signature for the attester

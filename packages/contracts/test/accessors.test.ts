@@ -6,7 +6,7 @@ import { stringifyBigInts } from '@unirep/utils'
 import { Circuit, SignupProof } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH } from './config'
 import { deployUnirep } from '../deploy'
 
 describe('Attester getters', function () {
@@ -52,8 +52,7 @@ describe('Attester getters', function () {
                 Circuit.signup,
                 stringifyBigInts({
                     epoch,
-                    identity_nullifier: id.nullifier,
-                    identity_trapdoor: id.trapdoor,
+                    secret: id.secret,
                     attester_id: attester.address,
                 })
             )

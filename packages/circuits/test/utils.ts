@@ -4,14 +4,8 @@ import { poseidon1 } from 'poseidon-lite'
 
 import { Circuit, SNARK_SCALAR_FIELD, CircuitConfig } from '../src'
 import { defaultProver } from '../provers/defaultProver'
-const {
-    EPOCH_TREE_DEPTH,
-    STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
-    SUM_FIELD_COUNT,
-    FIELD_COUNT,
-    REPL_NONCE_BITS,
-} = CircuitConfig.default
+const { STATE_TREE_DEPTH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS } =
+    CircuitConfig.default
 
 export const randomData = () => [
     ...Array(SUM_FIELD_COUNT)
@@ -186,8 +180,7 @@ const genSignupCircuitInput = (config: {
 }) => {
     const { id, epoch, attesterId } = Object.assign(config)
     const circuitInputs = {
-        identity_nullifier: id.nullifier,
-        identity_trapdoor: id.trapdoor,
+        secret: id.secret,
         epoch,
         attester_id: attesterId,
     }
@@ -204,7 +197,7 @@ const genPreventDoubleActionCircuitInput = (config: {
     data?: bigint[]
     sigData?: bigint
     revealNonce?: number
-    externalNullifier: bigint
+    scope: bigint
 }) => {
     const {
         id,
@@ -216,7 +209,7 @@ const genPreventDoubleActionCircuitInput = (config: {
         data: _data,
         sigData,
         revealNonce,
-        externalNullifier,
+        scope,
     } = Object.assign(
         {
             data: [],
@@ -234,9 +227,8 @@ const genPreventDoubleActionCircuitInput = (config: {
         epoch,
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
-        identity_nullifier: id.nullifier,
-        external_nullifier: externalNullifier,
-        identity_trapdoor: id.trapdoor,
+        secret: id.secret,
+        scope: scope,
     }
 
     return utils.stringifyBigInts(circuitInputs)

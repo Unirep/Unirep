@@ -1,6 +1,6 @@
 # Unirep procotol package
 
-Client library for protocol related functions which are used in unirep protocol.
+Client library for protocol related functions which are used in UniRep protocol.
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">
@@ -64,7 +64,6 @@ yarn add @unirep/core
 **Construct a synchronizer**
 ```typescript
 import { Synchronizer } from '@unirep/core'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const address = '0x....'
 const provider = 'YOUR/ETH/PROVIDER'
@@ -73,12 +72,13 @@ const provider = 'YOUR/ETH/PROVIDER'
 const synchronizer = new Synchronizer({
     unirepAddress: address,
     provider,
-    prover: defaultProver,
 })
 // 2. start listening to unriep contract events
 await synchronizer.start()
 // 3. wait until the latest block is processed
 await synchronizer.waitForSync()
+// 4. stop the synchronizer deamon
+synchronizer.stop()
 ```
 
 **Example: use the synchronizer to generate unirep state**
@@ -109,13 +109,16 @@ const userState = new UserState({
     unirepAddress: address,
     provider,
     prover: defaultProver,
-}, identity)
+    id: identity
+})
 // or through a synchronicr
-// const userState = new UserState(synchronizer, identity)
+// const userState = new UserState({synchronizer, id: identity})
 // 2. start listening to unriep contract events
 await userState.start()
 // 3. wait until the latest block is processed
 await userState.waitForSync()
+// 4. stop the synchronizer deamon
+userState.stop()
 ```
 
 **Example: use the user state to generate proofs**

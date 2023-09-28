@@ -1,6 +1,6 @@
-# Unirep circuits package
+# UniRep circuits package
 
-Client library for circuit related functions which are used in unirep protocol.
+Client library for circuit related functions which are used in UniRep protocol.
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">
@@ -33,12 +33,12 @@ Client library for circuit related functions which are used in unirep protocol.
 
 ---
 
-## 💡 About Unirep
+## 💡 About UniRep
 **UniRep** is a *private* and *non-repudiable* **data system**. Users can receive attestations from attesters, and voluntarily prove facts about their data without revealing the data itself. Moreover, users cannot refuse to receive attestations from an attester.
 
 ## 📘 Documentation
 
-Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of Unirep protocol.
+Read the [medium article](https://medium.com/privacy-scaling-explorations/unirep-a-private-and-non-repudiable-reputation-system-7fb5c6478549) to know more about the concept of UniRep protocol.
 For more information, refer to the [documentation](https://developer.unirep.io/)
 
 ## 🛠 Install
@@ -61,7 +61,7 @@ yarn add @unirep/circuits
 
 ### Prover
 
-**Build a prover for unirep protocol**
+**Build a prover for UniRep protocol**
 ```typescript
 import * as snarkjs from 'snarkjs'
 import { Circuit, Prover } from '@unirep/circuits'
@@ -119,6 +119,78 @@ const isValid = await prover.verifyProof(
     publicSignals,
     proof
 )
+```
+
+### Circom
+
+Use the unirep circom circuits like so:
+
+```circom
+pragma circom 2.0.0;
+
+include "PATH/TO/node_modules/@unirep/circuits/circuits/epochKey.circom";
+
+template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
+    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_elements[STATE_TREE_DEPTH];
+    signal input identity_secret;
+    signal input data[FIELD_COUNT];
+    signal input sig_data;
+    signal input reveal_nonce;
+    signal input attester_id;
+    signal input epoch;
+    signal input nonce;
+
+    signal output epoch_key;
+    signal output state_tree_root;    
+
+    component epoch_key_template = EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT);
+    for (var x = 0; x < STATE_TREE_DEPTH; x++) {
+      epoch_key_template.state_tree_indexes[x] <== state_tree_indexes[x];
+      epoch_key_template.state_tree_elements[x] <== state_tree_elements[x];
+    }
+    epoch_key_template.identity_secret <== identity_secret;
+    epoch_key_template.reveal_nonce <== reveal_nonce;
+    epoch_key_template.attester_id <== attester_id;
+    epoch_key_template.epoch <== epoch;
+    epoch_key_template.nonce <== nonce;
+    epoch_key_template.sig_data <== sig_data;
+    control <== epoch_key_template.control;
+    epoch_key <== epoch_key_template.epoch_key;
+
+    // add your customized circuits
+    ...
+}
+```
+
+### Proof helpers
+
+Proof helpers can help users query the public signals in each proof.
+
+**EpochKeyProof**
+
+```ts
+import { EpochKeyProof } from '@unirep/circuits'
+
+const { proof, publicSignals } = await prover.genProofAndPublicSignals(
+    Circuit.epochKey,
+    circuitInputs
+)
+const data = new EpochKeyProof(publicSignals, proof)
+const epk = data.epochKey
+```
+
+**SignupProof**
+
+```ts
+import { SignupProof } from '@unirep/circuits'
+
+const { proof, publicSignals } = await prover.genProofAndPublicSignals(
+    Circuit.signup,
+    circuitInputs
+)
+const data = new SignupProof(publicSignals, proof)
+const idCommitment = data.identityCommitment
 ```
 
 ## 🙌🏻 Join our community
