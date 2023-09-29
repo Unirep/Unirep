@@ -56,22 +56,22 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         uint8 repBits = 64;
         uint8 oneBit = 1;
         uint8 accBits = 0;
-        minRep = uint64(shift(control, accBits, repBits));
+        minRep = uint64(shiftAndParse(control, accBits, repBits));
         accBits += repBits;
 
-        maxRep = uint64(shift(control, accBits, repBits));
+        maxRep = uint64(shiftAndParse(control, accBits, repBits));
         accBits += repBits;
 
-        proveMinRep = bool(shift(control, accBits, oneBit) != 0);
+        proveMinRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
         accBits += oneBit;
 
-        proveMaxRep = bool(shift(control, accBits, oneBit) != 0);
+        proveMaxRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
         accBits += oneBit;
 
-        proveZeroRep = bool(shift(control, accBits, oneBit) != 0);
+        proveZeroRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
         accBits += oneBit;
 
-        proveGraffiti = bool(shift(control, accBits, oneBit) != 0);
+        proveGraffiti = bool(shiftAndParse(control, accBits, oneBit) != 0);
         accBits += oneBit;
         return (
             minRep,

@@ -65,23 +65,25 @@ contract BaseVerifierHelper {
         uint8 chainIdBits = 36;
         uint8 accBits = 0;
 
-        nonce = uint8(shift(control, accBits, nonceBits));
+        nonce = uint8(shiftAndParse(control, accBits, nonceBits));
         accBits += nonceBits;
 
-        epoch = uint48(shift(control, accBits, epochBits));
+        epoch = uint48(shiftAndParse(control, accBits, epochBits));
         accBits += epochBits;
 
-        attesterId = uint160(shift(control, accBits, attesterIdBits));
+        attesterId = uint160(shiftAndParse(control, accBits, attesterIdBits));
         accBits += attesterIdBits;
 
-        revealNonce = bool(shift(control, accBits, revealNonceBit) != 0);
+        revealNonce = bool(
+            shiftAndParse(control, accBits, revealNonceBit) != 0
+        );
         accBits += revealNonceBit;
 
-        chainId = uint48(shift(control, accBits, chainIdBits));
+        chainId = uint48(shiftAndParse(control, accBits, chainIdBits));
         return (nonce, epoch, attesterId, revealNonce, chainId);
     }
 
-    function shift(
+    function shiftAndParse(
         uint256 data,
         uint8 shiftBits,
         uint8 variableBits

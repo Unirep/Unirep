@@ -89,7 +89,7 @@ Get data in certain range of bits.
 It will return a variable from data within variable bits.
 
 ```sol
-function shift(
+function shiftAndParse(
   uint256 data,
   uint8 shiftBits,
   uint8 variableBits
