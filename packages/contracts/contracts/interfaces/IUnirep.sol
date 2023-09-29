@@ -74,10 +74,10 @@ interface IUnirep {
     error InvalidHistoryTreeRoot(uint256 historyTreeRoot);
 
     struct SignupSignals {
-        uint256 stateTreeLeaf;
         uint48 epoch;
         uint48 chainId;
         uint160 attesterId;
+        uint256 stateTreeLeaf;
         uint256 identityCommitment;
     }
 
@@ -90,29 +90,29 @@ interface IUnirep {
     }
 
     struct EpochKeyData {
-        uint256 leaf;
         uint40 leafIndex;
         uint48 epoch;
+        uint256 leaf;
         // use a constant because compile time variables are not supported
         uint256[128] data;
     }
 
     struct AttesterData {
-        // epoch keyed to root keyed to whether it's valid
-        mapping(uint256 => mapping(uint256 => bool)) stateTreeRoots;
-        ReusableTreeData stateTree;
-        mapping(uint256 => bool) historyTreeRoots;
-        IncrementalTreeData historyTree;
-        // epoch keyed to root
-        mapping(uint256 => uint256) epochTreeRoots;
-        LazyTreeData epochTree;
         uint48 startTimestamp;
         uint48 currentEpoch;
         uint48 epochLength;
+        // epoch keyed to root keyed to whether it's valid
+        mapping(uint256 => mapping(uint256 => bool)) stateTreeRoots;
+        mapping(uint256 => bool) historyTreeRoots;
+        // epoch keyed to root
+        mapping(uint256 => uint256) epochTreeRoots;
         mapping(uint256 => bool) identityCommitments;
         IncrementalTreeData semaphoreGroup;
         // epoch key management
         mapping(uint256 => EpochKeyData) epkData;
+        IncrementalTreeData historyTree;
+        ReusableTreeData stateTree;
+        LazyTreeData epochTree;
     }
 
     struct Config {

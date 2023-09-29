@@ -13,30 +13,30 @@ contract BaseVerifierHelper {
     struct EpochKeySignals {
         uint256 epochKey;
         uint256 stateTreeRoot;
-        uint8 nonce;
-        uint48 epoch;
-        uint160 attesterId;
-        bool revealNonce;
-        uint48 chainId;
         uint256 data;
+        uint160 attesterId;
+        uint48 epoch;
+        uint48 chainId;
+        uint8 nonce;
+        bool revealNonce;
     }
 
     struct ReputationSignals {
         uint256 epochKey;
         uint256 stateTreeRoot;
-        uint8 nonce;
-        uint48 epoch;
-        uint160 attesterId;
-        bool revealNonce;
-        uint48 chainId;
         uint256 minRep;
         uint256 maxRep;
+        uint256 graffiti;
+        uint256 data;
+        uint160 attesterId;
+        uint48 epoch;
+        uint48 chainId;
+        uint8 nonce;
+        bool revealNonce;
         bool proveMinRep;
         bool proveMaxRep;
         bool proveZeroRep;
         bool proveGraffiti;
-        uint256 graffiti;
-        uint256 data;
     }
 
     error AttesterInvalid();
