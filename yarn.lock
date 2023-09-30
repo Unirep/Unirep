@@ -4263,6 +4263,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/snarkjs@npm:^0.7.3":
+  version: 0.7.3
+  resolution: "@types/snarkjs@npm:0.7.3"
+  checksum: f2b0c3137c8552d7f635d702e7295e4159bd74dda0db2f65444d841697d54d3610cdf9fe2901670ea970937c408078cbaffd6bf30b58bad60607ba12480d3b35
+  languageName: node
+  linkType: hard
+
 "@types/sockjs@npm:^0.3.33":
   version: 0.3.33
   resolution: "@types/sockjs@npm:0.3.33"
@@ -17278,6 +17285,7 @@ __metadata:
   dependencies:
     "@types/chai": ^4.3.1
     "@types/mocha": ^9.1.1
+    "@types/snarkjs": ^0.7.3
     "@typescript-eslint/eslint-plugin": ^5.15.0
     argparse: ^2.0.1
     chai: ^4.3.6

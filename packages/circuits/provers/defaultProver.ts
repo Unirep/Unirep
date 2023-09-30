@@ -1,6 +1,6 @@
 import path from 'path'
 import { Circuit } from '../src'
-import * as snarkjs from 'snarkjs'
+import { groth16, CircuitSignals, Groth16Proof, PublicSignals } from 'snarkjs'
 import { SnarkProof, SnarkPublicSignals } from '@unirep/utils'
 
 const buildPath = '../zksnarkBuild'
@@ -17,7 +17,7 @@ export const defaultProver = {
      */
     genProofAndPublicSignals: async (
         circuitName: string | Circuit,
-        inputs: any
+        inputs: CircuitSignals
     ): Promise<any> => {
         const circuitWasmPath = path.join(
             __dirname,
@@ -25,7 +25,7 @@ export const defaultProver = {
             `${circuitName}.wasm`
         )
         const zkeyPath = path.join(__dirname, buildPath, `${circuitName}.zkey`)
-        const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+        const { proof, publicSignals } = await groth16.fullProve(
             inputs,
             circuitWasmPath,
             zkeyPath
@@ -43,11 +43,11 @@ export const defaultProver = {
      */
     verifyProof: async (
         circuitName: string | Circuit,
-        publicSignals: SnarkPublicSignals,
-        proof: SnarkProof
+        publicSignals: PublicSignals,
+        proof: Groth16Proof
     ): Promise<boolean> => {
         const vkey = require(path.join(buildPath, `${circuitName}.vkey.json`))
-        return snarkjs.groth16.verify(vkey, publicSignals, proof)
+        return groth16.verify(vkey, publicSignals, proof)
     },
 
     /**
