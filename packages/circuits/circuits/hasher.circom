@@ -16,6 +16,10 @@ template EpochKeyHasher() {
   signal output out;
 
   /**
+  * NOTE: Range of these values should be constrained before using the template
+  * e.g.
+  * _ <== Num2Bits(ATTESTER_ID_BITS)(attester_id);
+  *
   * control structure
   * 160 bits attester id
   * 48 bits epoch
@@ -83,6 +87,10 @@ template StateTreeLeaf(FIELD_COUNT) {
   }
 
   /**
+  * NOTE: Range of these values should be constrained before using the template
+  * e.g.
+  * _ <== Num2Bits(ATTESTER_ID_BITS)(attester_id);
+  *
   * control structure
   * 160 bits attester id
   * 48 bits epoch
