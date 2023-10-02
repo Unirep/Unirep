@@ -4263,10 +4263,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/snarkjs@npm:^0.7.3":
-  version: 0.7.3
-  resolution: "@types/snarkjs@npm:0.7.3"
-  checksum: f2b0c3137c8552d7f635d702e7295e4159bd74dda0db2f65444d841697d54d3610cdf9fe2901670ea970937c408078cbaffd6bf30b58bad60607ba12480d3b35
+"@types/snarkjs@npm:^0.7.4":
+  version: 0.7.4
+  resolution: "@types/snarkjs@npm:0.7.4"
+  checksum: ba2110134c08f3c16275860ea0cf40c6b14975bd49076cc6fba9136cc2b11d7b856d0cd9e864ab6b172545b3db2366594e4d50811121cffb7677743f7eb55f01
   languageName: node
   linkType: hard
 
@@ -17285,7 +17285,7 @@ __metadata:
   dependencies:
     "@types/chai": ^4.3.1
     "@types/mocha": ^9.1.1
-    "@types/snarkjs": ^0.7.3
+    "@types/snarkjs": ^0.7.4
     "@typescript-eslint/eslint-plugin": ^5.15.0
     argparse: ^2.0.1
     chai: ^4.3.6
