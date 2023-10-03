@@ -330,7 +330,7 @@ describe('Epoch key verifier helper', function () {
     let chainId
     let circuitInputs = {
         state_tree_elements: [0],
-        state_tree_indeces: [0],
+        state_tree_indices: [0],
         identity_secret: id.secret,
         data: Array(FIELD_COUNT).fill(0),
         sig_data: data,
@@ -376,7 +376,7 @@ describe('Epoch key verifier helper', function () {
         circuitInputs = {
             ...circuitInputs,
             state_tree_elements: merkleProof.siblings,
-            state_tree_indeces: merkleProof.pathIndices,
+            state_tree_indices: merkleProof.pathIndices,
             attester_id: attester.address,
             chain_id: chainId,
         }
@@ -587,7 +587,7 @@ describe('Reputation verifier helper', function () {
     const data = [0, 0, 0, 0, BigInt(graffiti) << BigInt(REPL_NONCE_BITS), 0]
     let circuitInputs = {
         identity_secret: id.secret,
-        state_tree_indeces: [0],
+        state_tree_indices: [0],
         state_tree_elements: [0],
         data,
         prove_graffiti: 1,
@@ -634,7 +634,7 @@ describe('Reputation verifier helper', function () {
         circuitInputs = {
             ...circuitInputs,
             state_tree_elements: merkleProof.siblings,
-            state_tree_indeces: merkleProof.pathIndices,
+            state_tree_indices: merkleProof.pathIndices,
             attester_id: attester.address,
             chain_id: chainId,
         }

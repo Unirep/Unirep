@@ -75,7 +75,7 @@ Control field:
 | 36 bits| 1 bits| 160 bits | 48 bits | 8 bits |
 
 Inputs:
-- `state_tree_indeces[STATE_TREE_DEPTH]`
+- `state_tree_indices[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `identity_secret`
 - `reveal_nonce`
@@ -96,7 +96,7 @@ Interface:
 // pragma circom 2.1.0;
 // include "PATH/node_modules/@unirep/circuits/circuits/epochKey.circom"; 
 (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
-  state_tree_indeces, 
+  state_tree_indices, 
   state_tree_elements, 
   identity_secret,
   reveal_nonce,
@@ -198,7 +198,7 @@ Control field 1:
 
 Inputs:
 - `identity_secret`
-- `state_tree_indeces[STATE_TREE_DEPTH]`
+- `state_tree_indices[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `data[FIELD_COUNT]`
 - `prove_graffiti`
@@ -226,7 +226,7 @@ Interface:
 // include "PATH/node_modules/@unirep/circuits/circuits/reputation.circom"; 
 (epoch_key, state_tree_root, control) <== Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT, FIELD_COUNT, REPL_NONCE_BITS)(
   identity_secret,
-  state_tree_indeces,
+  state_tree_indices,
   state_tree_elements,
   data,
   prove_graffiti,
@@ -268,7 +268,7 @@ Inputs:
 - `from_epoch`
 - `to_epoch`
 - `identity_secret`
-- `state_tree_indeces[STATE_TREE_DEPTH]`
+- `state_tree_indices[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `history_tree_indices[HISTORY_TREE_DEPTH]`
 - `history_tree_elements[HISTORY_TREE_DEPTH]`
@@ -302,7 +302,7 @@ Interface:
   from_epoch,
   to_epoch,
   identity_secret,
-  state_tree_indeces,
+  state_tree_indices,
   state_tree_elements,
   history_tree_indices,
   history_tree_elements,
@@ -328,7 +328,7 @@ Control field:
 | 36 bits| 1 bits| 160 bits | 48 bits | 8 bits |
 
 Inputs:
-- `state_tree_indeces[STATE_TREE_DEPTH]`
+- `state_tree_indices[STATE_TREE_DEPTH]`
 - `state_tree_elements[STATE_TREE_DEPTH]`
 - `reveal_nonce`
 - `attester_id`
@@ -351,7 +351,7 @@ Interface:
 // pragma circom 2.1.0;
 // include "PATH/node_modules/@unirep/circuits/circuits/scopeNullifier.circom"; 
 (epoch_key, state_tree_root, control, nullifier) <== ScopeNullifier(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
-  state_tree_indeces, 
+  state_tree_indices, 
   state_tree_elements,
   reveal_nonce, 
   attester_id,

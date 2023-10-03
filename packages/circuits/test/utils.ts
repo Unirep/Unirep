@@ -76,7 +76,7 @@ const genEpochKeyCircuitInput = (config: {
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
         state_tree_elements: proof.siblings,
-        state_tree_indeces: proof.pathIndices,
+        state_tree_indices: proof.pathIndices,
         identity_secret: id.secret,
         data,
         sig_data: sigData ?? BigInt(0),
@@ -148,7 +148,7 @@ const genReputationCircuitInput = (config: {
 
     const circuitInputs = {
         identity_secret: id.secret,
-        state_tree_indeces: stateTreeProof.pathIndices,
+        state_tree_indices: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
         data: startBalance,
         graffiti: graffiti,
@@ -237,7 +237,7 @@ const genPreventDoubleActionCircuitInput = (config: {
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
         state_tree_elements: proof.siblings,
-        state_tree_indeces: proof.pathIndices,
+        state_tree_indices: proof.pathIndices,
         data,
         sig_data: sigData ?? BigInt(0),
         nonce,

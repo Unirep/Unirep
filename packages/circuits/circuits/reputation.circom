@@ -19,7 +19,7 @@ template Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT
     // Global state tree leaf: Identity & user state root
     signal input identity_secret;
     // Global state tree
-    signal input state_tree_indeces[STATE_TREE_DEPTH];
+    signal input state_tree_indices[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
     // Attestation by the attester
     signal input data[FIELD_COUNT];
@@ -112,7 +112,7 @@ template Reputation(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, SUM_FIELD_COUNT
     _ <== Num2Bits(CHAIN_ID_BITS)(chain_id);
 
     (epoch_key, state_tree_root, control[0]) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
-        state_tree_indeces,
+        state_tree_indices,
         state_tree_elements,
         identity_secret,
         reveal_nonce,

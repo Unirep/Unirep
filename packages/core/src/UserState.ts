@@ -560,7 +560,7 @@ export default class UserState {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
             identity_secret: this.id.secret,
-            state_tree_indeces: stateTreeProof.pathIndices,
+            state_tree_indices: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             attester_id: attesterId.toString(),
             history_tree_indices: historyTreeProof.pathIndices,
@@ -619,7 +619,7 @@ export default class UserState {
 
         const circuitInputs = {
             identity_secret: this.id.secret,
-            state_tree_indeces: stateTreeProof.pathIndices,
+            state_tree_indices: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             data,
             prove_graffiti: graffiti ? 1 : 0,
@@ -703,7 +703,7 @@ export default class UserState {
             data,
             sig_data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
-            state_tree_indeces: proof.pathIndices,
+            state_tree_indices: proof.pathIndices,
             epoch,
             nonce,
             attester_id: attesterId,

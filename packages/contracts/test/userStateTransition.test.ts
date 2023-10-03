@@ -33,7 +33,7 @@ let circuitInputs = {
     from_epoch: 0,
     to_epoch: 1,
     identity_secret: id.secret,
-    state_tree_indeces: [0],
+    state_tree_indices: [0],
     state_tree_elements: [0],
     history_tree_indices: [0],
     history_tree_elements: [0],
@@ -117,7 +117,7 @@ describe('User State Transition', function () {
         const historyTreeProof = historyTree.createProof(0)
         circuitInputs = {
             ...circuitInputs,
-            state_tree_indeces: stateTreeProof.pathIndices,
+            state_tree_indices: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             history_tree_indices: historyTreeProof.pathIndices,
             history_tree_elements: historyTreeProof.siblings,
@@ -203,7 +203,7 @@ describe('User State Transition', function () {
             Circuit.userStateTransition,
             stringifyBigInts({
                 ...circuitInputs,
-                state_tree_indeces: wrongStateTreeProof.pathIndices,
+                state_tree_indices: wrongStateTreeProof.pathIndices,
                 state_tree_elements: wrongStateTreeProof.siblings,
             })
         )
@@ -419,7 +419,7 @@ describe('User State Transition', function () {
                         from_epoch: fromEpoch,
                         to_epoch: epoch,
                         identity_secret: userState[i].id.secret,
-                        state_tree_indeces: stateTreeProof.pathIndices,
+                        state_tree_indices: stateTreeProof.pathIndices,
                         state_tree_elements: stateTreeProof.siblings,
                         history_tree_indices: historyTreeProof.pathIndices,
                         history_tree_elements: historyTreeProof.siblings,

@@ -106,7 +106,7 @@ import { Circuit } from '@unirep/circuits'
 // See ./test/verifyEpochKey.test.ts for generating circuit inputs
 const circuitInputs = {
     state_tree_elements: ...,
-    state_tree_indeces: ...,
+    state_tree_indices: ...,
     ...
 }
 const { proof, publicSignals } = await prover.genProofAndPublicSignals(
@@ -131,7 +131,7 @@ pragma circom 2.1.0;
 include "PATH/TO/node_modules/@unirep/circuits/circuits/epochKey.circom";
 
 template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
-    signal input state_tree_indeces[STATE_TREE_DEPTH];
+    signal input state_tree_indices[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
     signal input identity_secret;
     signal input data[FIELD_COUNT];
@@ -146,7 +146,7 @@ template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     signal output state_tree_root;   
 
     (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
-        state_tree_indeces, 
+        state_tree_indices, 
         state_tree_elements, 
         identity_secret,
         reveal_nonce,
