@@ -164,7 +164,7 @@ export class DataSchema {
             const { name, /* type, updateBy, */ dataIndex, bits, offset } =
                 field
             parsed[name] = shiftBits(
-                data[dataIndex].toString(),
+                data[dataIndex],
                 BigInt(offset),
                 BigInt(bits)
             )

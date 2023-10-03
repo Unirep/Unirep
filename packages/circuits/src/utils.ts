@@ -46,16 +46,15 @@ export const formatProofForSnarkjsVerification = (
 }
 
 export const shiftBits = (
-    data: string,
+    data: bigint,
     shiftBits: bigint,
     variableBits: bigint
 ): bigint => {
-    const _data = BigInt(data)
-    return (_data >> shiftBits) & ((BigInt(1) << variableBits) - BigInt(1))
+    return (data >> shiftBits) & ((BigInt(1) << variableBits) - BigInt(1))
 }
 
 export const decodeEpochKeyControl = (
-    control: string,
+    control: bigint,
     config: CircuitConfig = CircuitConfig.default
 ): EpochKeyControl => {
     const {
@@ -86,7 +85,7 @@ export const decodeEpochKeyControl = (
 }
 
 export const decodeReputationControl = (
-    control: string,
+    control: bigint,
     config: CircuitConfig = CircuitConfig.default
 ) => {
     const { REP_BITS, ONE_BIT } = config
@@ -121,7 +120,7 @@ export const decodeReputationControl = (
 }
 
 export const decodeUserStateTransitionControl = (
-    control: string,
+    control: bigint,
     config: CircuitConfig = CircuitConfig.default
 ): UserStateTransitionControl => {
     const { ATTESTER_ID_BITS, EPOCH_BITS } = config
@@ -137,7 +136,7 @@ export const decodeUserStateTransitionControl = (
 }
 
 export const decodeSignupControl = (
-    control: string,
+    control: bigint,
     config: CircuitConfig = CircuitConfig.default
 ): SignupControl => {
     const { ATTESTER_ID_BITS, EPOCH_BITS, CHAIN_ID_BITS } = config

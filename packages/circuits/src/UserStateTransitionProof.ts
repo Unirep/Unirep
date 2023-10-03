@@ -18,10 +18,10 @@ export class UserStateTransitionProof extends BaseProof {
         control: 5,
     }
     // original data
-    public historyTreeRoot: string
-    public stateTreeLeaf: string
-    public epochKeys: string[]
-    public control: string
+    public historyTreeRoot: bigint
+    public stateTreeLeaf: bigint
+    public epochKeys: bigint[]
+    public control: bigint
     // decoded data
     public attesterId: bigint
     public toEpoch: bigint
@@ -32,20 +32,24 @@ export class UserStateTransitionProof extends BaseProof {
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        publicSignals: string[],
+        publicSignals: (bigint | string)[],
         proof: SnarkProof,
         prover?: Prover,
         config: CircuitConfig = CircuitConfig.default
     ) {
         super(publicSignals, proof, prover)
         const { NUM_EPOCH_KEY_NONCE_PER_EPOCH } = config
-        this.historyTreeRoot = this.publicSignals[this.idx.historyTreeRoot]
-        this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]
-        this.epochKeys = this.publicSignals.slice(
-            this.idx.epochKeys,
-            this.idx.epochKeys + NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        this.historyTreeRoot = BigInt(
+            this.publicSignals[this.idx.historyTreeRoot]
         )
-        this.control = this.publicSignals[this.idx.control]
+        this.stateTreeLeaf = BigInt(this.publicSignals[this.idx.stateTreeLeaf])
+        this.epochKeys = this.publicSignals
+            .slice(
+                this.idx.epochKeys,
+                this.idx.epochKeys + NUM_EPOCH_KEY_NONCE_PER_EPOCH
+            )
+            .map((n) => BigInt(n))
+        this.control = BigInt(this.publicSignals[this.idx.control])
         const { attesterId, toEpoch } = decodeUserStateTransitionControl(
             this.control
         )

@@ -8,7 +8,7 @@ const { MAX_SAFE_BITS, REPL_NONCE_BITS } = CircuitConfig.default
 describe('Compare large numbers', function () {
     this.timeout(30000)
     it('should compare equal lower bits', async () => {
-        const FIELD_BITS = BigInt(253) - BigInt(REPL_NONCE_BITS)
+        const FIELD_BITS = MAX_SAFE_BITS - BigInt(REPL_NONCE_BITS)
         const n = randomf(BigInt(2) ** BigInt(REPL_NONCE_BITS))
         const n1 =
             n + (randomf(BigInt(2) ** FIELD_BITS) << BigInt(REPL_NONCE_BITS))

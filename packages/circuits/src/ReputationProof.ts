@@ -21,12 +21,12 @@ export class ReputationProof extends BaseProof {
         data: 5,
     }
     // original data
-    public epochKey: string
-    public stateTreeRoot: string
-    public control0: string
-    public control1: string
-    public graffiti: string
-    public data: string
+    public epochKey: bigint
+    public stateTreeRoot: bigint
+    public control0: bigint
+    public control1: bigint
+    public graffiti: bigint
+    public data: bigint
     // decoded data
     // control 0
     public nonce: bigint
@@ -47,12 +47,16 @@ export class ReputationProof extends BaseProof {
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
-    constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {
+    constructor(
+        publicSignals: (bigint | string)[],
+        proof: SnarkProof,
+        prover?: Prover
+    ) {
         super(publicSignals, proof, prover)
-        this.epochKey = this.publicSignals[this.idx.epochKey]
-        this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]
-        this.control0 = this.publicSignals[this.idx.control0]
-        this.control1 = this.publicSignals[this.idx.control1]
+        this.epochKey = BigInt(this.publicSignals[this.idx.epochKey])
+        this.stateTreeRoot = BigInt(this.publicSignals[this.idx.stateTreeRoot])
+        this.control0 = BigInt(this.publicSignals[this.idx.control0])
+        this.control1 = BigInt(this.publicSignals[this.idx.control1])
         const { nonce, epoch, attesterId, revealNonce, chainId } =
             decodeEpochKeyControl(this.control0)
         this.nonce = nonce

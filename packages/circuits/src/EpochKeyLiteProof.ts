@@ -10,9 +10,9 @@ export class EpochKeyLiteProof extends BaseProof {
         data: 2,
     }
     // original data
-    public control: string
-    public epochKey: string
-    public data: string
+    public control: bigint
+    public epochKey: bigint
+    public data: bigint
     // decoded data
     public nonce: bigint
     public epoch: bigint
@@ -20,11 +20,15 @@ export class EpochKeyLiteProof extends BaseProof {
     public revealNonce: bigint
     public chainId: bigint
 
-    constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {
+    constructor(
+        publicSignals: (bigint | string)[],
+        proof: SnarkProof,
+        prover?: Prover
+    ) {
         super(publicSignals, proof, prover)
-        this.epochKey = this.publicSignals[this.idx.epochKey]
-        this.control = this.publicSignals[this.idx.control]
-        this.data = this.publicSignals[this.idx.data]
+        this.epochKey = BigInt(this.publicSignals[this.idx.epochKey])
+        this.control = BigInt(this.publicSignals[this.idx.control])
+        this.data = BigInt(this.publicSignals[this.idx.data])
         const { nonce, epoch, attesterId, revealNonce, chainId } =
             decodeEpochKeyControl(this.control)
         this.nonce = nonce

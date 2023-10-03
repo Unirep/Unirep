@@ -12,8 +12,8 @@ export class BaseProof {
     readonly _snarkProof: SnarkProof
     protected circuit?: Circuit
 
-    readonly publicSignals: string[]
-    public proof: string[]
+    readonly publicSignals: bigint[]
+    public proof: bigint[]
     public prover?: Prover
 
     /**
@@ -22,12 +22,13 @@ export class BaseProof {
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        publicSignals: string[],
-        proof: SnarkProof | string[],
+        publicSignals: (bigint | string)[],
+        proof: SnarkProof | (bigint | string)[],
         prover?: Prover
     ) {
         if (Array.isArray(proof)) {
-            this.proof = proof
+            // assume it's formatted for verifier contract
+            this.proof = proof.map((v) => BigInt(v))
             this._snarkProof = formatProofForSnarkjsVerification(
                 proof.map((p) => p.toString())
             )
@@ -39,7 +40,7 @@ export class BaseProof {
         } else {
             throw new Error('Invalid proof supplied')
         }
-        this.publicSignals = publicSignals
+        this.publicSignals = publicSignals.map((v) => BigInt(v))
         this.prover = prover
     }
 
@@ -56,7 +57,7 @@ export class BaseProof {
         }
         return this.prover.verifyProof(
             this.circuit,
-            this.publicSignals,
+            this.publicSignals.map((n) => BigInt(n.toString())),
             this._snarkProof
         )
     }

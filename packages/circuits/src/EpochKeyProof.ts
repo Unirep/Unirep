@@ -14,10 +14,10 @@ export class EpochKeyProof extends BaseProof {
         data: 3,
     }
     // original data
-    public epochKey: string
-    public stateTreeRoot: string
-    public control: string
-    public data: string
+    public epochKey: bigint
+    public stateTreeRoot: bigint
+    public control: bigint
+    public data: bigint
     // decoded data
     public nonce: bigint
     public epoch: bigint
@@ -30,7 +30,11 @@ export class EpochKeyProof extends BaseProof {
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
-    constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {
+    constructor(
+        publicSignals: (bigint | string)[],
+        proof: SnarkProof,
+        prover?: Prover
+    ) {
         super(publicSignals, proof, prover)
         this.epochKey = this.publicSignals[this.idx.epochKey]
         this.stateTreeRoot = this.publicSignals[this.idx.stateTreeRoot]

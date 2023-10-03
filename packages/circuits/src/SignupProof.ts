@@ -14,9 +14,9 @@ export class SignupProof extends BaseProof {
     }
 
     // original data
-    public identityCommitment: string
-    public stateTreeLeaf: string
-    public control: string
+    public identityCommitment: bigint
+    public stateTreeLeaf: bigint
+    public control: bigint
     // decoded data
     public attesterId: bigint
     public epoch: bigint
@@ -27,12 +27,17 @@ export class SignupProof extends BaseProof {
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
-    constructor(publicSignals: string[], proof: SnarkProof, prover?: Prover) {
+    constructor(
+        publicSignals: (bigint | string)[],
+        proof: SnarkProof,
+        prover?: Prover
+    ) {
         super(publicSignals, proof, prover)
-        this.identityCommitment =
+        this.identityCommitment = BigInt(
             this.publicSignals[this.idx.identityCommitment]
-        this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]
-        this.control = this.publicSignals[this.idx.control]
+        )
+        this.stateTreeLeaf = BigInt(this.publicSignals[this.idx.stateTreeLeaf])
+        this.control = BigInt(this.publicSignals[this.idx.control])
         const { chainId, epoch, attesterId } = decodeSignupControl(this.control)
         this.chainId = chainId
         this.epoch = epoch
