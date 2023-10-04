@@ -100,8 +100,7 @@ export default class UserState {
 
     async start() {
         await this.sync.start()
-        const { chainId } = await this.sync.provider.getNetwork()
-        this._chainId = chainId
+        await this._checkChainId()
     }
 
     async waitForSync(n?: number) {
