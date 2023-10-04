@@ -13,7 +13,7 @@ import {
 const VerifierHelpers = {
     epochKey: Circuit.epochKey,
     epochKeyLite: Circuit.epochKeyLite,
-    reputation: Circuit.proveReputation,
+    reputation: Circuit.reputation,
 }
 
 const createVerifierHelperName = (circuit: Circuit): string => {

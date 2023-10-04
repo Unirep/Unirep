@@ -79,6 +79,11 @@ Please make sure the signature is signed through the correct attester.
     The [epoch](../protocol/epoch.md) in the proof is greater than the current epoch. <br/>
     Please check the current epoch and generate a corresponding proof.
 
+## 0x4c4783a8
+- `ChainIdNotMatch(uint48 chainId)`<br/>
+    The chain id in the proof does not match the current unirep contract.
+    Check if [`chainid()`](./unirep-sol.md#chainid) matches your circuit inputs.
+
 ## 0x09bde339
 - `InvalidProof()`<br/>
     The proof is verified invalid through on-chain verifiers. <br/>

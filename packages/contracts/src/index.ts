@@ -20,17 +20,19 @@ export { Unirep, UnirepFactory }
  * @param unirepAddress The address of UniRep smart contract
  * @param attesterAddress The address of the attester
  * @param epochLength Epoch length of the attester
+ * @param chainId The current UniRep contract the attester wants to signup
  * @returns An sign up signature for the attester
  */
 export const genSignature = async (
     unirepAddress: string,
     attester: ethers.Signer | ethers.Wallet,
-    epochLength: number
+    epochLength: number,
+    chainId: bigint | number
 ): Promise<string> => {
     const attesterAddress = await attester.getAddress()
     const message = ethers.utils.solidityKeccak256(
-        ['address', 'address', 'uint256'],
-        [unirepAddress, attesterAddress, epochLength]
+        ['address', 'address', 'uint256', 'uint256'],
+        [unirepAddress, attesterAddress, epochLength, chainId]
     )
     return attester.signMessage(ethers.utils.arrayify(message))
 }

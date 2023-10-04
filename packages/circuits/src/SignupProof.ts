@@ -1,9 +1,7 @@
-import { Circuit, Prover } from './circuits'
+import { Circuit, Prover } from './type'
 import { SnarkProof } from '@unirep/utils'
 import { BaseProof } from './BaseProof'
-import { CircuitConfig } from './CircuitConfig'
-
-const { ATTESTER_ID_BITS, EPOCH_BITS } = CircuitConfig
+import { buildSignupControl, decodeSignupControl } from './utils'
 
 /**
  * The sign up proof structure that helps to query the public signals
@@ -15,38 +13,44 @@ export class SignupProof extends BaseProof {
         control: 2,
     }
 
+    // original data
     public identityCommitment: bigint
     public stateTreeLeaf: bigint
+    public control: bigint
+    // decoded data
     public attesterId: bigint
     public epoch: bigint
-    public control: bigint
+    public chainId: bigint
 
     /**
-     * @param _publicSignals The public signals of the user sign up proof that can be verified by the prover
-     * @param _proof The proof that can be verified by the prover
+     * @param publicSignals The public signals of the user sign up proof that can be verified by the prover
+     * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        _publicSignals: (bigint | string)[],
-        _proof: SnarkProof,
+        publicSignals: (bigint | string)[],
+        proof: SnarkProof,
         prover?: Prover
     ) {
-        super(_publicSignals, _proof, prover)
-        this.identityCommitment =
+        super(publicSignals, proof, prover)
+        this.identityCommitment = BigInt(
             this.publicSignals[this.idx.identityCommitment]
-        this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]
-        this.control = this.publicSignals[this.idx.control]
-        this.epoch =
-            (BigInt(this.control) >> ATTESTER_ID_BITS) &
-            ((BigInt(1) << EPOCH_BITS) - BigInt(1))
-        this.attesterId =
-            BigInt(this.control) & ((BigInt(1) << ATTESTER_ID_BITS) - BigInt(1))
+        )
+        this.stateTreeLeaf = BigInt(this.publicSignals[this.idx.stateTreeLeaf])
+        this.control = BigInt(this.publicSignals[this.idx.control])
+        const { chainId, epoch, attesterId } = decodeSignupControl(this.control)
+        this.chainId = chainId
+        this.epoch = epoch
+        this.attesterId = attesterId
         this.circuit = Circuit.signup
     }
 
-    static buildControl({ attesterId, epoch }: any) {
-        let control = BigInt(attesterId)
-        control += BigInt(epoch) << BigInt(160)
+    static buildControl({ attesterId, epoch, chainId }: any) {
+        const control = buildSignupControl({
+            attesterId: BigInt(attesterId),
+            epoch: BigInt(epoch),
+            chainId: BigInt(chainId),
+        })
         return control
     }
 }

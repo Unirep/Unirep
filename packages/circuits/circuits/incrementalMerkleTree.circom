@@ -1,9 +1,5 @@
 pragma circom 2.1.0;
 
-// Refer to:
-// https://github.com/peppersec/tornado-mixer/blob/master/circuits/merkleTree.circom
-// https://github.com/appliedzkp/semaphore/blob/master/circuits/circom/semaphore-base.circom
-
 include "./circomlib/circuits/mux1.circom";
 include "./circomlib/circuits/poseidon.circom";
 include "./circomlib/circuits/comparators.circom";

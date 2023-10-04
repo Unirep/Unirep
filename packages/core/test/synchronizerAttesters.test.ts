@@ -194,7 +194,7 @@ describe('Synchronizer watch multiple attesters', function () {
             })
             expect(userCount).to.equal(1)
         }
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should sync after event happens', async () => {
@@ -221,7 +221,7 @@ describe('Synchronizer watch multiple attesters', function () {
                     .userSignUp(publicSignals, proof)
                     .then((t) => t.wait())
             }
-            userState.sync.stop()
+            userState.stop()
         }
 
         const userState = await genUserState(
@@ -235,7 +235,7 @@ describe('Synchronizer watch multiple attesters', function () {
             commitment: id.commitment.toString(),
         })
         expect(userCount).to.equal(1)
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should stop and sync with different attesters', async () => {
@@ -393,6 +393,6 @@ describe('Synchronizer watch multiple attesters', function () {
             const valid = await proof.verify()
             expect(valid).to.be.true
         }
-        userState.sync.stop()
+        userState.stop()
     })
 })

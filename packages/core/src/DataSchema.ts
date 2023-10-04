@@ -1,4 +1,4 @@
-import { CircuitConfig } from '@unirep/circuits'
+import { CircuitConfig, shiftBits } from '@unirep/circuits'
 
 export type SchemaField = {
     name: string
@@ -22,9 +22,11 @@ export class DataSchema {
     parseSchema(schema: SchemaField[]): any[] {
         let sumOffset = 0
         let replOffset = 0
-        const maxSumOffset = 253 * this.config.SUM_FIELD_COUNT
+        const MAX_SAFE_BITS = Number(this.config.MAX_SAFE_BITS)
+        const maxSumOffset = MAX_SAFE_BITS * this.config.SUM_FIELD_COUNT
         const maxReplOffset =
-            253 * (this.config.FIELD_COUNT - this.config.SUM_FIELD_COUNT)
+            MAX_SAFE_BITS *
+            (this.config.FIELD_COUNT - this.config.SUM_FIELD_COUNT)
 
         return schema.map((field, idx) => {
             const { name, type, updateBy, ...extraFields } = field
@@ -49,29 +51,29 @@ export class DataSchema {
             }
 
             const bits = +match[1]
-            if (bits < 1 || bits > 253)
+            if (bits < 1 || bits > MAX_SAFE_BITS)
                 throw new Error(`Invalid uint size for field ${name}: ${bits}`)
             if (updateBy === 'sum') {
                 if (
-                    Math.floor(sumOffset / 253) !==
-                    Math.floor((sumOffset + bits - 1) / 253)
+                    Math.floor(sumOffset / MAX_SAFE_BITS) !==
+                    Math.floor((sumOffset + bits - 1) / MAX_SAFE_BITS)
                 ) {
-                    sumOffset += 253 - (sumOffset % 253)
+                    sumOffset += MAX_SAFE_BITS - (sumOffset % MAX_SAFE_BITS)
                 }
                 if (sumOffset + bits > maxSumOffset) {
                     throw new Error(
                         `Invalid schema, field "${name}" exceeds available storage`
                     )
                 }
-                const dataIndex = Math.floor(sumOffset / 253)
-                const offset = sumOffset % 253
+                const dataIndex = Math.floor(sumOffset / MAX_SAFE_BITS)
+                const offset = sumOffset % MAX_SAFE_BITS
                 sumOffset += bits
                 return { ...field, dataIndex, offset, bits }
             } else if (updateBy === 'replace') {
-                if (bits !== 253 - this.config.REPL_NONCE_BITS)
+                if (bits !== MAX_SAFE_BITS - this.config.REPL_NONCE_BITS)
                     throw new Error(
                         `Field must be ${
-                            253 - this.config.REPL_NONCE_BITS
+                            MAX_SAFE_BITS - this.config.REPL_NONCE_BITS
                         } bits`
                     )
                 if (replOffset + bits > maxReplOffset) {
@@ -81,8 +83,9 @@ export class DataSchema {
                 }
 
                 const dataIndex =
-                    this.config.SUM_FIELD_COUNT + Math.floor(replOffset / 253)
-                const offset = replOffset % 253
+                    this.config.SUM_FIELD_COUNT +
+                    Math.floor(replOffset / MAX_SAFE_BITS)
+                const offset = replOffset % MAX_SAFE_BITS
                 replOffset += bits
                 return { ...field, dataIndex, offset, bits }
             }
@@ -160,9 +163,11 @@ export class DataSchema {
         for (const field of this.schema) {
             const { name, /* type, updateBy, */ dataIndex, bits, offset } =
                 field
-            parsed[name] =
-                (data[dataIndex] >> BigInt(offset)) &
-                ((BigInt(1) << BigInt(bits)) - BigInt(1))
+            parsed[name] = shiftBits(
+                data[dataIndex],
+                BigInt(offset),
+                BigInt(bits)
+            )
         }
 
         return parsed

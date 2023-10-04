@@ -5,9 +5,10 @@ include "./circomlib/circuits/bitify.circom";
 
 // Extract `l` lower bits and `u` upper bits
 template ExtractBits(l, u) {
-    assert(l + u <= 253);
-    assert(l < 253);
-    assert(u < 253);
+    var MAX_SAFE_BITS = 253;
+    assert(l + u <= MAX_SAFE_BITS);
+    assert(l < MAX_SAFE_BITS);
+    assert(u < MAX_SAFE_BITS);
     signal input in;
     signal output upper;
     signal output lower;
@@ -25,7 +26,8 @@ template ExtractBits(l, u) {
 }
 
 template LowerGreaterThan(n) {
-    assert(n < 253);
+    var MAX_SAFE_BITS = 253;
+    assert(n < MAX_SAFE_BITS);
     signal input in[2];
     signal output out;
     
@@ -33,28 +35,16 @@ template LowerGreaterThan(n) {
 }
 
 template LowerLessThan(n) {
-    assert(n < 253);
+    var MAX_SAFE_BITS = 253;
+    assert(n < MAX_SAFE_BITS);
     signal input in[2];
     signal output out;
     signal extractor[2];
 
     for (var x = 0; x < 2; x++) {
         // since we only need output: lower here => using tuple
-        (_,extractor[x]) <== ExtractBits(n, 253-n)(in[x]);
+        (_,extractor[x]) <== ExtractBits(n, MAX_SAFE_BITS-n)(in[x]);
     }
 
     out <== LessThan(n)(extractor);
-}
-
-template replFieldEqual(REPL_NONCE_BITS) {
-    assert(REPL_NONCE_BITS < 253);
-    signal input in[2];
-    signal output out;
-    signal extractor[2];
-
-    for (var x = 0; x < 2; x++) {
-        (extractor[x], _) <== ExtractBits(REPL_NONCE_BITS, 253-REPL_NONCE_BITS)(in[x]);
-    }
-
-    out <== IsEqual()(extractor);
 }

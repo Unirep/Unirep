@@ -106,7 +106,7 @@ import { Circuit } from '@unirep/circuits'
 // See ./test/verifyEpochKey.test.ts for generating circuit inputs
 const circuitInputs = {
     state_tree_elements: ...,
-    state_tree_indexes: ...,
+    state_tree_indices: ...,
     ...
 }
 const { proof, publicSignals } = await prover.genProofAndPublicSignals(
@@ -126,12 +126,12 @@ const isValid = await prover.verifyProof(
 Use the unirep circom circuits like so:
 
 ```circom
-pragma circom 2.0.0;
+pragma circom 2.1.0;
 
 include "PATH/TO/node_modules/@unirep/circuits/circuits/epochKey.circom";
 
 template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
-    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_indices[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
     signal input identity_secret;
     signal input data[FIELD_COUNT];
@@ -140,23 +140,23 @@ template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     signal input attester_id;
     signal input epoch;
     signal input nonce;
+    signal input chain_id;
 
     signal output epoch_key;
-    signal output state_tree_root;    
+    signal output state_tree_root;   
 
-    component epoch_key_template = EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT);
-    for (var x = 0; x < STATE_TREE_DEPTH; x++) {
-      epoch_key_template.state_tree_indexes[x] <== state_tree_indexes[x];
-      epoch_key_template.state_tree_elements[x] <== state_tree_elements[x];
-    }
-    epoch_key_template.identity_secret <== identity_secret;
-    epoch_key_template.reveal_nonce <== reveal_nonce;
-    epoch_key_template.attester_id <== attester_id;
-    epoch_key_template.epoch <== epoch;
-    epoch_key_template.nonce <== nonce;
-    epoch_key_template.sig_data <== sig_data;
-    control <== epoch_key_template.control;
-    epoch_key <== epoch_key_template.epoch_key;
+    (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
+        state_tree_indices, 
+        state_tree_elements, 
+        identity_secret,
+        reveal_nonce,
+        attester_id,
+        epoch,
+        nonce,
+        data,
+        sig_data,
+        chain_id
+    );
 
     // add your customized circuits
     ...
@@ -190,7 +190,7 @@ const { proof, publicSignals } = await prover.genProofAndPublicSignals(
     circuitInputs
 )
 const data = new SignupProof(publicSignals, proof)
-const idCommitment = data.identityCommitment
+const identityCommitment = data.identityCommitment
 ```
 
 ## 🙌🏻 Join our community
@@ -198,7 +198,7 @@ const idCommitment = data.identityCommitment
 - Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>
 - Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram"></a>
 
-## <img height="24" src="https://ethereum.org/static/a183661dd70e0e5c70689a0ec95ef0ba/13c43/eth-diamond-purple.png"> Privacy & Scaling Explorations
+## <img height="24" src="https://pse.dev/_next/static/media/header-logo.16312102.svg"> Privacy & Scaling Explorations
 
 This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) in Ethereum Foundation.
-See more projects on: https://appliedzkp.org/.
+See more projects on: https://pse.dev/.

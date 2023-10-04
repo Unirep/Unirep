@@ -2,18 +2,37 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
-import { deployUnirep } from '@unirep/contracts/deploy'
+import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
 
 import { EPOCH_LENGTH, genUserState } from './utils'
+import { Circuit } from '@unirep/circuits'
+
+const checkSignals = (signals, proof) => {
+    expect(signals.epochKey.toString()).equal(proof.epochKey.toString())
+    expect(signals.stateTreeRoot.toString()).equal(
+        proof.stateTreeRoot.toString()
+    )
+    expect(signals.nonce.toString()).equal(proof.nonce.toString())
+    expect(signals.epoch.toString()).equal(proof.epoch.toString())
+    expect(signals.attesterId.toString()).equal(proof.attesterId.toString())
+    expect(signals.revealNonce).equal(Boolean(proof.revealNonce))
+    expect(signals.chainId.toString()).equal(proof.chainId.toString())
+    expect(signals.data.toString()).equal(proof.data.toString())
+}
 
 describe('Epoch key proof', function () {
     this.timeout(0)
 
     let unirepContract
+    let epochKeyVerifierHelper
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        epochKeyVerifierHelper = await deployVerifierHelper(
+            accounts[0],
+            Circuit.epochKey
+        )
     })
 
     {
@@ -56,7 +75,13 @@ describe('Epoch key proof', function () {
         const proof = await userState.genEpochKeyProof()
         const valid = await proof.verify()
         expect(valid).to.be.true
-        userState.sync.stop()
+
+        const signals = await epochKeyVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 
     it('should reveal the epoch key nonce', async () => {
@@ -90,7 +115,13 @@ describe('Epoch key proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal(nonce)
-        userState.sync.stop()
+
+        const signals = await epochKeyVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 
     it('should not reveal the epoch key nonce', async () => {
@@ -124,7 +155,13 @@ describe('Epoch key proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal('0')
-        userState.sync.stop()
+
+        const signals = await epochKeyVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 
     it('should prove data', async () => {
@@ -156,6 +193,12 @@ describe('Epoch key proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.data).to.equal(data.toString())
-        userState.sync.stop()
+
+        const signals = await epochKeyVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 })

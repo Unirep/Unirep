@@ -1,15 +1,15 @@
 ---
-title: EpochKeyProof
+title: ScopeNullifierProof
 ---
 
 Inherits: [`BaseProof`](base-proof)
 
-A class representing an [epoch key proof](circuits#epoch-key-proof). Each of the following properties are public signals for the proof.
+A class representing an [scope nullifier proof](circuits#scope-nullifier-proof). Each of the following properties are public signals for the proof.
 
 ```ts
-import { EpochKeyProof } from '@unirep/circuits'
+import { ScopeNullifierProof } from '@unirep/circuits'
 
-const data = new EpochKeyProof(publicSignals, proof)
+const data = new ScopeNullifierProof(publicSignals, proof)
 ```
 
 ## epochKey
@@ -44,12 +44,12 @@ The attester id for the proof.
 this.attesterId
 ```
 
-## data
+## sigData
 
 The 32 byte data endorsed by the proof.
 
 ```ts
-this.data
+this.sigData
 ```
 
 ## revealNonce
@@ -76,6 +76,22 @@ The chain id for the proof.
 this.chainId
 ```
 
+## scope
+
+The scope for the proof, which indicates the user will take action on which event/scope.
+
+```ts
+this.scope
+```
+
+## nullifier
+
+The nullifier for the proof, which is computed by `hash(scope, identitySecret)` in circuit
+
+```ts
+this.nullifier
+```
+
 ## control
 
 The control field used for the proof. This field contains many signals binary encoded into a single 253 bit value. This value is automatically decoded into the other properties on this class.
@@ -94,7 +110,7 @@ Build control from the following parameters:
 - `chainId`: `bigint`
 
 ```ts
-EpochKeyProof.buildControl({
+ScopeNullifierProof.buildControl({
     nonce,
     epoch,
     attesterId,

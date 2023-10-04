@@ -14,8 +14,9 @@ The elements in addition field are combined with addition and modulo by [`SNARK_
 
 The elements in replacement field are combined by replacement. Each replacement field contains 2 parts:
 
-- 205 bits data (upper bits)
-- 48 bits index (lower bits)
+| data | index |
+| :--: | :--: |
+| 205 bits | 48 bits |
 
 The maximum value that can be stored in a replacement field is `2**205-1`. The `index` value is used by the protocol to order the attestations. Because the index is stored as the higher order bits data field attestation can be sorted without bit operations.
 

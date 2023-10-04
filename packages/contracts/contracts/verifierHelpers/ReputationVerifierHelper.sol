@@ -14,12 +14,14 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         signals.epochKey = publicSignals[0];
         signals.stateTreeRoot = publicSignals[1];
         signals.graffiti = publicSignals[4];
+        signals.data = publicSignals[5];
         // now decode the control values
         (
-            signals.revealNonce,
-            signals.attesterId,
+            signals.nonce,
             signals.epoch,
-            signals.nonce
+            signals.attesterId,
+            signals.revealNonce,
+            signals.chainId
         ) = super.decodeEpochKeyControl(publicSignals[2]);
 
         (
@@ -43,28 +45,34 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         public
         pure
         returns (
-            uint256 minRep,
-            uint256 maxRep,
+            uint64 minRep,
+            uint64 maxRep,
             bool proveMinRep,
             bool proveMaxRep,
             bool proveZeroRep,
             bool proveGraffiti
         )
     {
-        minRep = control & ((1 << 64) - 1);
-        maxRep = (control >> 64) & ((1 << 64) - 1);
-        proveMinRep = ((control >> 128) & 1) != 0;
-        proveMaxRep = ((control >> 129) & 1) != 0;
-        proveZeroRep = ((control >> 130) & 1) != 0;
-        proveGraffiti = ((control >> 131) & 1) != 0;
-        return (
-            minRep,
-            maxRep,
-            proveMinRep,
-            proveMaxRep,
-            proveZeroRep,
-            proveGraffiti
-        );
+        uint8 repBits = 64;
+        uint8 oneBit = 1;
+        uint8 accBits = 0;
+        minRep = uint64(shiftAndParse(control, accBits, repBits));
+        accBits += repBits;
+
+        maxRep = uint64(shiftAndParse(control, accBits, repBits));
+        accBits += repBits;
+
+        proveMinRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
+        accBits += oneBit;
+
+        proveMaxRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
+        accBits += oneBit;
+
+        proveZeroRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
+        accBits += oneBit;
+
+        proveGraffiti = bool(shiftAndParse(control, accBits, oneBit) != 0);
+        accBits += oneBit;
     }
 
     function verifyAndCheck(
@@ -76,8 +84,9 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         );
 
         bool valid = verifier.verifyProof(publicSignals, proof);
-
         if (!valid) revert InvalidProof();
+
+        if (signals.chainId != chainid) revert ChainIdNotMatch(signals.chainId);
 
         return signals;
     }
