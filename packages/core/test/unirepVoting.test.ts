@@ -6,7 +6,6 @@ import {
     UnirepVoting__factory,
     VotingPrizeNFT__factory,
 } from '@unirep/contracts/typechain'
-import {} from '@unirep/contracts/typechain/contracts/UnirepVoting.sol'
 
 import {
     genProofAndVerify,
@@ -36,6 +35,7 @@ describe('Voting', function () {
     let unirep
     let voting
     let nft
+    let chainId
 
     const numTeams = 6
     const numVoters = 6
@@ -60,7 +60,7 @@ describe('Voting', function () {
         unirep = await deployUnirep(deployer)
         const reputationVerifierHelper = await deployVerifierHelper(
             deployer,
-            Circuit.proveReputation
+            Circuit.reputation
         )
         const epochKeyVerifierHelper = await deployVerifierHelper(
             deployer,
@@ -83,6 +83,8 @@ describe('Voting', function () {
         )
         await nft.setVotingAddress(voting.address).then((t) => t.wait())
         await voting.deployed()
+        const network = await deployer.provider.getNetwork()
+        chainId = network.chainId
     })
 
     it('voter sign up', async () => {
@@ -181,10 +183,11 @@ describe('Voting', function () {
                 minRep: 2,
                 proveMinRep: 1,
                 revealNonce: 1,
+                chainId,
             })
 
             const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.proveReputation,
+                Circuit.reputation,
                 circuitInputs
             )
 
