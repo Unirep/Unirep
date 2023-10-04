@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid'
 const _schema = [
     {
         name: 'SynchronizerState',
+        indexes: [{ keys: ['latestCompleteBlock'] }],
         rows: [
             ['attesterId', 'String', { unique: true }],
             {
@@ -30,10 +31,7 @@ const _schema = [
     },
     {
         name: 'Attestation',
-        indexes: [
-            { keys: ['index'] },
-            { keys: ['index', 'epochKey', 'epoch'] },
-        ],
+        indexes: [{ keys: ['index'] }],
         rows: [
             ['epoch', 'Int'],
             ['epochKey', 'String'],
@@ -57,7 +55,7 @@ const _schema = [
     },
     {
         name: 'EpochTreeLeaf',
-        primaryKey: 'id',
+        indexes: [{ keys: ['index'] }],
         rows: [
             ['id', 'String'],
             ['epoch', 'Int'],
@@ -69,7 +67,7 @@ const _schema = [
     },
     {
         name: 'HistoryTreeLeaf',
-        primaryKey: 'id',
+        indexes: [{ keys: ['index'] }],
         rows: [
             ['id', 'String'],
             ['index', 'Int'],
@@ -79,7 +77,7 @@ const _schema = [
     },
     {
         name: 'Epoch',
-        indexes: [{ keys: ['attesterId', 'number'] }],
+        indexes: [{ keys: ['number'] }],
         rows: [
             ['number', 'Int'],
             ['attesterId', 'String'],
@@ -88,6 +86,7 @@ const _schema = [
     },
     {
         name: 'Nullifier',
+        indexes: [{ keys: ['epoch'] }],
         rows: [
             ['epoch', 'Int'],
             ['attesterId', 'String'],
@@ -98,9 +97,12 @@ const _schema = [
     },
     {
         name: 'UserSignUp',
-        indexes: [{ keys: ['commitment', 'attesterId'] }],
+        indexes: [
+            { keys: ['commitment', 'attesterId'] },
+            { keys: ['commitment', 'attesterId', 'epoch'] },
+        ],
         rows: [
-            ['commitment', 'String', { index: true }],
+            ['commitment', 'String'],
             ['epoch', 'Int'],
             ['attesterId', 'String'],
             ['blockNumber', 'Int'],
@@ -108,7 +110,6 @@ const _schema = [
     },
     {
         name: 'Attester',
-        primaryKey: '_id',
         rows: [
             ['startTimestamp', 'Int'],
             ['epochLength', 'Int'],
