@@ -80,7 +80,6 @@ contract BaseVerifierHelper {
         accBits += revealNonceBit;
 
         chainId = uint48(shiftAndParse(control, accBits, chainIdBits));
-        return (nonce, epoch, attesterId, revealNonce, chainId);
     }
 
     function shiftAndParse(

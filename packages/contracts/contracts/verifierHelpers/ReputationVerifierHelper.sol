@@ -73,14 +73,6 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
 
         proveGraffiti = bool(shiftAndParse(control, accBits, oneBit) != 0);
         accBits += oneBit;
-        return (
-            minRep,
-            maxRep,
-            proveMinRep,
-            proveMaxRep,
-            proveZeroRep,
-            proveGraffiti
-        );
     }
 
     function verifyAndCheck(

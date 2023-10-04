@@ -447,7 +447,6 @@ contract Unirep is IUnirep, VerifySignature {
         chainId = uint48((control >> (208)) & ((1 << 36) - 1));
         epoch = uint48((control >> 160) & ((1 << 48) - 1));
         attesterId = uint160(control & ((1 << 160) - 1));
-        return (attesterId, epoch, chainId);
     }
 
     function decodeSignupSignals(
@@ -470,7 +469,6 @@ contract Unirep is IUnirep, VerifySignature {
     ) public pure returns (uint160 attesterId, uint48 toEpoch) {
         toEpoch = uint48((control >> 160) & ((1 << 48) - 1));
         attesterId = uint160(control & ((1 << 160) - 1));
-        return (attesterId, toEpoch);
     }
 
     function decodeUserStateTransitionSignals(
