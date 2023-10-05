@@ -81,6 +81,7 @@ export const deployVerifiers = async (
 }
 
 export const deployVerifierHelpers = async (
+    unirepAddress: string,
     deployer: ethers.Signer,
     prover?: Prover
 ): Promise<{ [circuit: string]: ethers.Contract }> => {
@@ -88,6 +89,7 @@ export const deployVerifierHelpers = async (
 
     for (const verifierHelper in VerifierHelpers) {
         const verifierContract = await deployVerifierHelper(
+            unirepAddress,
             deployer,
             VerifierHelpers[verifierHelper],
             prover
@@ -98,6 +100,7 @@ export const deployVerifierHelpers = async (
 }
 
 export const deployVerifierHelper = async (
+    unirepAddress: string,
     deployer: ethers.Signer,
     circuit: Circuit,
     prover?: Prover
@@ -118,7 +121,7 @@ export const deployVerifierHelper = async (
     const _helperFactory = new ethers.ContractFactory(abi, bytecode, deployer)
     const helperFactory = await GlobalFactory(_helperFactory)
     const helperContract = await retryAsNeeded(() =>
-        helperFactory.deploy(verifier.address)
+        helperFactory.deploy(unirepAddress, verifier.address)
     )
     await helperContract.deployed()
     return helperContract

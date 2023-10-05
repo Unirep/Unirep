@@ -21,6 +21,7 @@ describe('Synchronizer watch multiple attesters', function () {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
         epkVerifierHelper = await deployVerifierHelper(
+            unirepContract.address,
             accounts[0],
             Circuit.epochKey
         )

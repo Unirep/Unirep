@@ -9,7 +9,6 @@ import { Circuit } from '@unirep/circuits'
 
 const checkSignals = (signals, proof) => {
     expect(signals.epochKey.toString()).equal(proof.epochKey.toString())
-
     expect(signals.nonce.toString()).equal(proof.nonce.toString())
     expect(signals.epoch.toString()).equal(proof.epoch.toString())
     expect(signals.attesterId.toString()).equal(proof.attesterId.toString())
@@ -28,6 +27,7 @@ describe('Epoch key Lite proof', function () {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
         epochKeyLiteVerifierHelper = await deployVerifierHelper(
+            unirepContract.address,
             accounts[0],
             Circuit.epochKeyLite
         )
@@ -222,7 +222,10 @@ describe('Epoch key Lite proof', function () {
         }
 
         await userState.waitForSync()
+        // epoch transition
         const epoch = 100
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH * epoch])
+        await ethers.provider.send('evm_mine', [])
         const proof = await userState.genEpochKeyLiteProof({
             epoch,
         })
