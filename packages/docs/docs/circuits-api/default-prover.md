@@ -14,5 +14,5 @@ The keys included are not safe for production use. A phase 2 trusted setup needs
 import { Circuit } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-await defaultProver.genProofAndPublicSignals(Circuit.proveReputation, { /* inputs */ })
+await defaultProver.genProofAndPublicSignals(Circuit.reputation, { /* inputs */ })
 ```
