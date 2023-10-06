@@ -1,7 +1,6 @@
 import path from 'path'
 import { Circuit } from '../src'
 import { groth16, CircuitSignals, Groth16Proof, PublicSignals } from 'snarkjs'
-import { SnarkProof, SnarkPublicSignals } from '@unirep/utils'
 
 const buildPath = '../zksnarkBuild'
 
