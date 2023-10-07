@@ -9,6 +9,11 @@ function fromLE(arr: any): BigInt {
     return val
 }
 
+/**
+ * https://developer.unirep.io/docs/utils-api/helpers#stringifybigints
+ * @param o an object with `bigint`, an array of `bigint`s, or a `bigint`.
+ * @returns stringified object, an array of string, or a string.
+ */
 export function stringifyBigInts(o: any): any {
     if (typeof o == 'bigint' || o.eq !== undefined) {
         return o.toString(10)
@@ -28,6 +33,11 @@ export function stringifyBigInts(o: any): any {
     }
 }
 
+/**
+ * https://developer.unirep.io/docs/utils-api/helpers#unstringifybigints
+ * @param o stringified object, an array of string, or a string.
+ * @returns an object with `bigint`, an array of `bigint`s, or a `bigint`.
+ */
 export function unstringifyBigInts(o: any): any {
     if (typeof o == 'string' && /^[0-9]+$/.test(o)) {
         return BigInt(o)

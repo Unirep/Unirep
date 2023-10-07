@@ -22,4 +22,6 @@ describe('crypto utils', function () {
         const unstringifiedValues = unstringifyBigInts(stringifiedValues)
         expect(unstringifiedValues).deep.equal(values)
     })
+
+    // TODO: add tests for genEpochKey, genIdentityHash, genStateTreeLeaf, genEpochTreeLeaf
 })
