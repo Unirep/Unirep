@@ -10,7 +10,7 @@ function fromLE(arr: any): BigInt {
 }
 
 /**
- * https://developer.unirep.io/docs/utils-api/helpers#stringifybigints
+ * @see https://developer.unirep.io/docs/utils-api/helpers#stringifybigints
  * @param o an object with `bigint`, an array of `bigint`s, or a `bigint`.
  * @returns stringified object, an array of string, or a string.
  */
@@ -34,7 +34,7 @@ export function stringifyBigInts(o: any): any {
 }
 
 /**
- * https://developer.unirep.io/docs/utils-api/helpers#unstringifybigints
+ * @see https://developer.unirep.io/docs/utils-api/helpers#unstringifybigints
  * @param o stringified object, an array of string, or a string.
  * @returns an object with `bigint`, an array of `bigint`s, or a `bigint`.
  */

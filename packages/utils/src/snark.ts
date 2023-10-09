@@ -1,10 +1,10 @@
 /**
- * https://developer.unirep.io/docs/utils-api/types#snarkpublicsignals
+ * @see https://developer.unirep.io/docs/utils-api/types#snarkpublicsignals
  */
 type SnarkPublicSignals = bigint[]
 
 /**
- * https://developer.unirep.io/docs/utils-api/types#snarkproof
+ * @see https://developer.unirep.io/docs/utils-api/types#snarkproof
  */
 interface SnarkProof {
     pi_a: bigint[]

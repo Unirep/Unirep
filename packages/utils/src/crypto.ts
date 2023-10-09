@@ -2,13 +2,13 @@ import randomf from 'randomf'
 import { poseidon2 } from 'poseidon-lite'
 
 /**
- * https://developer.unirep.io/docs/utils-api/helpers#snark_scalar_field
+ * @see https://developer.unirep.io/docs/utils-api/helpers#snark_scalar_field
  */
 export const SNARK_SCALAR_FIELD =
     '21888242871839275222246405745257275088548364400416034343698204186575808495617'
 
 /**
- * https://developer.unirep.io/docs/utils-api/helpers#f
+ * @see https://developer.unirep.io/docs/utils-api/helpers#f
  */
 export const F = BigInt(SNARK_SCALAR_FIELD)
 
@@ -66,7 +66,7 @@ export const MAX_EPOCH = 2 ** Number(EPOCH_BITS) - 1
 export const genRandomSalt = () => randomf(F)
 
 /**
- * https://developer.unirep.io/docs/utils-api/helpers#genepochkey
+ * @see https://developer.unirep.io/docs/utils-api/helpers#genepochkey
  * @param identitySecret The secret of a user's [Semaphore identity](https://semaphore.pse.dev/).
  * @param attesterId Either an EOA or a smart contract address of an [attester](https://developer.unirep.io/docs/next/protocol/users-and-attesters#attesters-).
  * @param epoch Current epoch information.
@@ -97,7 +97,7 @@ export const genEpochKey = (
 }
 
 /**
- * https://developer.unirep.io/docs/utils-api/helpers#genidentityhash
+ * @see https://developer.unirep.io/docs/utils-api/helpers#genidentityhash
  * @param identitySecret The secret of a user's [Semaphore identity](https://semaphore.pse.dev/).
  * @param attesterId Either an EOA or a smart contract address of an [attester](https://developer.unirep.io/docs/next/protocol/users-and-attesters#attesters-).
  * @param epoch Current epoch information.
@@ -122,7 +122,7 @@ export const genIdentityHash = (
 }
 
 /**
- * https://developer.unirep.io/docs/utils-api/helpers#genstatetreeleaf
+ * @see https://developer.unirep.io/docs/utils-api/helpers#genstatetreeleaf
  * @param identitySecret The secret of a user's [Semaphore identity](https://semaphore.pse.dev/).
  * @param attesterId Either an EOA or a smart contract address of an [attester](https://developer.unirep.io/docs/next/protocol/users-and-attesters#attesters-).
  * @param epoch Current epoch information.
@@ -152,7 +152,7 @@ export const genStateTreeLeaf = (
 }
 
 /**
- * https://developer.unirep.io/docs/utils-api/helpers#genepochtreeleaf
+ * @see https://developer.unirep.io/docs/utils-api/helpers#genepochtreeleaf
  * @param epochKey The [epoch key]([data](https://developer.unirep.io/docs/protocol/epoch-key) in the epoch tree.
  * @param data The [data](https://developer.unirep.io/docs/protocol/data) of the epoch key in the epoch tree.
  * @returns The epoch tree leaf.
