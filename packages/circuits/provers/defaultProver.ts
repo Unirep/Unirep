@@ -6,14 +6,16 @@ import { SnarkProof, SnarkPublicSignals } from '@unirep/utils'
 const buildPath = '../zksnarkBuild'
 
 /**
- * The default prover that uses the circuits in default built folder `zksnarkBuild/`
+ * https://developer.unirep.io/docs/circuits-api/default-prover
  */
 export const defaultProver = {
+    // TODO: update docs
     /**
      * Generate proof and public signals with `snarkjs.groth16.fullProve`
      * @param circuitName Name of the circuit, which can be chosen from `Circuit`
      * @param inputs The user inputs of the circuit
      * @returns snark proof and public signals
+     * @see https://developer.unirep.io/docs/circuits-api/web-prover
      */
     genProofAndPublicSignals: async (
         circuitName: string | Circuit,
@@ -40,6 +42,7 @@ export const defaultProver = {
      * @param publicSignals The snark public signals that is generated from `genProofAndPublicSignals`
      * @param proof The snark proof that is generated from `genProofAndPublicSignals`
      * @returns True if the proof is valid, false otherwise
+     * @see https://developer.unirep.io/docs/circuits-api/web-prover
      */
     verifyProof: async (
         circuitName: string | Circuit,
@@ -53,7 +56,8 @@ export const defaultProver = {
     /**
      * Get vkey from default built folder `zksnarkBuild/`
      * @param name Name of the circuit, which can be chosen from `Circuit`
-     * @returns vkey of the circuit
+     * @returns The vkey of the circuit
+     * @see https://developer.unirep.io/docs/circuits-api/web-prover
      */
     getVKey: async (name: string | Circuit) => {
         return require(path.join(buildPath, `${name}.vkey.json`))

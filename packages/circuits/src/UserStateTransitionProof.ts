@@ -8,9 +8,13 @@ import {
 } from './utils'
 
 /**
- * The epoch key proof structure that helps to query the public signals
+ * @see https://developer.unirep.io/docs/circuits-api/user-state-transition-proof
  */
 export class UserStateTransitionProof extends BaseProof {
+    // TODO: update docs
+    /**
+     * The index of the data in the public signals
+     */
     readonly idx = {
         historyTreeRoot: 0,
         stateTreeLeaf: 1,
@@ -18,16 +22,35 @@ export class UserStateTransitionProof extends BaseProof {
         control: 5,
     }
     // original data
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/user-state-transition-proof#historytreeroot
+     */
     public historyTreeRoot: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/user-state-transition-proof#statetreeleaf
+     */
     public stateTreeLeaf: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/user-state-transition-proof#epochkeys
+     */
     public epochKeys: bigint[]
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/user-state-transition-proof#control
+     */
     public control: bigint
     // decoded data
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/user-state-transition-proof#attesterid
+     */
     public attesterId: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/user-state-transition-proof#toepoch
+     */
     public toEpoch: bigint
 
     /**
-     * @param publicSignals The public signals of the epoch key proof that can be verified by the prover
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#constructor
+     * @param publicSignals The public signals of the proof that can be verified by the prover
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
@@ -58,6 +81,9 @@ export class UserStateTransitionProof extends BaseProof {
         this.circuit = Circuit.userStateTransition
     }
 
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/user-state-transition-proof#buildcontrol
+     */
     static buildControl({ attesterId, toEpoch }) {
         const control = buildUserStateTransitionControl({
             attesterId: BigInt(attesterId),

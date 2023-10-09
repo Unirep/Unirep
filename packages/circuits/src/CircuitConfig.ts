@@ -19,6 +19,12 @@ const defaultConfig = {
     REPL_NONCE_BITS: 48,
 }
 
+/**
+ * @see https://developer.unirep.io/docs/circuits-api/circuit-config
+ *
+ * Current deployment configuration:
+ * @see https://developer.unirep.io/docs/testnet-deployment
+ */
 export class CircuitConfig {
     STATE_TREE_DEPTH: number
     EPOCH_TREE_DEPTH: number

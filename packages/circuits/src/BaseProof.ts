@@ -6,17 +6,33 @@ import { SnarkProof } from '@unirep/utils'
 import { Circuit, Prover } from './type'
 
 /**
- * The basic proof structure that is used in unirep protocol
+ * @see https://developer.unirep.io/docs/circuits-api/base-proof
  */
 export class BaseProof {
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#_snarkproof
+     */
     readonly _snarkProof: SnarkProof
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#circuit
+     */
     protected circuit?: Circuit
 
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#publicsignals
+     */
     readonly publicSignals: bigint[]
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#proof
+     */
     public proof: bigint[]
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/prover
+     */
     public prover?: Prover
 
     /**
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#constructor
      * @param publicSignals The public signals of the proof that can be verified by the prover
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
@@ -45,8 +61,7 @@ export class BaseProof {
     }
 
     /**
-     * Call the `verifyProof` function in the prover that verifies the proof.
-     * @returns True if the proof is valid, false otherwise
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#verify
      */
     public async verify(): Promise<boolean> {
         if (!this.prover) {

@@ -4,9 +4,13 @@ import { BaseProof } from './BaseProof'
 import { buildEpochKeyControl, decodeEpochKeyControl } from './utils'
 
 /**
- * The prevent double action proof structure that helps to query the public signals
+ * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof
  */
 export class ScopeNullifierProof extends BaseProof {
+    // TODO: update docs
+    /**
+     * The index of the data in the public signals
+     */
     readonly idx = {
         epochKey: 0,
         stateTreeRoot: 1,
@@ -16,21 +20,55 @@ export class ScopeNullifierProof extends BaseProof {
         scope: 5,
     }
     // original data
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#epochkey
+     */
     public epochKey: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#statetreeroot
+     */
     public stateTreeRoot: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#control
+     */
     public control: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#nullifier
+     */
     public nullifier: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#sigdata
+     */
     public sigData: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#scope
+     */
     public scope: bigint
     // decoded data
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#nonce
+     */
     public nonce: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#epoch
+     */
     public epoch: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#attesterid
+     */
     public attesterId: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#revealnonce
+     */
     public revealNonce: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#chainid
+     */
     public chainId: bigint
 
     /**
-     * @param publicSignals The public signals of the prevent double action proof that can be verified by the prover
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#constructor
+     * @param publicSignals The public signals of the proof that can be verified by the prover
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
@@ -56,6 +94,9 @@ export class ScopeNullifierProof extends BaseProof {
         this.circuit = Circuit.scopeNullifier
     }
 
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/scope-nullifier-proof#buildcontrol
+     */
     static buildControl(config: EpochKeyControl) {
         return buildEpochKeyControl(config)
     }

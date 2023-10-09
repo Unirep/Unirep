@@ -9,9 +9,13 @@ import {
 } from './utils'
 
 /**
- * The reputation proof structure that helps to query the public signals
+ * @see https://developer.unirep.io/docs/circuits-api/reputation-proof
  */
 export class ReputationProof extends BaseProof {
+    // TODO: update docs
+    /**
+     * The index of the data in the public signals
+     */
     readonly idx = {
         epochKey: 0,
         stateTreeRoot: 1,
@@ -21,29 +25,82 @@ export class ReputationProof extends BaseProof {
         data: 5,
     }
     // original data
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#epochkey
+     */
     public epochKey: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#statetreeroot
+     */
     public stateTreeRoot: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#control
+     */
     public control0: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#control
+     */
     public control1: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#graffiti
+     */
     public graffiti: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#data
+     */
     public data: bigint
+
     // decoded data
     // control 0
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#nonce
+     */
     public nonce: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#epoch
+     */
     public epoch: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#attesterid
+     */
     public attesterId: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#revealnonce
+     */
     public revealNonce: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#chainid
+     */
     public chainId: bigint
     // control 1
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#minrep
+     */
     public minRep: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#maxrep
+     */
     public maxRep: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#proveminrep
+     */
     public proveMinRep: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#provemaxrep
+     */
     public proveMaxRep: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#provezerorep
+     */
     public proveZeroRep: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#provegraffiti
+     */
     public proveGraffiti: bigint
 
     /**
-     * @param publicSignals The public signals of the reputation proof that can be verified by the prover
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#constructor
+     * @param publicSignals The public signals of the proof that can be verified by the prover
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
@@ -83,6 +140,9 @@ export class ReputationProof extends BaseProof {
         this.circuit = Circuit.reputation
     }
 
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/reputation-proof#buildcontrol
+     */
     static buildControl({
         attesterId,
         epoch,

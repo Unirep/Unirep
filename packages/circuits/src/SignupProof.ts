@@ -4,9 +4,13 @@ import { BaseProof } from './BaseProof'
 import { buildSignupControl, decodeSignupControl } from './utils'
 
 /**
- * The sign up proof structure that helps to query the public signals
+ * @see https://developer.unirep.io/docs/circuits-api/signup-proof
  */
 export class SignupProof extends BaseProof {
+    // TODO: update docs
+    /**
+     * The index of the data in the public signals
+     */
     readonly idx = {
         identityCommitment: 0,
         stateTreeLeaf: 1,
@@ -14,16 +18,32 @@ export class SignupProof extends BaseProof {
     }
 
     // original data
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/signup-proof#identitycommitment
+     */
     public identityCommitment: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/signup-proof#statetreeleaf
+     */
     public stateTreeLeaf: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/signup-proof#control
+     */
     public control: bigint
     // decoded data
     public attesterId: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/signup-proof#epoch
+     */
     public epoch: bigint
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/signup-proof#chainid
+     */
     public chainId: bigint
 
     /**
-     * @param publicSignals The public signals of the user sign up proof that can be verified by the prover
+     * @see https://developer.unirep.io/docs/circuits-api/base-proof#constructor
+     * @param publicSignals The public signals of the proof that can be verified by the prover
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
@@ -45,6 +65,9 @@ export class SignupProof extends BaseProof {
         this.circuit = Circuit.signup
     }
 
+    /**
+     * @see https://developer.unirep.io/docs/circuits-api/signup-proof#buildcontrol
+     */
     static buildControl({ attesterId, epoch, chainId }: any) {
         const control = buildSignupControl({
             attesterId: BigInt(attesterId),

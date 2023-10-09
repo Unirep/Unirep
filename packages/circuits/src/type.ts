@@ -2,6 +2,10 @@ import { CircuitConfig } from './CircuitConfig'
 
 export type Field = bigint | string
 
+// TODO: update doc
+/**
+ * The elements are used to build epoch key control field
+ */
 export type EpochKeyControl = {
     nonce: bigint
     epoch: bigint
@@ -10,6 +14,10 @@ export type EpochKeyControl = {
     chainId: bigint
 }
 
+// TODO: update doc
+/**
+ * The elements are used to build reputation control field
+ */
 export type ReputationControl = {
     minRep: bigint
     maxRep: bigint
@@ -19,11 +27,19 @@ export type ReputationControl = {
     proveGraffiti: bigint
 }
 
+// TODO: update doc
+/**
+ * The elements are used to build user state transition control field
+ */
 export type UserStateTransitionControl = {
     attesterId: bigint
     toEpoch: bigint
 }
 
+// TODO: update doc
+/**
+ * The elements are used to build user sign up control field
+ */
 export type SignupControl = {
     attesterId: bigint
     epoch: bigint
@@ -31,7 +47,7 @@ export type SignupControl = {
 }
 
 /**
- * Name of the circuits that are used in Unirep protocol
+ * @see https://developer.unirep.io/docs/circuits-api/circuits
  */
 export enum Circuit {
     epochKey = 'epochKey',
@@ -43,30 +59,30 @@ export enum Circuit {
 }
 
 /**
- * Definition of interface that a Unirep prover should include
+ * @see https://developer.unirep.io/docs/circuits-api/prover
  */
 export interface Prover {
     /**
-     * The function should returns true if the proof of the circuit is valid, false otherwise.
-     * @param name Name of the circuit, which can be chosen from `Circuit`
-     * @param publicSignals The public signals of the snark
-     * @param proof The proof of the snark
+     * @see https://developer.unirep.io/docs/circuits-api/prover#verifyproof
+     * @param circuitName Name of the circuit, which can be chosen from `Circuit`
+     * @param publicSignals The snark public signals that is generated from `genProofAndPublicSignals`
+     * @param proof The snark proof that is generated from `genProofAndPublicSignals`
      * @returns True if the proof is valid, false otherwise
      */
     verifyProof: (
-        name: string | Circuit,
+        circuitName: string | Circuit,
         publicSignals: any,
         proof: any
     ) => Promise<boolean>
 
     /**
-     * The function should return snark proof and snark public signals of given circuit and inputs
-     * @param proofType Name of the circuit, which can be chosen from `Circuit`
+     * @see https://developer.unirep.io/docs/circuits-api/prover#genproofandpublicsignals
+     * @param circuitName Name of the circuit, which can be chosen from `Circuit`
      * @param inputs The user inputs of the circuit
      * @returns `proof` and `publicSignals` that can be verified by `Prover.verifyProof`
      */
     genProofAndPublicSignals: (
-        proofType: string | Circuit,
+        circuitName: string | Circuit,
         inputs: any
     ) => Promise<{
         proof: any
@@ -74,11 +90,11 @@ export interface Prover {
     }>
 
     /**
-     * Get vkey from default built folder `zksnarkBuild/`
-     * @param name Name of the circuit, which can be chosen from `Circuit`
-     * @returns vkey of the circuit
+     * @see https://developer.unirep.io/docs/circuits-api/prover#getvkey
+     * @param circuitName Name of the circuit, which can be chosen from `Circuit`
+     * @returns The vkey of the circuit
      */
-    getVKey: (name: string | Circuit) => Promise<any>
+    getVKey: (circuitName: string | Circuit) => Promise<any>
 
     getConfig?: () => CircuitConfig
 }
