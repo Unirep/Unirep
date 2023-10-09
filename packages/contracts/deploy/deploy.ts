@@ -10,12 +10,20 @@ import {
     tryPath,
 } from './utils'
 
+/**
+ * The current supported verifier helpers.
+ */
 const VerifierHelpers = {
     epochKey: Circuit.epochKey,
     epochKeyLite: Circuit.epochKeyLite,
     reputation: Circuit.reputation,
 }
 
+/**
+ * Create the verififier helper contract name.
+ * Capitalize the first character and add `VerifierHelper` at the end.
+ * @param circuit The name of the circuit
+ */
 const createVerifierHelperName = (circuit: Circuit): string => {
     const verifierName = Object.keys(VerifierHelpers).find(
         (key) => VerifierHelpers[key] == circuit
@@ -29,6 +37,12 @@ const createVerifierHelperName = (circuit: Circuit): string => {
     }VerifierHelper`
 }
 
+// TODO: update doc
+/**
+ * Try a function several times.
+ * @param fn The function will be executed.
+ * @param maxRetry The maximum number of trying functions.
+ */
 export const retryAsNeeded = async (fn: any, maxRetry = 10) => {
     let retryCount = 0
     let backoff = 1000
@@ -44,6 +58,13 @@ export const retryAsNeeded = async (fn: any, maxRetry = 10) => {
     }
 }
 
+/**
+ * @see https://developer.unirep.io/docs/contracts-api/deploy#deployverifier
+ * @param deployer A signer or an ethereum wallet
+ * @param circuit Name of the circuit, which can be chosen from `Circuit`
+ * @param prover The prover which provides `vkey` of the circuit
+ * @returns The deployed verifier smart contract
+ */
 export const deployVerifier = async (
     deployer: ethers.Signer,
     circuit: Circuit | string,
@@ -68,6 +89,12 @@ export const deployVerifier = async (
     return verifierContract
 }
 
+/**
+ * @see https://developer.unirep.io/docs/contracts-api/deploy#deployverifiers
+ * @param deployer A signer or an ethereum wallet
+ * @param prover The prover which provides `vkey` of the circuit
+ * @returns All deployed verifier smart contracts
+ */
 export const deployVerifiers = async (
     deployer: ethers.Signer,
     prover?: Prover
@@ -80,6 +107,12 @@ export const deployVerifiers = async (
     return verifiers
 }
 
+/**
+ * @see https://developer.unirep.io/docs/contracts-api/deploy#deployverifierhelpers
+ * @param deployer A signer or an ethereum wallet
+ * @param prover The prover which provides `vkey` of the circuit
+ * @returns All deployed verifier helper contracts
+ */
 export const deployVerifierHelpers = async (
     deployer: ethers.Signer,
     prover?: Prover
@@ -97,6 +130,13 @@ export const deployVerifierHelpers = async (
     return verifierHelpers
 }
 
+/**
+ * @see https://developer.unirep.io/docs/contracts-api/deploy#deployverifierhelper
+ * @param deployer A signer or an ethereum wallet
+ * @param circuit Name of the circuit, which can be chosen from `Circuit`
+ * @param prover The prover which provides `vkey` of the circuit
+ * @returns The deployed verifier helper contracts
+ */
 export const deployVerifierHelper = async (
     deployer: ethers.Signer,
     circuit: Circuit,
@@ -125,9 +165,10 @@ export const deployVerifierHelper = async (
 }
 
 /**
- * Deploy the unirep contract and verifier contracts with given `deployer` and settings
+ * @see https://developer.unirep.io/docs/contracts-api/deploy#deployunirep
  * @param deployer A signer who will deploy the contracts
- * @param settings The settings that the signer can define: `epochLength`, `attestingFee`, `maxUsers`, `maxAttesters`
+ * @param settings The settings that the deployer can define. See [`CircuitConfig`](https://developer.unirep.io/docs/circuits-api/circuit-config)
+ * @param prover The prover which provides `vkey` of the circuit
  * @returns The Unirep smart contract
  */
 export const deployUnirep = async (

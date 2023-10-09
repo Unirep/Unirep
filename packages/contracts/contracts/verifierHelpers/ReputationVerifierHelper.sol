@@ -4,9 +4,14 @@ pragma solidity ^0.8.0;
 import {IVerifier} from '../interfaces/IVerifier.sol';
 import {BaseVerifierHelper} from './BaseVerifierHelper.sol';
 
+/// @title ReputationVerifierHelper
+/// @dev https://developer.unirep.io/docs/contracts-api/verifiers/reputation-verifier-helper
 contract ReputationVerifierHelper is BaseVerifierHelper {
     constructor(IVerifier _verifier) BaseVerifierHelper(_verifier) {}
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/reputation-verifier-helper#decodereputationsignals
+    /// @param publicSignals The public signals of the snark proof
+    /// @return signals The ReputationSignals
     function decodeReputationSignals(
         uint256[] calldata publicSignals
     ) public pure returns (ReputationSignals memory) {
@@ -39,6 +44,14 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         return signals;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/reputation-verifier-helper#decodereputationcontrol
+    /// @param control The encoded control field
+    /// @return minRep The minimum rep information in the control field
+    /// @return maxRep The maximum rep information in the control field
+    /// @return proveMinRep Whether to prove minimum rep information in the control field
+    /// @return proveMaxRep Whether to prove maximum rep information in the control field
+    /// @return proveZeroRep Whether to prove zero rep information in the control field
+    /// @return proveGraffiti Whether to prove graffiti information in the control field
     function decodeReputationControl(
         uint256 control
     )
@@ -75,6 +88,10 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         accBits += oneBit;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/reputation-verifier-helper#verifyandcheck
+    /// @param publicSignals The public signals of the snark proof
+    /// @param proof The proof data of the snark proof
+    /// @return signals The ReputationSignals
     function verifyAndCheck(
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
@@ -91,6 +108,10 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         return signals;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/reputation-verifier-helper#verifyandcheckcaller
+    /// @param publicSignals The public signals of the snark proof
+    /// @param proof The proof data of the snark proof
+    /// @return signals The ReputationSignals
     function verifyAndCheckCaller(
         uint256[] calldata publicSignals,
         uint256[8] calldata proof

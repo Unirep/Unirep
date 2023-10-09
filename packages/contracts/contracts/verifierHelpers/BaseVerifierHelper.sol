@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import {IVerifier} from '../interfaces/IVerifier.sol';
 
+/// @title BaseVerifierHelper
+/// @dev https://developer.unirep.io/docs/contracts-api/verifiers/base-verifier-helper
 contract BaseVerifierHelper {
     IVerifier verifier;
 
@@ -10,6 +12,7 @@ contract BaseVerifierHelper {
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
     uint256 public immutable chainid;
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/base-verifier-helper#epochkeysignals
     struct EpochKeySignals {
         uint256 epochKey;
         uint256 stateTreeRoot;
@@ -21,6 +24,7 @@ contract BaseVerifierHelper {
         bool revealNonce;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/base-verifier-helper#reputationsignals
     struct ReputationSignals {
         uint256 epochKey;
         uint256 stateTreeRoot;
@@ -39,12 +43,24 @@ contract BaseVerifierHelper {
         bool proveGraffiti;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/errors
     error AttesterInvalid();
+    /// @dev https://developer.unirep.io/docs/contracts-api/errors
     error InvalidEpochKey();
+    /// @dev https://developer.unirep.io/docs/contracts-api/errors
     error InvalidProof();
+    /// @dev https://developer.unirep.io/docs/contracts-api/errors
     error CallerInvalid();
+    /// @dev https://developer.unirep.io/docs/contracts-api/errors
     error ChainIdNotMatch(uint48 chainId);
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/base-verifier-helper#decodeepochkeycontrol
+    /// @param control The encoded control field
+    /// @return nonce The epoch key nonce information in the control
+    /// @return epoch The epoch information in the control
+    /// @return attesterId The attester address in the control
+    /// @return revealNonce Indicate if the user wants to reveal epoch key nonce in the control
+    /// @return chainId The chain ID information in the control
     function decodeEpochKeyControl(
         uint256 control
     )
@@ -82,6 +98,11 @@ contract BaseVerifierHelper {
         chainId = uint48(shiftAndParse(control, accBits, chainIdBits));
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/base-verifier-helper#shiftAndParse
+    /// @param data The raw data before parsed
+    /// @param shiftBits The number of bits to be shifted
+    /// @param variableBits The maximum number of bits of the output data
+    /// @return parsedData The output data being shifted and parsed
     function shiftAndParse(
         uint256 data,
         uint8 shiftBits,

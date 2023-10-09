@@ -19,29 +19,43 @@ import 'poseidon-solidity/PoseidonT3.sol';
  */
 contract Unirep is IUnirep, VerifySignature {
     // All verifier contracts
+    /// @dev The verifier is used to verify user signup snark proof
     IVerifier public immutable signupVerifier;
+    /// @dev The verifier is used to verify user state transition snark proof
     IVerifier public immutable userStateTransitionVerifier;
 
+    /// @dev The current snark finite field
     uint256 public constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
 
-    // Attester id == address
+    /// @dev The mapping from attester address to the attester data.
+    /// where attester id == address
     mapping(uint160 => AttesterData) attesters;
 
-    // Mapping of used nullifiers
+    /// @dev The mapping of used nullifiers.
     mapping(uint256 => bool) public usedNullifiers;
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#statetreedepth
     uint8 public immutable stateTreeDepth;
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#epochtreedepth
     uint8 public immutable epochTreeDepth;
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#historytreedepth
     uint8 public immutable historyTreeDepth;
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#fieldcount
     uint8 public immutable fieldCount;
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#sumfieldcount
     uint8 public immutable sumFieldCount;
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#numepochkeynonceperepoch
     uint8 public immutable numEpochKeyNoncePerEpoch;
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#replnoncebits
     uint8 public immutable replNonceBits;
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#replfieldbits
     uint8 public immutable replFieldBits;
+    /// @dev The current chain ID.
     uint48 public immutable chainid;
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#defaultdatahash
     uint256 public immutable defaultDataHash;
-
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attestationcount
     uint48 public attestationCount = 1;
 
     constructor(
@@ -81,6 +95,7 @@ contract Unirep is IUnirep, VerifySignature {
         defaultDataHash = zeroDataHash;
     }
 
+    /// @dev Get the corrent circuit config.
     function config() public view returns (Config memory) {
         return
             Config({
@@ -95,10 +110,11 @@ contract Unirep is IUnirep, VerifySignature {
             });
     }
 
-    /**
-     * Use this if your application has custom signup proof logic.
-     * e.g. to insert a non-zero data field in the state tree leaf
-     **/
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#manualusersignup
+    /// @param epoch The signup epoch.
+    /// @param identityCommitment The identity commitment of the user.
+    /// @param leafIdentityHash The identity hash: H(identitySecret, attesterId, epoch, chainid).
+    /// @param initialData The initial data when the user signs up.
     function manualUserSignUp(
         uint48 epoch,
         uint256 identityCommitment,
@@ -133,10 +149,9 @@ contract Unirep is IUnirep, VerifySignature {
         _userSignUp(epoch, identityCommitment, stateTreeLeaf);
     }
 
-    /**
-     * @dev User signs up by provding a zk proof outputting identity commitment and new gst leaf.
-     * msg.sender must be attester
-     */
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#usersignup
+    /// @param publicSignals The public signals of user signup proof.
+    /// @param proof The snark proof of user signup proof.
     function userSignUp(
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
@@ -158,6 +173,10 @@ contract Unirep is IUnirep, VerifySignature {
         );
     }
 
+    /// @dev The internal function which is used in userSignUp and manualUserSignUp
+    /// @param epoch The signup epoch.
+    /// @param identityCommitment The identity commitment of the user.
+    /// @param stateTreeLeaf The new state tree leaf: H(identityHash, H(data)).
     function _userSignUp(
         uint48 epoch,
         uint256 identityCommitment,
@@ -198,9 +217,9 @@ contract Unirep is IUnirep, VerifySignature {
         );
     }
 
-    /**
-     * @dev Allow an attester to signup and specify their epoch length
-     */
+    /// @dev Allow an attester to signup and specify their epoch length
+    /// @param attesterId The EOA address or a contract address of the attester.
+    /// @param epochLength The epoch length which the attester specifies.
     function _attesterSignUp(address attesterId, uint48 epochLength) private {
         AttesterData storage attester = attesters[uint160(attesterId)];
         if (attester.startTimestamp != 0)
@@ -235,32 +254,31 @@ contract Unirep is IUnirep, VerifySignature {
         );
     }
 
-    /**
-     * @dev Sign up an attester using the address who sends the transaction
-     */
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attestersignup
+    /// @param epochLength The epoch length which the attester specifies.
     function attesterSignUp(uint48 epochLength) public {
         _attesterSignUp(msg.sender, epochLength);
     }
 
-    /**
-     * @dev Sign up an attester using the claimed address and the signature
-     * @param attester The address of the attester who wants to sign up
-     * @param signature The signature of the attester
-     */
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attestersignupviarelayer
+    /// @param attester The address of the attester who wants to sign up
+    /// @param epochLength The epoch length which the attester specifies
+    /// @param signature The signature of the attester
     function attesterSignUpViaRelayer(
         address attester,
         uint48 epochLength,
         bytes calldata signature
     ) public {
-        // TODO: verify epoch length in signature
         if (!isValidSignature(attester, epochLength, signature))
             revert InvalidSignature();
         _attesterSignUp(attester, epochLength);
     }
 
-    /**
-     * @dev Attest to a change in data for a user that controls `epochKey`
-     */
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attest
+    /// @param epochKey The receiver's epoch key
+    /// @param epoch The attestation should happen in which epoch
+    /// @param fieldIndex The field index the data will change
+    /// @param change The amount of the data change
     function attest(
         uint256 epochKey,
         uint48 epoch,
@@ -333,9 +351,9 @@ contract Unirep is IUnirep, VerifySignature {
         emit EpochTreeLeaf(epoch, uint160(msg.sender), epkData.leafIndex, leaf);
     }
 
-    /**
-     * @dev Allow a user to epoch transition for an attester. Accepts a zk proof outputting the new gst leaf
-     **/
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#userstatetransition
+    /// @param publicSignals The public signals of user state transition proof.
+    /// @param proof The snark proof of user state transition proof.
     function userStateTransition(
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
@@ -392,10 +410,10 @@ contract Unirep is IUnirep, VerifySignature {
         attester.stateTreeRoots[attester.currentEpoch][root] = true;
     }
 
-    /**
-     * @dev Update the currentEpoch for an attester, if needed
-     * https://github.com/ethereum/solidity/issues/13813
-     */
+    /// @dev Update the currentEpoch for an attester
+    /// if needed https://github.com/ethereum/solidity/issues/13813
+    /// @param attesterId The address of the attester
+    /// @return epoch The new epoch
     function _updateEpochIfNeeded(
         uint256 attesterId
     ) public returns (uint epoch) {
@@ -403,6 +421,9 @@ contract Unirep is IUnirep, VerifySignature {
         return updateEpochIfNeeded(uint160(attesterId));
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#updateepochifneeded
+    /// @param attesterId The address of the attester
+    /// @return epoch The new epoch
     function updateEpochIfNeeded(
         uint160 attesterId
     ) public returns (uint48 epoch) {
@@ -441,6 +462,11 @@ contract Unirep is IUnirep, VerifySignature {
         attester.currentEpoch = epoch;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#decodesignupcontrol
+    /// @param control The encoded control field
+    /// @return attesterId The attester address information in the control
+    /// @return epoch The epoch information in the control
+    /// @return chainId The chain id information in the control
     function decodeSignupControl(
         uint256 control
     ) public pure returns (uint160 attesterId, uint48 epoch, uint48 chainId) {
@@ -449,6 +475,9 @@ contract Unirep is IUnirep, VerifySignature {
         attesterId = uint160(control & ((1 << 160) - 1));
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#decodesignupsignals
+    /// @param publicSignals The public signals generated by a snark prover.
+    /// @return signals The SignupSignals.
     function decodeSignupSignals(
         uint256[] calldata publicSignals
     ) public pure returns (SignupSignals memory) {
@@ -464,6 +493,10 @@ contract Unirep is IUnirep, VerifySignature {
         return signals;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#decodeuserstatetransitioncontrol
+    /// @param control The encoded control field
+    /// @return attesterId The attester address information in the control
+    /// @return toEpoch The to epoch information in the control
     function decodeUserStateTransitionControl(
         uint256 control
     ) public pure returns (uint160 attesterId, uint48 toEpoch) {
@@ -471,6 +504,9 @@ contract Unirep is IUnirep, VerifySignature {
         attesterId = uint160(control & ((1 << 160) - 1));
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#decodeuserstatetransitionsignals
+    /// @param publicSignals The public signals generated by a snark prover.
+    /// @return signals The UserStateTransitionSignals.
     function decodeUserStateTransitionSignals(
         uint256[] calldata publicSignals
     ) public view returns (UserStateTransitionSignals memory) {
@@ -490,6 +526,9 @@ contract Unirep is IUnirep, VerifySignature {
         return signals;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attesterstarttimestamp
+    /// @param attesterId The given attester address
+    /// @return timestamp The start time stamp
     function attesterStartTimestamp(
         uint160 attesterId
     ) public view returns (uint256) {
@@ -498,6 +537,9 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.startTimestamp;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attestercurrentepoch
+    /// @param attesterId The given attester address
+    /// @return epoch The current epoch
     function attesterCurrentEpoch(
         uint160 attesterId
     ) public view returns (uint48) {
@@ -507,6 +549,9 @@ contract Unirep is IUnirep, VerifySignature {
         return (uint48(block.timestamp) - timestamp) / epochLength;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attesterepochremainingtime
+    /// @param attesterId The given attester address
+    /// @return time The remaining time to the next epoch
     function attesterEpochRemainingTime(
         uint160 attesterId
     ) public view returns (uint48) {
@@ -518,6 +563,9 @@ contract Unirep is IUnirep, VerifySignature {
         return timestamp + (_currentEpoch + 1) * epochLength - blockTimestamp;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attesterepochlength
+    /// @param attesterId The given attester address
+    /// @return epochLength The epoch length information
     function attesterEpochLength(
         uint160 attesterId
     ) public view returns (uint48) {
@@ -525,6 +573,11 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.epochLength;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attesterstatetreerootexists
+    /// @param attesterId The given attester address
+    /// @param epoch The epoch information of the state tree root
+    /// @param root The state tree root information
+    /// @return exist True if the state tree root exists before
     function attesterStateTreeRootExists(
         uint160 attesterId,
         uint48 epoch,
@@ -534,6 +587,9 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.stateTreeRoots[epoch][root];
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attesterstatetreeroot
+    /// @param attesterId The given attester address
+    /// @return root The current state tree root in current epoch
     function attesterStateTreeRoot(
         uint160 attesterId
     ) public view returns (uint256) {
@@ -541,6 +597,9 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.stateTree.root;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attesterstatetreeleafcount
+    /// @param attesterId The given attester address
+    /// @return number The current number of state tree leaves in current epoch
     function attesterStateTreeLeafCount(
         uint160 attesterId
     ) public view returns (uint256) {
@@ -548,6 +607,9 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.stateTree.numberOfLeaves;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attestersemaphoregrouproot
+    /// @param attesterId The given attester address
+    /// @return root The current root of semaphore group tree
     function attesterSemaphoreGroupRoot(
         uint160 attesterId
     ) public view returns (uint256) {
@@ -555,6 +617,9 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.semaphoreGroup.root;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attestermembercount
+    /// @param attesterId The given attester address
+    /// @return number The number of current members
     function attesterMemberCount(
         uint160 attesterId
     ) public view returns (uint256) {
@@ -562,6 +627,10 @@ contract Unirep is IUnirep, VerifySignature {
         return attester.semaphoreGroup.numberOfLeaves;
     }
 
+    /// @dev https://developer.unirep.io/docs/contracts-api/unirep-sol#attesterepochroot
+    /// @param attesterId The given attester address
+    /// @param epoch The given epoch number
+    /// @return root The root of the epoch tree
     function attesterEpochRoot(
         uint160 attesterId,
         uint48 epoch

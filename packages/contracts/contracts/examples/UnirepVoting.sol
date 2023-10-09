@@ -14,6 +14,8 @@ enum Option {
     DOWN
 }
 
+// TODO: update doc
+/// @title UnirepVoting
 contract UnirepVoting {
     Unirep public unirep;
     ReputationVerifierHelper public repHelper;
