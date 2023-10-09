@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Unirep} from '../Unirep.sol';
 import {IVerifier} from '../interfaces/IVerifier.sol';
 
 contract BaseVerifierHelper {
+    Unirep unirep;
     IVerifier verifier;
 
     uint256 public constant SNARK_SCALAR_FIELD =
@@ -33,6 +35,17 @@ contract BaseVerifierHelper {
         uint256 graffiti;
         uint256 minRep;
         uint256 maxRep;
+    }
+
+    struct SpendReputationSignals {
+        bool revealNonce;
+        uint8 nonce;
+        uint48 epoch;
+        uint160 attesterId;
+        uint256 epochTreeRoot;
+        uint256 updatedEpochTreeRoot;
+        uint256 spenderData;
+        uint256 receiverData;
     }
 
     error AttesterInvalid();
@@ -65,7 +78,8 @@ contract BaseVerifierHelper {
         return (revealNonce, attesterId, epoch, nonce);
     }
 
-    constructor(IVerifier _verifier) {
+    constructor(Unirep _unirep, IVerifier _verifier) {
+        unirep = _unirep;
         verifier = _verifier;
     }
 }
