@@ -18,15 +18,21 @@ contract UnirepVoting {
     Unirep public unirep;
     ReputationVerifierHelper public repHelper;
     EpochKeyVerifierHelper public epochKeyHelper;
-
-    int[] public scores;
-    uint public immutable numTeams;
-    int public winnerScore;
-    uint[][] public projectData;
-    bool foundWinner = false;
     VotingPrizeNFT public nft;
 
+    uint public immutable numProjects;
+
+    // A list of [upvote count, downvote count] for each project.
+    uint[][] public projectData;
+    // A list of scores for each project that project ID is the index.
+    int[] public scores;
+
+    int public winnerScore;
+    bool foundWinner = false;
+
+    // A mapping from project ID to a list of epoch keys of joined hackers.
     mapping(uint256 => uint256[]) public participants;
+    // A mapping from project ID to a count of joined hackers.
     mapping(uint256 => uint256) public counts;
     mapping(uint256 => uint256) public voted;
     mapping(uint256 => bool) claimed;
@@ -36,7 +42,7 @@ contract UnirepVoting {
         ReputationVerifierHelper _repHelper,
         EpochKeyVerifierHelper _epochKeyHelper,
         VotingPrizeNFT _nft,
-        uint8 _numTeams,
+        uint8 _numProjects,
         uint48 _epochLength
     ) {
         // set unirep address
@@ -52,11 +58,11 @@ contract UnirepVoting {
 
         unirep.attesterSignUp(_epochLength);
 
-        // how many numTeams
-        numTeams = _numTeams;
-        scores = new int[](numTeams);
-        projectData = new uint[][](numTeams);
-        for (uint i; i < numTeams; i++) {
+        // how many projects that hackers can join.
+        numProjects = _numProjects;
+        scores = new int[](numProjects);
+        projectData = new uint[][](numProjects);
+        for (uint i; i < numProjects; i++) {
             projectData[i] = new uint256[](2);
         }
     }
@@ -74,7 +80,7 @@ contract UnirepVoting {
         uint256[] memory publicSignals,
         uint256[8] memory proof
     ) public {
-        require(projectID < numTeams, 'Voteathon: invalid project iD');
+        require(projectID < numProjects, 'projectID out of range');
         EpochKeyVerifierHelper.EpochKeySignals memory signals = epochKeyHelper
             .verifyAndCheck(publicSignals, proof);
 
@@ -101,7 +107,7 @@ contract UnirepVoting {
         uint256[] calldata publicSignals,
         uint256[8] calldata proof
     ) public {
-        require(projectID < numTeams, 'projectID out of range');
+        require(projectID < numProjects, 'projectID out of range');
 
         EpochKeyVerifierHelper.EpochKeySignals memory signals = epochKeyHelper
             .verifyAndCheck(publicSignals, proof);
@@ -149,7 +155,7 @@ contract UnirepVoting {
 
     function _findWinner() internal {
         int highest = 0;
-        for (uint256 i = 0; i < numTeams; i++) {
+        for (uint256 i = 0; i < numProjects; i++) {
             if (scores[i] > highest) {
                 highest = scores[i];
             }
