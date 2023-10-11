@@ -1,10 +1,10 @@
 /**
- * Type of snark public signals
+ * Type of snark public signals.
  */
 type SnarkPublicSignals = bigint[]
 
 /**
- * Interface of snark proof
+ * Interface of snark proof.
  */
 interface SnarkProof {
     pi_a: bigint[]
