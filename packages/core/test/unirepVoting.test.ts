@@ -7,37 +7,17 @@ import {
     VotingPrizeNFT__factory,
 } from '@unirep/contracts/typechain'
 
-import {
-    genProofAndVerify,
-    genReputationCircuitInput,
-} from '@unirep/circuits/test/utils'
-import { Circuit, ReputationProof } from '@unirep/circuits'
-import { assert, expect } from 'chai'
+import { Circuit } from '@unirep/circuits'
+import { expect } from 'chai'
 import { genUserState } from './utils'
-
-async function genUserStateInternal(id, app) {
-    // generate a user state
-    const unirepAddress = await app.unirep()
-    const attesterId = BigInt(app.address)
-    const userState = await genUserState(
-        ethers.provider,
-        unirepAddress,
-        id,
-        attesterId
-    )
-    await userState.sync.start()
-    await userState.waitForSync()
-    return userState
-}
 
 describe('Voting', function () {
     this.timeout(0)
     let unirep
     let voting
     let nft
-    let chainId
 
-    const numTeams = 6
+    const numTeams = 4
     const numVoters = 6
     const numHackers = 7
     const epochLength = 300
@@ -59,10 +39,12 @@ describe('Voting', function () {
         const [deployer] = await ethers.getSigners()
         unirep = await deployUnirep(deployer)
         const reputationVerifierHelper = await deployVerifierHelper(
+            unirep.address,
             deployer,
             Circuit.reputation
         )
         const epochKeyVerifierHelper = await deployVerifierHelper(
+            unirep.address,
             deployer,
             Circuit.epochKey
         )
@@ -83,33 +65,46 @@ describe('Voting', function () {
         )
         await nft.setVotingAddress(voting.address).then((t) => t.wait())
         await voting.deployed()
-        const network = await deployer.provider.getNetwork()
-        chainId = network.chainId
     })
 
     it('voter sign up', async () => {
         for (let i = 0; i < numVoters; i++) {
-            const userState = await genUserStateInternal(voters[i], voting)
+            const userState = await genUserState(
+                ethers.provider,
+                unirep.address,
+                voters[i],
+                voting.address
+            )
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
             await voting.userSignUp(publicSignals, proof).then((t) => t.wait())
-            userState.sync.stop()
+            userState.stop()
         }
     })
 
     it('hackers sign up', async () => {
         for (let i = 0; i < numHackers; i++) {
-            const userState = await genUserStateInternal(hackers[i], voting)
+            const userState = await genUserState(
+                ethers.provider,
+                unirep.address,
+                hackers[i],
+                voting.address
+            )
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
             await voting.userSignUp(publicSignals, proof).then((t) => t.wait())
-            userState.sync.stop()
+            userState.stop()
         }
     })
 
     it('hackers join project', async () => {
         for (let i = 0; i < numHackers; i++) {
-            const userState = await genUserStateInternal(hackers[i], voting)
+            const userState = await genUserState(
+                ethers.provider,
+                unirep.address,
+                hackers[i],
+                voting.address
+            )
             const projectID = i % numTeams
             // generate epoch key proof
             const { publicSignals, proof } = await userState.genEpochKeyProof({
@@ -119,20 +114,23 @@ describe('Voting', function () {
             await voting
                 .joinProject(projectID, publicSignals, proof)
                 .then((t) => t.wait())
-            userState.sync.stop()
+            userState.stop()
         }
     })
 
     it('vote project', async () => {
         for (let i = 0; i < numVoters; i++) {
-            const userState = await genUserStateInternal(voters[i], voting)
+            const userState = await genUserState(
+                ethers.provider,
+                unirep.address,
+                voters[i],
+                voting.address
+            )
             const option = i % 2
             const projectID = i % numTeams
             const count = await voting.counts(projectID)
-            const epoch_keys = new Array()
             for (let j = 0; j < count; j++) {
-                const epoch_key = await voting.participants(projectID, j)
-                epoch_keys.push(epoch_key)
+                await voting.participants(projectID, j)
             }
 
             const { publicSignals, proof } = await userState.genEpochKeyProof({
@@ -143,7 +141,7 @@ describe('Voting', function () {
             await voting
                 .vote(projectID, option, publicSignals, proof)
                 .then((t) => t.wait())
-            userState.sync.stop()
+            userState.stop()
         }
     })
 
@@ -153,7 +151,12 @@ describe('Voting', function () {
 
         for (let i = 0; i < numHackers; i++) {
             const newEpoch = await unirep.attesterCurrentEpoch(voting.address)
-            const userState = await genUserStateInternal(hackers[i], voting)
+            const userState = await genUserState(
+                ethers.provider,
+                unirep.address,
+                hackers[i],
+                voting.address
+            )
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({
                     toEpoch: newEpoch,
@@ -161,7 +164,7 @@ describe('Voting', function () {
             await unirep
                 .userStateTransition(publicSignals, proof)
                 .then((t) => t.wait())
-            userState.sync.stop()
+            userState.stop()
         }
     })
 
@@ -171,41 +174,32 @@ describe('Voting', function () {
             scores.push((await voting.scores(i)).toNumber())
         }
         scores.sort()
-        for (let i = 0; i < numVoters; i++) {
-            const userState = await genUserStateInternal(voters[i], voting)
-            const attesterId = 219090124810
-            const circuitInputs = genReputationCircuitInput({
-                id: voters[i],
-                epoch: 20,
-                nonce: 1,
-                attesterId,
-                startBalance: [5, 1],
-                minRep: 2,
-                proveMinRep: 1,
-                revealNonce: 1,
-                chainId,
-            })
 
-            const { isValid, publicSignals, proof } = await genProofAndVerify(
-                Circuit.reputation,
-                circuitInputs
+        for (let i = 0; i < numHackers; i++) {
+            const userState = await genUserState(
+                ethers.provider,
+                unirep.address,
+                hackers[i],
+                voting.address
             )
+            const data = await userState.getData()
+            if (data[0] - data[1] !== BigInt(scores[numTeams - 1])) continue
+            const { publicSignals, proof } =
+                await userState.genProveReputationProof({
+                    minRep: scores[numTeams - 1],
+                    revealNonce: true,
+                    epkNonce: 1,
+                })
 
-            assert(isValid, 'reputation proof is not valid')
-            const data = new ReputationProof(publicSignals, proof)
             const accounts = await ethers.getSigners()
 
             await voting
-                .claimPrize(
-                    accounts[i + 1].address,
-                    data.publicSignals,
-                    data.proof
-                )
+                .claimPrize(accounts[i + 1].address, publicSignals, proof)
                 .then((t) => t.wait())
             expect(
                 (await nft.balanceOf(accounts[i + 1].address)).toString()
             ).equal('1')
-            userState.sync.stop()
+            userState.stop()
         }
     })
 })

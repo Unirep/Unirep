@@ -33,7 +33,7 @@ const genSignature = async (
     unirepAddress: string,
     attester: ethers.Signer | ethers.Wallet,
     epochLength: number,
-    hainId: bigint | number
+    chainId: bigint | number
 )
 ```
 

@@ -18,12 +18,17 @@ import TabItem from '@theme/TabItem';
 ```
 
 ```ts title="epochKeyVerifierHelper.ts"
-import { deployVerifierHelper } from '@unirep/contracts/deploy'
+import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit, EpochKeyProof } from '@unirep/circuits'
 
 // deploys epoch key verifier helper contract
-const epochKeyVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.epochKey)
+const unirep = await deployUnirep(accounts[0])
+const epochKeyVerifierHelper = await deployVerifierHelper(
+  unirep.address,
+  accounts[0],
+  Circuit.epochKey
+)
 
 const r = await defaultProver.genProofAndPublicSignals(
   Circuit.epochKey,
@@ -92,14 +97,14 @@ function decodeEpochKeySignals(uint256[] memory publicSignals)
 
 ```sol
 struct EpochKeySignals {
-    uint256 epochKey;
-    uint256 stateTreeRoot;
-    uint8 nonce;
-    uint48 epoch;
-    uint160 attesterId;
-    bool revealNonce;
-    uint48 chainId;
-    uint256 data;
+  uint256 epochKey;
+  uint256 stateTreeRoot;
+  uint256 data;
+  uint160 attesterId;
+  uint48 epoch;
+  uint48 chainId;
+  uint8 nonce;
+  bool revealNonce;
 }
 ```
 
@@ -108,7 +113,7 @@ struct EpochKeySignals {
 Verify an [epoch key proof](../../circuits-api/circuits#epoch-key-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
-This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](../unirep-sol.md#attestercurrentepoch).
 :::
 
 :::danger
@@ -130,7 +135,7 @@ function verifyAndCheck(
 Verify an [epoch key proof](../../circuits-api/circuits#epoch-key-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
 
 :::caution
-This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](../unirep-sol.md#attestercurrentepoch).
 :::
 
 ```sol
@@ -141,23 +146,3 @@ function verifyAndCheckCaller(
   view
   returns (EpochKeySignals memory) 
 ```
-
-:::danger
-The helper is not connected to the [`Unirep.sol`](../unirep-sol.md) contract. Please manually check if the state tree root exists with [`attesterStateTreeRootExists`](../unirep-sol.md#attesterstatetreerootexists).
-
-1. Decode public signals
-```sol
-EpochKeyVerifierHelper.EpochKeySignals memory signals = verifier.decodeEpochKeySignals(publicSignals); 
-```
-
-2. Verify state tree root
-```sol
-require(
-  unirep.attesterStateTreeRootExists(
-    signals.attesterId, 
-    signals.epoch, 
-    signals.stateTreeRoot
-  )
-);
-```
-:::

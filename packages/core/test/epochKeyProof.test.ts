@@ -30,6 +30,7 @@ describe('Epoch key proof', function () {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
         epochKeyVerifierHelper = await deployVerifierHelper(
+            unirepContract.address,
             accounts[0],
             Circuit.epochKey
         )

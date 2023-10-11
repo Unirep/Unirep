@@ -39,6 +39,7 @@ describe('Reputation proof', function () {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
         repVerifierHelper = await deployVerifierHelper(
+            unirepContract.address,
             accounts[0],
             Circuit.reputation
         )
@@ -181,7 +182,6 @@ describe('Reputation proof', function () {
         userState.stop()
     })
 
-    // TODO: should prove minRep, maxRep, graffiti
     it('should prove minRep', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
