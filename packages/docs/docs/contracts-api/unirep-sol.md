@@ -33,7 +33,7 @@ function userSignUp(
 
 ## manualUserSignUp
 
-Sign up a new user by manually supplying an identity commitment and an [identity hash](../utils-api/helpers.md#genidentityhash). The `initialData` should be the values of the user data in the state tree leaf (if non-zero). This is designed to be used by applications that want custom signup proofs.
+Sign up a new user by manually supplying an identity commitment and an [identity hash](utils-api/modules.md#genidentityhash). The `initialData` should be the values of the user data in the state tree leaf (if non-zero). This is designed to be used by applications that want custom signup proofs.
 
 :::caution
 `msg.sender` must be the attester.

@@ -381,7 +381,7 @@ const epochKey = genEpochKey(
 ```
 
 :::info
-See [`genEpochKey`](utils-api/helpers.md#genepochkey) for more information.
+See [`genEpochKey`](utils-api/modules.md#genepochkey) for more information.
 :::
 
 
