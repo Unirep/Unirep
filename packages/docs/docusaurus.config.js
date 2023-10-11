@@ -189,6 +189,62 @@ const config = {
             }
         },
         'docusaurus-plugin-matomo',
+        [
+            'docusaurus-plugin-typedoc',
+            {
+                id: 'utils',
+                entryPoints: ['../utils/src/index.ts'],
+                tsconfig: '../utils/tsconfig.json',
+                out: 'utils-api',
+                sidebar: {
+                    categoryLabel: 'Utils',
+                    position: 0,
+                    fullNames: true,
+                },
+            },
+        ],
+        [
+            'docusaurus-plugin-typedoc',
+            {
+                id: 'circuits',
+                entryPoints: ['../circuits/src/index.ts'],
+                tsconfig: '../circuits/tsconfig.json',
+                out: 'circuits-api',
+                sidebar: {
+                    categoryLabel: 'Circuits',
+                    position: 0,
+                    fullNames: true,
+                },
+            },
+        ],
+        [
+            'docusaurus-plugin-typedoc',
+            {
+                id: 'contracts',
+                entryPoints: ['../contracts/src/index.ts'],
+                tsconfig: '../contracts/tsconfig.json',
+                out: 'contracts-api',
+                sidebar: {
+                    categoryLabel: 'Conctracts',
+                    position: 0,
+                    fullNames: true,
+                },
+            },
+        ],
+        [
+            'docusaurus-plugin-typedoc',
+            {
+                id: 'core',
+                entryPoints: ['../core/src/index.ts'],
+                tsconfig: '../core/tsconfig.json',
+                out: 'core-api',
+                sidebar: {
+                    categoryLabel: 'Core',
+                    position: 0,
+                    fullNames: true,
+                },
+            },
+        ],
     ],
 }
 
