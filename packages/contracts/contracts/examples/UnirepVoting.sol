@@ -122,13 +122,6 @@ contract UnirepVoting {
         for (uint256 i = 0; i < members.length; i++) {
             unirep.attest(members[i], epoch, uint(option), 1);
         }
-
-        uint160 attesterId = uint160(address(this));
-        unirep.attesterStateTreeRootExists(
-            attesterId,
-            epoch,
-            signals.stateTreeRoot
-        );
     }
 
     function claimPrize(
@@ -144,13 +137,6 @@ contract UnirepVoting {
         require(signals.epoch > 0, 'invalid epoch to claim prize');
         require(signals.revealNonce == true, 'reveal nonce wrong');
         require(signals.nonce == 1, 'nonce wrong');
-
-        uint256 stateTreeRoot = signals.stateTreeRoot;
-        unirep.attesterStateTreeRootExists(
-            attesterId,
-            signals.epoch,
-            stateTreeRoot
-        );
 
         require(!claimed[signals.epochKey], 'Already claimed');
         if (!foundWinner) {
