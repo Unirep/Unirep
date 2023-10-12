@@ -87,7 +87,7 @@ See: [testnet deployment](../testnet-deployment.mdx)
     Please make sure the signature is signed through the correct attester.
 
 :::info
-See: [genSignature](../contracts-api/helpers.md#gensignature)
+See: [genSignature](./modules/src.md#gensignature)
 :::
 
 
