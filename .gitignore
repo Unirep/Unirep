@@ -30,6 +30,7 @@ generated
 packages/docs/**/classes
 packages/docs/**/interfaces
 packages/docs/**/enums
+packages/docs/**/modules
 _category_.yml
 packages/docs/**/index.md
 packages/docs/**/modules.md

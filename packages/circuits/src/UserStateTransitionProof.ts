@@ -8,7 +8,7 @@ import {
 } from './utils'
 
 /**
- * The epoch key proof structure that helps to query the public signals
+ * A class representing a [user state transition proof](https://developer.unirep.io/docs/circuits-api/classes/src.UserStateTransitionProof). Each of the following properties are public signals for the proof.
  */
 export class UserStateTransitionProof extends BaseProof {
     readonly idx = {
@@ -18,18 +18,41 @@ export class UserStateTransitionProof extends BaseProof {
         control: 5,
     }
     // original data
+    /**
+     * The [history tree](https://developer.unirep.io/docs/protocol/trees.md#history-tree) root being proven against.
+     */
     public historyTreeRoot: bigint
+    /**
+     * The new state tree leaf for the user.
+     */
     public stateTreeLeaf: bigint
+    /**
+     * The epoch keys that are output as public signals. These should be verified to not exist in the epoch tree.
+     */
     public epochKeys: bigint[]
+    /**
+     * The control field used for the proof. This field contains many signals binary encoded into a single 253 bit value. This value is automatically decoded into the other properties on this class.
+     */
     public control: bigint
     // decoded data
+    /**
+     * The attester id for the proof.
+     */
     public attesterId: bigint
+    /**
+     * The epoch the user is transitioning to.
+     */
     public toEpoch: bigint
 
     /**
-     * @param publicSignals The public signals of the epoch key proof that can be verified by the prover
+     * @param publicSignals The public signals of the user state transition proof that can be verified by the prover
      * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
+     * @example
+     * ```ts
+     * import { UserStateTransitionProof } from '@unirep/circuits'
+     * const data = new UserStateTransitionProof(publicSignals, proof)
+     * ```
      */
     constructor(
         publicSignals: (bigint | string)[],
@@ -58,6 +81,18 @@ export class UserStateTransitionProof extends BaseProof {
         this.circuit = Circuit.userStateTransition
     }
 
+    /**
+     * Pack several variables into one `bigint` variable.
+     * @param config The variables that will be packed.
+     * @returns The control
+     * @example
+     * ```ts
+     * UserStateTransitionProof.buildControl({
+     *   toEpoch,
+     *   attesterId,
+     * })
+     * ```
+     */
     static buildControl({ attesterId, toEpoch }) {
         const control = buildUserStateTransitionControl({
             attesterId: BigInt(attesterId),

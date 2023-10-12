@@ -199,7 +199,6 @@ const config = {
                 sidebar: {
                     categoryLabel: 'Utils',
                     position: 0,
-                    fullNames: true,
                 },
             },
         ],
@@ -207,13 +206,16 @@ const config = {
             'docusaurus-plugin-typedoc',
             {
                 id: 'circuits',
-                entryPoints: ['../circuits/src/index.ts'],
+                entryPoints: [
+                    '../circuits/src/index.ts',
+                    '../circuits/provers/web.ts',
+                    '../circuits/provers/defaultProver.ts',
+                ],
                 tsconfig: '../circuits/tsconfig.json',
                 out: 'circuits-api',
                 sidebar: {
                     categoryLabel: 'Circuits',
-                    position: 0,
-                    fullNames: true,
+                    position: 1,
                 },
             },
         ],
@@ -227,7 +229,6 @@ const config = {
                 sidebar: {
                     categoryLabel: 'Conctracts',
                     position: 0,
-                    fullNames: true,
                 },
             },
         ],
@@ -241,7 +242,6 @@ const config = {
                 sidebar: {
                     categoryLabel: 'Core',
                     position: 0,
-                    fullNames: true,
                 },
             },
         ],

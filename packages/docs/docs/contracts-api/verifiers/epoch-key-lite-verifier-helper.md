@@ -86,7 +86,7 @@ contract App {
 
 ## decodeEpochKeyLiteSignals
 
-Decode the public signals from an [epoch key lite proof](../../circuits-api/circuits#epoch-key-lite-proof) info named variables.
+Decode the public signals from an [epoch key lite proof](../../circuits-api/classes/src.EpochKeyLiteProof.md) info named variables.
 
 ```sol
 function decodeEpochKeyLiteSignals(uint256[] memory publicSignals)
@@ -114,7 +114,7 @@ struct EpochKeySignals {
 
 ## verifyAndCheck
 
-Verify an [epoch key lite proof](../../circuits-api/circuits#epoch-key-lite-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
+Verify an [epoch key lite proof](../../circuits-api/classes/src.EpochKeyLiteProof.md) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
 This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](../unirep-sol.md#attestercurrentepoch).
@@ -134,7 +134,7 @@ function verifyAndCheck(
 ```
 ## verifyAndCheckCaller
 
-Verify an [epoch key lite proof](../../circuits-api/circuits#epoch-key-lite-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
+Verify an [epoch key lite proof](../../circuits-api/classes/src.EpochKeyLiteProof.md) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
 
 :::caution
 This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](../unirep-sol.md#attestercurrentepoch).

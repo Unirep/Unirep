@@ -73,7 +73,7 @@ Please call [`attesterSignUp()`](unirep-sol#attestersignup)
 ## 0x09bde339
 - `InvalidProof()`<br/>
     The proof is verified invalid through on-chain verifiers. <br/>
-    Please verify it with the off-chain [prover](../circuits-api/prover.md). <br/>
+    Please verify it with the off-chain [prover](../circuits-api/interfaces/src.Prover.md). <br/>
     If it is valid off-chain but invalid through on-chain verifiers, please check the if the proving keys match the ones on-chain.
 
 :::info

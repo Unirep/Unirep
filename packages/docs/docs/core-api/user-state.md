@@ -161,7 +161,7 @@ state.parseReplData(replData: bigint): <{data: bigint, nonce: bigint}>
 Get the data for a user up to and including the provided epoch. By default data up to and including the current epoch is returned.
 
 :::tip
-If you want to make a proof of data make sure to use [`getProvableData`](#getprovabledata). Data can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#reputation-proof).
+If you want to make a proof of data make sure to use [`getProvableData`](#getprovabledata). Data can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/classes/src.ReputationProof.md).
 :::
 
 ```ts
@@ -202,7 +202,7 @@ state.getEpochKeyIndex(
 
 ## genUserStateTransitionProof
 
-Generate a user state transition proof. Returns a [`UserStateTransitionProof`](../circuits-api/user-state-transition-proof).
+Generate a user state transition proof. Returns a [`UserStateTransitionProof`](../circuits-api/classes/src.UserStateTransitionProof.md).
 
 ```ts
 state.genUserStateTransitionProof(options?: {
@@ -213,7 +213,7 @@ state.genUserStateTransitionProof(options?: {
 
 ## genProveReputationProof
 
-Generate a proof of reputation. Returns a [`ReputationProof`](../circuits-api/reputation-proof).
+Generate a proof of reputation. Returns a [`ReputationProof`](../circuits-api/classes/src.ReputationProof.md).
 
 :::danger
 **Please avoid assigning the `minRep = data[0] - data[1]` or `maxRep = data[1] - data[0]`.**<br/>
@@ -235,7 +235,7 @@ state.genProveReputationProof(options: {
 
 ## genUserSignUpProof
 
-Generate a proof that can be used to signup. Returns a [`SignupProof`](../circuits-api/signup-proof).
+Generate a proof that can be used to signup. Returns a [`SignupProof`](../circuits-api/classes/src.SignupProof.md).
 
 ```ts
 state.genUserSignUpProof(options: {
@@ -246,7 +246,7 @@ state.genUserSignUpProof(options: {
 
 ## genEpochKeyProof
 
-Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyProof`](../circuits-api/epoch-key-proof).
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyProof`](../circuits-api/classes/src.EpochKeyProof.md).
 
 ```ts
 state.genEpochKeyProof(options: {
@@ -260,7 +260,7 @@ state.genEpochKeyProof(options: {
 
 ## genEpochKeyLiteProof
 
-Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyLiteProof`](../circuits-api/epoch-key-lite-proof). This proof **will not include a merkle tree proof** which makes the proof size smaller than an [`EpochKeyProof`](../circuits-api/epoch-key-proof). It can be used to prove a seen and valid epoch key.
+Generate a proof that a user controls an epoch key in a certain epoch. Optionally provide a data value to sign. Returns an [`EpochKeyLiteProof`](../circuits-api/classes/src.EpochKeyLiteProof.md). This proof **will not include a merkle tree proof** which makes the proof size smaller than an [`EpochKeyProof`](../circuits-api/classes/src.EpochKeyProof.md). It can be used to prove a seen and valid epoch key.
 
 ```ts
 state.genEpochKeyLiteProof(options: {

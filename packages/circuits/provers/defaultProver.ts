@@ -7,6 +7,19 @@ const buildPath = '../zksnarkBuild'
 
 /**
  * The default prover that uses the circuits in default built folder `zksnarkBuild/`
+ * @note
+ * :::caution
+ * The keys included are not safe for production use. A phase 2 trusted setup needs to be done before use.
+ * :::
+ * @example
+ * ```ts
+ * import { Circuit } from '@unirep/circuits'
+ * import prover from '@unirep/circuits/provers/defaultProver'
+ *
+ * await prover.genProofAndPublicSignals(Circuit.signup, {
+ *  // circuit inputs
+ * })
+ * ```
  */
 export const defaultProver = {
     /**
