@@ -25,6 +25,7 @@
         "remark-math": "3"
     },
     "devDependencies": {
+        "@unirep/core": "2.0.0-beta-4",
         "@cloudflare/kv-asset-handler": "^0.2.0",
         "@docusaurus/module-type-aliases": "^2.4.3",
         "docusaurus-plugin-matomo": "^0.0.6",

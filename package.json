@@ -50,6 +50,5 @@
         "**/{src,test,config,scripts,circuits}/**/*.{ts,json,sol}": [
             "prettier --write"
         ]
-    },
-    "packageManager": "yarn@3.2.0"
+    }
 }
