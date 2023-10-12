@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Verifier interface
-// Verifier should follow IVerifer interface.
+/// @title IVerifier
+/// @dev https://developer.unirep.io/docs/contracts-api/verifiers/iverifier-sols
 interface IVerifier {
-    /**
-     * @return bool Whether the proof is valid given the hardcoded verifying key
-     *          above and the public inputs
-     */
+    /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/iverifier-sol#verifyproof
+    /// @param publicSignals The public signals of the snark proof
+    /// @param proof The proof data of the snark proof
+    /// @return isValid True if the proof is valid, false otherwise
     function verifyProof(
         uint256[] calldata publicSignals,
         uint256[8] calldata proof

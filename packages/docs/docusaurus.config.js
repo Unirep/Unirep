@@ -215,7 +215,7 @@ const config = {
                 out: 'circuits-api',
                 sidebar: {
                     categoryLabel: 'Circuits',
-                    position: 1,
+                    position: 0,
                 },
             },
         ],
@@ -223,7 +223,11 @@ const config = {
             'docusaurus-plugin-typedoc',
             {
                 id: 'contracts',
-                entryPoints: ['../contracts/src/index.ts'],
+                entryPoints: [
+                    '../contracts/src/index.ts',
+                    '../contracts/typechain/index.ts',
+                    '../contracts/deploy/index.ts',
+                ],
                 tsconfig: '../contracts/tsconfig.json',
                 out: 'contracts-api',
                 sidebar: {

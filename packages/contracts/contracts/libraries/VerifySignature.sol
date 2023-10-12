@@ -3,14 +3,14 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
 
-// verify signature use for relayer
-// NOTE: This method not safe, contract may attack by signature replay.
+// TODO: update doc
+/// @title VerifySignature
 contract VerifySignature {
-    /**
-     * Verify if the signer has a valid signature as claimed
-     * @param signer The address of user who wants to perform an action
-     * @param signature The signature signed by the signer
-     */
+    /// @dev Verify if the signer has a valid signature as claimed
+    /// @param signer The address of attester who wants to perform an action
+    /// @param epochLength The epoch length of attester
+    /// @param signature The signature signed by the attester
+    /// @return isValid True if the signature is valid, false otherwise
     function isValidSignature(
         address signer,
         uint256 epochLength,

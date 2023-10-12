@@ -1,5 +1,5 @@
 ---
-title: UniRep contract
+title: Unirep.sol
 ---
 
 This is the core UniRep contract.
