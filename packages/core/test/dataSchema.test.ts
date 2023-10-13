@@ -65,7 +65,7 @@ describe('Check schema parsing', function () {
                 invalidKey: 'invalidValue',
             },
         ]
-        expect(() => new DataSchema(invalidSchema)).to.throw(
+        expect(() => new DataSchema(invalidSchema as SchemaField[])).to.throw(
             'Invalid fields included for field averageVote: [invalidKey]'
         )
     })
@@ -89,7 +89,7 @@ describe('Check schema parsing', function () {
                 invalidKey: 'invalidValue',
             },
         ]
-        expect(() => new DataSchema(invalidSchema)).to.throw(
+        expect(() => new DataSchema(invalidSchema as SchemaField[])).to.throw(
             'Schema includes a duplicate entry: "posRep"'
         )
     })
@@ -107,7 +107,7 @@ describe('Check schema parsing', function () {
                 updateBy: 'sum',
             },
         ]
-        expect(() => new DataSchema(invalidSchema)).to.throw(
+        expect(() => new DataSchema(invalidSchema as SchemaField[])).to.throw(
             'Invalid type for field negRep: "uint8x"'
         )
     })
@@ -151,7 +151,9 @@ describe('Check schema parsing', function () {
                     updateBy: 'sum',
                 },
             ]
-            expect(() => new DataSchema(invalidSchema)).to.throw(
+            expect(
+                () => new DataSchema(invalidSchema as SchemaField[])
+            ).to.throw(
                 'Invalid schema, field "posRep4" exceeds available storage'
             )
         }
@@ -173,7 +175,9 @@ describe('Check schema parsing', function () {
                     updateBy: 'replace',
                 },
             ]
-            expect(() => new DataSchema(invalidSchema)).to.throw(
+            expect(
+                () => new DataSchema(invalidSchema as SchemaField[])
+            ).to.throw(
                 'Invalid schema, field "graffiti2" exceeds available storage'
             )
         }
@@ -192,7 +196,7 @@ describe('Check schema parsing', function () {
                 updateBy: 'replace',
             },
         ]
-        expect(() => new DataSchema(invalidSchema)).to.throw(
+        expect(() => new DataSchema(invalidSchema as SchemaField[])).to.throw(
             'Invalid updateBy strategy for field posRep: "invalidUpdateStrategy"'
         )
     })
@@ -211,9 +215,9 @@ describe('Check schema parsing', function () {
                     updateBy: 'replace',
                 },
             ]
-            expect(() => new DataSchema(invalidSchema)).to.throw(
-                'Invalid uint size for field posRep: 254'
-            )
+            expect(
+                () => new DataSchema(invalidSchema as SchemaField[])
+            ).to.throw('Invalid uint size for field posRep: 254')
         }
         {
             const invalidSchema = [
@@ -228,9 +232,9 @@ describe('Check schema parsing', function () {
                     updateBy: 'replace',
                 },
             ]
-            expect(() => new DataSchema(invalidSchema)).to.throw(
-                'Field must be 205 bits'
-            )
+            expect(
+                () => new DataSchema(invalidSchema as SchemaField[])
+            ).to.throw('Field must be 205 bits')
         }
     })
 })

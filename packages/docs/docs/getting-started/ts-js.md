@@ -270,7 +270,7 @@ const { proof, publicSignals } = await userState.genUserSignUpProof()
 ```
 
 :::info
-See [`UserState`](core-api/user-state.md) for more information.
+See [`UserState`](../core-api/classes/UserState.md) for more information.
 :::
 
 ### Attester submits sign up proof
@@ -321,7 +321,7 @@ A user can check if they have signed up successfully with `userState`:
 await userState.waitForSync()
 console.log(await userState.hasSignedUp()) // true
 ```
-See [`waitForSync`](core-api/synchronizer.md#waitforsync) for more information.
+See [`waitForSync`](../core-api/classes/Synchronizer.md#waitforsync) for more information.
 :::
 
 ## 📮 Attestation
@@ -484,7 +484,7 @@ const { proof, publicSignals } = await userState.genUserStateTransitionProof()
 ```
 
 :::info
-See [`genUserStateTransitionProof`](core-api/user-state.md#genuserstatetransitionproof) for more information.
+See [`genUserStateTransitionProof`](../core-api/classes/UserState.md#genuserstatetransitionproof) for more information.
 :::
 
 ### A transition proof can be relayed
@@ -569,7 +569,7 @@ In the [above attestation](#attester-submits-the-transaction), the user's `data[
 
 Therefore in this case `data[0] - data[1]` = `5`.
 
-Use [`getProvableData`](core-api/user-state.md#getprovabledata) to know the data that a user can prove.
+Use [`getProvableData`](../core-api/classes/UserState.md#getprovabledata) to know the data that a user can prove.
 
 ```ts
 const data = await userState.getProvableData()

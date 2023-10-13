@@ -1,5 +1,5 @@
 ---
-title: Unirep contract deployment
+title: Deployment
 ---
 
 Import the deployment functions with:
