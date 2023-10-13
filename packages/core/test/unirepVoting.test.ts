@@ -20,7 +20,7 @@ describe('Voting', function () {
     const numTeams = 4
     const numVoters = 6
     const numHackers = 7
-    const epochLength = 300
+    const epochLength = 100000
 
     // generate random identidies for all voters
     const voters = Array(numVoters)
