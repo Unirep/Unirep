@@ -4,13 +4,13 @@ import {
     formatProofForSnarkjsVerification,
     Prover,
 } from './circuits'
-import { SnarkProof } from '@unirep/utils'
+import { Groth16Proof } from 'snarkjs'
 
 /**
  * The basic proof structure that is used in unirep protocol
  */
 export class BaseProof {
-    readonly _snarkProof: SnarkProof
+    readonly _snarkProof: Groth16Proof
     protected circuit?: Circuit
 
     readonly publicSignals: bigint[]
@@ -24,7 +24,7 @@ export class BaseProof {
      */
     constructor(
         publicSignals: (bigint | string)[],
-        proof: SnarkProof | (bigint | string)[],
+        proof: Groth16Proof | (bigint | string)[],
         prover?: Prover
     ) {
         if (Array.isArray(proof)) {
@@ -36,7 +36,7 @@ export class BaseProof {
         } else if (typeof proof === 'object') {
             // assume it's a SnarkProof
             const formattedProof: any[] = formatProofForVerifierContract(proof)
-            this._snarkProof = proof as SnarkProof
+            this._snarkProof = proof as Groth16Proof
             this.proof = formattedProof
         } else {
             throw new Error('Invalid proof supplied')
