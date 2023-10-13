@@ -44,10 +44,39 @@ The attester id for the proof.
 this.attesterId
 ```
 
+## chainId
+
+The chain id for the proof.
+
+```ts
+this.chainId
+```
+
 ## epochKeys
 
 The epoch keys that are output as public signals. These should be verified to not exist in the epoch tree.
 
 ```ts
 this.epochKeys
+```
+
+## control
+
+The control field used for the proof. This field contains many signals binary encoded into a single 253 bit value. This value is automatically decoded into the other properties on this class.
+
+```ts
+this.control
+```
+
+## buildControl
+
+Build control from the following parameters:
+- `toEpoch`: `bigint`
+- `attesterId`: `bigint`
+
+```ts
+UserStateTransitionProof.buildControl({
+    toEpoch,
+    attesterId,
+})
 ```

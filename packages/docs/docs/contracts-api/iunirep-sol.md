@@ -115,8 +115,23 @@ Public signals of a user signup proof.
 struct SignupSignals {
     uint256 stateTreeLeaf;
     uint48 epoch;
+    uint48 chainId;
     uint160 attesterId;
-    uint256 idCommitment;
+    uint256 identityCommitment;
+}
+```
+
+### UserStateTransitionSignals
+
+Public signals of a user state transition proof.
+
+```sol
+struct UserStateTransitionSignals {
+    uint256 historyTreeRoot;
+    uint256 stateTreeLeaf;
+    uint48 toEpoch;
+    uint160 attesterId;
+    uint256[] epochKeys;
 }
 ```
 

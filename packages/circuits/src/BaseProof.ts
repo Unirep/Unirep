@@ -1,10 +1,9 @@
 import {
-    Circuit,
     formatProofForVerifierContract,
     formatProofForSnarkjsVerification,
-    Prover,
-} from './circuits'
+} from './utils'
 import { Groth16Proof } from 'snarkjs'
+import { Circuit, Prover } from './type'
 
 /**
  * The basic proof structure that is used in unirep protocol

@@ -1,4 +1,4 @@
-import { Groth16Proof } from 'snarkjs'
+import { SnarkProof } from '@unirep/utils'
 import { CircuitConfig } from './CircuitConfig'
 
 /**
@@ -59,7 +59,7 @@ export interface Prover {
  * @param proof The proof of `SnarkProof` type
  * @returns An one dimensional array of stringified proof data
  */
-export const formatProofForVerifierContract = (proof: Groth16Proof): string[] => {
+export const formatProofForVerifierContract = (proof: SnarkProof): string[] => {
     return [
         proof.pi_a[0],
         proof.pi_a[1],
@@ -78,17 +78,15 @@ export const formatProofForVerifierContract = (proof: Groth16Proof): string[] =>
  * @returns The `SnarkProof` type proof data
  */
 export const formatProofForSnarkjsVerification = (
-    proof: (string)[]
-): Groth16Proof => {
+    proof: (bigint | string)[]
+): SnarkProof => {
     return {
-        pi_a: [proof[0], proof[1], '1'],
+        pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')],
         pi_b: [
-            [proof[3], proof[2]],
-            [proof[5], proof[4]],
-            ['1', '0'],
+            [BigInt(proof[3]), BigInt(proof[2])],
+            [BigInt(proof[5]), BigInt(proof[4])],
+            [BigInt('1'), BigInt('0')],
         ],
-        pi_c: [proof[6], proof[7], '1'],
-        protocol: 'groth16',
-        curve: 'bn128'
+        pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')],
     }
 }

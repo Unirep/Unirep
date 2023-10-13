@@ -4,7 +4,7 @@ title: ReputationProof
 
 Inherits: [`BaseProof`](base-proof)
 
-A class representing a [reputation proof](circuits.md#prove-reputation-proof). Each of the following are accessible as properties on the object.
+A class representing a [reputation proof](circuits.md#reputation-proof). Each of the following are accessible as properties on the object.
 
 ```ts
 import { ReputationProof } from '@unirep/circuits'
@@ -58,6 +58,14 @@ The attester id for the proof.
 
 ```ts
 this.attesterId
+```
+
+## chainId
+
+The chain id for the proof.
+
+```ts
+this.chainId
 ```
 
 ## data
@@ -122,7 +130,7 @@ this.proveGraffiti
 
 ## graffiti
 
-The graffiti controlled by the user, which is defined by `data[SUM_FIELD_COUNT]` in the circuits. This value is only checked if `proveGraffiti` is non-zero.
+The graffiti controlled by the user, which is defined by `data[SUM_FIELD_COUNT] % (2 ** REPL_NONCE_BITS)` in the circuits. This value is only checked if `proveGraffiti` is non-zero.
 
 ```ts
 this.graffiti
@@ -130,9 +138,40 @@ this.graffiti
 
 ## control
 
-The control field used for the proof. This field contains many signals binary encoded into an array of 256 bit values. This value is automatically decoded into the other properties on this class. See the [circuit documentation](circuits#prove-reputation-proof) for more information.
+The control field used for the proof. This field contains many signals binary encoded into an array of 256 bit values. This value is automatically decoded into the other properties on this class. See the [circuit documentation](circuits#reputation-proof) for more information.
 
 ```ts
-this.control[0]
-this.control[1]
+this.control0
+this.control1
+```
+
+## buildControl
+
+Build control from the following parameters:
+- `nonce`: `any`
+- `epoch`: `any`
+- `attesterId`: `any`
+- `revealNonce`: `any`
+- `chainId`: `any`
+- `proveGraffiti`: `any`
+- `minRep`: `any`
+- `maxRep`: `any`
+- `proveMinRep`: `any`
+- `proveMaxRep`: `any`
+- `proveZeroRep`: `any`
+
+```ts
+ReputationProof.buildControl({
+    attesterId,
+    epoch,
+    nonce,
+    revealNonce,
+    chainId,
+    proveGraffiti,
+    minRep,
+    maxRep,
+    proveMinRep,
+    proveMaxRep,
+    proveZeroRep,
+})
 ```

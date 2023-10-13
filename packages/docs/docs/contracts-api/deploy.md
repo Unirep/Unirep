@@ -69,6 +69,7 @@ Deploy all known circuit verifier helpers. A helper can help with decoding publi
 
 ```ts
 const deployVerifierHelpers = async (
+    unirepAddress: string,
     deployer: ethers.Signer,
     prover?: Prover
 )
@@ -76,10 +77,11 @@ const deployVerifierHelpers = async (
 
 ## deployVerifierHelper
 
-Deploy a given circuit verifier helper.
+Deploy a given circuit verifier helper. For example: [EpochKeyVerifierHelper.sol](./verifiers/epoch-key-verifier-helper.md)
 
 ```ts
 const deployVerifierHelper = async (
+    unirepAddress: string,
     deployer: ethers.Signer,
     circuit: Circuit,
     prover?: Prover

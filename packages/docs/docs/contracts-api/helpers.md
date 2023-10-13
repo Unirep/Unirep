@@ -32,7 +32,8 @@ Generate signature for attester if the attester signs up through [`attesterSignU
 const genSignature = async (
     unirepAddress: string,
     attester: ethers.Signer | ethers.Wallet,
-    epochLength: number
+    epochLength: number,
+    chainId: bigint | number
 )
 ```
 
@@ -46,6 +47,7 @@ const signature = genSignature(
     address,     // the address of UniRep contract
     signer,      // the signer of the attester
     epochLength, // the epoch length of the attester
+    chainId,     // the current chain ID of UniRep contract
 )
 
 // sign up with UniRep contract

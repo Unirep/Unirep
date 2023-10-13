@@ -18,15 +18,19 @@ import TabItem from '@theme/TabItem';
 ```
 
 ```ts title="reputationVerifierHelper.ts"
-import { deployVerifierHelper } from '@unirep/contracts/deploy'
+import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Circuit, ReputationProof } from '@unirep/circuits'
 
 // deploys reputation verifier helper contract
-const reputationVerifierHelper = await deployVerifierHelper(accounts[0], Circuit.proveReputation)
+const reputationVerifierHelper = await deployVerifierHelper(
+  unirep.address,
+  accounts[0],
+  Circuit.reputation
+)
 
 const r = await defaultProver.genProofAndPublicSignals(
-  Circuit.proveReputation,
+  Circuit.reputation,
   CircuitInputs // see @unirep/circuits to know the whole circuit inputs
 )
 
@@ -81,15 +85,15 @@ contract App {
 
 ## decodeReputationControl
 
-Decode a reputation related control from [reputation proof](../../circuits-api/circuits.md#prove-reputation-proof) into named variables.
+Decode a reputation related control from [reputation proof](../../circuits-api/circuits.md#reputation-proof) into named variables.
 
 ```sol
 function decodeReputationControl(uint256 control)
     public
     pure
     returns (
-      uint256 minRep,
-      uint256 maxRep,
+      uint64 minRep,
+      uint64 maxRep,
       bool proveMinRep,
       bool proveMaxRep,
       bool proveZeroRep,
@@ -99,7 +103,7 @@ function decodeReputationControl(uint256 control)
 
 ## decodeReputationSignals
 
-Decode the public signals from a [reputation proof](../../circuits-api/circuits#prove-reputation-proof) into named variables.
+Decode the public signals from a [reputation proof](../../circuits-api/circuits#reputation-proof) into named variables.
 
 ```sol
 function decodeReputationSignals(uint256[] memory publicSignals)
@@ -110,28 +114,30 @@ function decodeReputationSignals(uint256[] memory publicSignals)
 
 ```sol
 struct ReputationSignals {
-    bool proveGraffiti;
-    bool proveMinRep;
-    bool proveMaxRep;
-    bool proveZeroRep;
-    bool revealNonce;
-    uint8 nonce;
-    uint48 epoch;
-    uint160 attesterId;
-    uint256 stateTreeRoot;
-    uint256 epochKey;
-    uint256 graffiti;
-    uint256 minRep;
-    uint256 maxRep;
+  uint256 epochKey;
+  uint256 stateTreeRoot;
+  uint256 minRep;
+  uint256 maxRep;
+  uint256 graffiti;
+  uint256 data;
+  uint160 attesterId;
+  uint48 epoch;
+  uint48 chainId;
+  uint8 nonce;
+  bool revealNonce;
+  bool proveMinRep;
+  bool proveMaxRep;
+  bool proveZeroRep;
+  bool proveGraffiti;
 }
 ```
 
 ## verifyAndCheck 
 
-Verify a [reputation proof](../../circuits-api/circuits#prove-reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
+Verify a [reputation proof](../../circuits-api/circuits#reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
-This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](../unirep-sol.md#attestercurrentepoch).
 :::
 
 :::danger
@@ -150,10 +156,10 @@ function verifyAndCheck(
 
 ## verifyAndCheckCaller
 
-Verify a [reputation proof](../../circuits-api/circuits#prove-reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
+Verify a [reputation proof](../../circuits-api/circuits#reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
 
 :::caution
-This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](../unirep-sol.md#attestercurrentepoch).
 :::
 
 ```sol
@@ -164,23 +170,3 @@ function verifyAndCheckCaller(
   view
   returns (ReputationSignals memory) 
 ```
-
-:::danger
-The helper is not connected to the [`Unirep.sol`](../unirep-sol.md) contract. Please manually check if the state tree root exists with [`attesterStateTreeRootExists`](../unirep-sol.md#attesterstatetreerootexists).
-
-1. Decode public signals
-```sol
-ReputationVerifierHelper.ReputationSignals memory signals = verifier.decodeReputationSignals(publicSignals); 
-```
-
-2. Verify state tree root
-```sol
-require(
-  unirep.attesterStateTreeRootExists(
-    signals.attesterId, 
-    signals.epoch, 
-    signals.stateTreeRoot
-  )
-);
-```
-:::

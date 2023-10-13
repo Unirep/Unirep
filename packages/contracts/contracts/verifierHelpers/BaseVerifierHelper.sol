@@ -1,44 +1,53 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Unirep} from '../Unirep.sol';
 import {IVerifier} from '../interfaces/IVerifier.sol';
 
 contract BaseVerifierHelper {
+    Unirep unirep;
     IVerifier verifier;
 
     uint256 public constant SNARK_SCALAR_FIELD =
         21888242871839275222246405745257275088548364400416034343698204186575808495617;
+    uint256 public immutable chainid;
 
     struct EpochKeySignals {
-        bool revealNonce;
-        uint8 nonce;
-        uint48 epoch;
-        uint160 attesterId;
-        uint256 stateTreeRoot;
         uint256 epochKey;
+        uint256 stateTreeRoot;
         uint256 data;
+        uint160 attesterId;
+        uint48 epoch;
+        uint48 chainId;
+        uint8 nonce;
+        bool revealNonce;
     }
 
     struct ReputationSignals {
-        bool proveGraffiti;
+        uint256 epochKey;
+        uint256 stateTreeRoot;
+        uint256 minRep;
+        uint256 maxRep;
+        uint256 graffiti;
+        uint256 data;
+        uint160 attesterId;
+        uint48 epoch;
+        uint48 chainId;
+        uint8 nonce;
+        bool revealNonce;
         bool proveMinRep;
         bool proveMaxRep;
         bool proveZeroRep;
-        bool revealNonce;
-        uint8 nonce;
-        uint48 epoch;
-        uint160 attesterId;
-        uint256 stateTreeRoot;
-        uint256 epochKey;
-        uint256 graffiti;
-        uint256 minRep;
-        uint256 maxRep;
+        bool proveGraffiti;
     }
 
     error AttesterInvalid();
     error InvalidEpochKey();
     error InvalidProof();
+    error InvalidEpoch();
+    error InvalidStateTreeRoot(uint256 stateTreeRoot);
     error CallerInvalid();
+    error ChainIdNotMatch(uint48 chainId);
 
     function decodeEpochKeyControl(
         uint256 control
@@ -46,26 +55,52 @@ contract BaseVerifierHelper {
         public
         pure
         returns (
-            bool revealNonce,
-            uint160 attesterId,
+            uint8 nonce,
             uint48 epoch,
-            uint8 nonce
+            uint160 attesterId,
+            bool revealNonce,
+            uint48 chainId
         )
     {
-        uint8 attesterIdBits = 160;
-        uint8 epochBits = 48;
         uint8 nonceBits = 8;
-        revealNonce =
-            ((control >> (attesterIdBits + epochBits + nonceBits)) & 1) != 0;
-        attesterId = uint160(
-            (control >> (epochBits + nonceBits)) & ((1 << attesterIdBits) - 1)
+        uint8 epochBits = 48;
+        uint8 attesterIdBits = 160;
+        uint8 revealNonceBit = 1;
+        uint8 chainIdBits = 36;
+        uint8 accBits = 0;
+
+        nonce = uint8(shiftAndParse(control, accBits, nonceBits));
+        accBits += nonceBits;
+
+        epoch = uint48(shiftAndParse(control, accBits, epochBits));
+        accBits += epochBits;
+
+        attesterId = uint160(shiftAndParse(control, accBits, attesterIdBits));
+        accBits += attesterIdBits;
+
+        revealNonce = bool(
+            shiftAndParse(control, accBits, revealNonceBit) != 0
         );
-        epoch = uint48((control >> nonceBits) & ((1 << epochBits) - 1));
-        nonce = uint8(control & ((1 << nonceBits) - 1));
-        return (revealNonce, attesterId, epoch, nonce);
+        accBits += revealNonceBit;
+
+        chainId = uint48(shiftAndParse(control, accBits, chainIdBits));
     }
 
-    constructor(IVerifier _verifier) {
+    function shiftAndParse(
+        uint256 data,
+        uint8 shiftBits,
+        uint8 variableBits
+    ) public pure returns (uint256) {
+        return (data >> shiftBits) & ((1 << variableBits) - 1);
+    }
+
+    constructor(Unirep _unirep, IVerifier _verifier) {
+        unirep = _unirep;
         verifier = _verifier;
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        chainid = uint48(id);
     }
 }

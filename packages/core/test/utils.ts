@@ -4,7 +4,7 @@
 import { expect } from 'chai'
 import { ethers } from 'ethers'
 import { Identity } from '@semaphore-protocol/identity'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { defaultProver as prover } from '@unirep/circuits/provers/defaultProver'
 
 import { UserState } from '../src'
 import { DB } from 'anondb/node'
@@ -110,17 +110,18 @@ export const compareAttestations = (attestDB: any, attestObj: any) => {
  * Retrieves and parses on-chain Unirep contract data to create an off-chain
  * representation as a UnirepState object.
  * @param provider An Ethereum provider
- * @param address The address of the Unirep contract
+ * @param unirepAddress The address of the Unirep contract
+ * @param attesterId The address of a Unirep attester
  * @param db An optional DB object
  */
 export const genUnirepState = async (
     provider: ethers.providers.Provider,
-    address: string,
+    unirepAddress: string,
     attesterId?: bigint | bigint[],
     db?: DB
 ) => {
     const unirep = new Synchronizer({
-        unirepAddress: address,
+        unirepAddress,
         provider,
         attesterId,
         db,
@@ -135,21 +136,27 @@ export const genUnirepState = async (
  * This function works mostly the same as genUnirepState,
  * except that it also updates the user's state during events processing.
  * @param provider An Ethereum provider
- * @param address The address of the Unirep contract
- * @param userIdentity The semaphore identity of the user
+ * @param unirepAddress The address of the Unirep contract
+ * @param id The semaphore identity of the user
+ * @param attesterId The address of a UniRep attester
  * @param db An optional DB object
  */
 export const genUserState = async (
     provider: ethers.providers.Provider,
-    address: string,
-    userIdentity: Identity,
+    unirepAddress: string,
+    id: Identity,
     attesterId?: bigint | bigint[],
     db?: DB
 ) => {
-    const synchronizer = await genUnirepState(provider, address, attesterId, db)
-    return new UserState({
-        synchronizer,
-        prover: defaultProver,
-        id: userIdentity,
+    const userState = new UserState({
+        unirepAddress,
+        provider,
+        attesterId,
+        db,
+        id,
+        prover,
     })
+    await userState.start()
+    await userState.waitForSync()
+    return userState
 }

@@ -1,7 +1,11 @@
-import { Circuit, Prover } from './circuits'
+import { Circuit, Prover } from './type'
 import { Groth16Proof } from 'snarkjs'
 import { BaseProof } from './BaseProof'
 import { CircuitConfig } from './CircuitConfig'
+import {
+    buildUserStateTransitionControl,
+    decodeUserStateTransitionControl,
+} from './utils'
 
 /**
  * The epoch key proof structure that helps to query the public signals
@@ -11,42 +15,54 @@ export class UserStateTransitionProof extends BaseProof {
         historyTreeRoot: 0,
         stateTreeLeaf: 1,
         epochKeys: 2,
-        toEpoch: 3,
-        attesterId: 4,
+        control: 5,
     }
+    // original data
     public historyTreeRoot: bigint
     public stateTreeLeaf: bigint
     public epochKeys: bigint[]
-    public toEpoch: bigint
+    public control: bigint
+    // decoded data
     public attesterId: bigint
+    public toEpoch: bigint
 
     /**
-     * @param _publicSignals The public signals of the epoch key proof that can be verified by the prover
-     * @param _proof The proof that can be verified by the prover
+     * @param publicSignals The public signals of the epoch key proof that can be verified by the prover
+     * @param proof The proof that can be verified by the prover
      * @param prover The prover that can verify the public signals and the proof
      */
     constructor(
-        _publicSignals: (bigint | string)[],
-        _proof: Groth16Proof,
+        publicSignals: (bigint | string)[],
+        proof: Groth16Proof,
         prover?: Prover,
         config: CircuitConfig = CircuitConfig.default
     ) {
-        super(_publicSignals, _proof, prover)
+        super(publicSignals, proof, prover)
         const { NUM_EPOCH_KEY_NONCE_PER_EPOCH } = config
-        this.historyTreeRoot = this.publicSignals[this.idx.historyTreeRoot]
-        this.stateTreeLeaf = this.publicSignals[this.idx.stateTreeLeaf]
-        this.epochKeys = this.publicSignals.slice(
-            this.idx.epochKeys,
-            this.idx.epochKeys + NUM_EPOCH_KEY_NONCE_PER_EPOCH
+        this.historyTreeRoot = BigInt(
+            this.publicSignals[this.idx.historyTreeRoot]
         )
-        this.toEpoch =
-            this.publicSignals[
-                this.idx.toEpoch + NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
-            ]
-        this.attesterId =
-            this.publicSignals[
-                this.idx.attesterId + NUM_EPOCH_KEY_NONCE_PER_EPOCH - 1
-            ]
+        this.stateTreeLeaf = BigInt(this.publicSignals[this.idx.stateTreeLeaf])
+        this.epochKeys = this.publicSignals
+            .slice(
+                this.idx.epochKeys,
+                this.idx.epochKeys + NUM_EPOCH_KEY_NONCE_PER_EPOCH
+            )
+            .map((n) => BigInt(n))
+        this.control = BigInt(this.publicSignals[this.idx.control])
+        const { attesterId, toEpoch } = decodeUserStateTransitionControl(
+            this.control
+        )
+        this.attesterId = attesterId
+        this.toEpoch = toEpoch
         this.circuit = Circuit.userStateTransition
+    }
+
+    static buildControl({ attesterId, toEpoch }) {
+        const control = buildUserStateTransitionControl({
+            attesterId: BigInt(attesterId),
+            toEpoch: BigInt(toEpoch),
+        })
+        return control
     }
 }
