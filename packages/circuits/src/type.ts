@@ -74,7 +74,7 @@ export enum Circuit {
  */
 export interface Prover {
     /**
-     * The function should returns true if the proof of the circuit is valid, false otherwise.
+     * The function returns true if the proof of the circuit is valid, false otherwise.
      * @param circuitName Name of the circuit, which can be chosen from `Circuit`
      * @param publicSignals The public signals of the snark
      * @param proof The proof of the snark

@@ -4,7 +4,7 @@ import { BaseProof } from './BaseProof'
 import { buildEpochKeyControl, decodeEpochKeyControl } from './utils'
 
 /**
- * A class representing an [scope nullifier proof](https://developer.unirep.io/docs/circuits-api/classes/src.ScopeNullifierProof). Each of the following properties are public signals for the proof.
+ * A class representing a [scope nullifier proof](https://developer.unirep.io/docs/circuits-api/classes/src.ScopeNullifierProof). Each of the following properties are public signals for the proof.
  */
 export class ScopeNullifierProof extends BaseProof {
     /**

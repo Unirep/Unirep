@@ -28,7 +28,7 @@ type AttesterSetting = {
 }
 
 /**
- * Turn a either decimal or hex string to decimal string.
+ * Turn either a decimal or hex string to a decimal string.
  * @param content A `bigint`, `string` or `number` type data.
  * @returns A decimal string.
  */
@@ -99,7 +99,7 @@ export class Synchronizer extends EventEmitter {
     protected defaultEpochTreeLeaf: bigint = BigInt(0)
     /**
      * @private
-     * Indicate the synchronizer if to sync all UniRep attesters.
+     * Indicates if the synchronizer is to sync with all Unirep attesters.
      */
     private _syncAll = false
 
@@ -306,13 +306,13 @@ export class Synchronizer extends EventEmitter {
     }
 
     /**
-     * The default attester ID that is set when construction.
+     * The default attester ID that is set when constructed.
      * If there is a list of attester IDs, then the first one will be the default attester ID.
-     * If no attester ID is given during construction, all attesters will be synchronized. And the default `attesterId` would be `BigInt(0)`.
+     * If no attester ID is given during construction, all attesters will be synchronized and the default `attesterId` will be `BigInt(0)`.
      *
      * :::caution
-     * Should check which default attester Id is carefully while synchronizing more than one attester.
-     * The default attester ID could be changed through [setAttesterId](#setattesterid).
+     * The default attester ID should be checked carefully while synchronizing more than one attester.
+     * The default attester ID can be changed with [setAttesterId](#setattesterid).
      * :::
      */
     get attesterId() {
@@ -332,7 +332,7 @@ export class Synchronizer extends EventEmitter {
 
     /**
      * Change default [attesterId](#attesterid) to another attester ID.
-     * It will fail if an `attesterId` is not synchronized when construction.
+     * It will fail if an `attesterId` is not synchronized during construction.
      * @param attesterId The default attester Id to be set.
      */
     setAttesterId(attesterId: string | bigint) {
@@ -358,7 +358,7 @@ export class Synchronizer extends EventEmitter {
     }
 
     /**
-     * Check if attester events are synchronized in this synchronizer. It will throw an error is the attester is not synchronized.
+     * Check if attester events are synchronized in this synchronizer. It will throw an error if the attester is not synchronized.
      * @param attesterId The queried attester ID.
      */
     checkAttesterId(attesterId: string | bigint) {
@@ -411,7 +411,7 @@ export class Synchronizer extends EventEmitter {
 
     /**
      * Find the attester's genesis block in the Unirep smart contract.
-     * Then stores the `startTimestamp` and `epochLength` in database and in the memory.
+     * Then store the `startTimestamp` and `epochLength` in database and in the memory.
      */
     private async _findStartBlock() {
         // look for the first attesterSignUp event
@@ -830,7 +830,7 @@ export class Synchronizer extends EventEmitter {
     /**
      * Calculate the amount of time remaining in the current epoch. This operation is **synchronous** and does not involve any database operations.
      * @param attesterId The queried attester Id.
-     * @returns The number of current calculated time to the next epoch.
+     * @returns Current calculated time to the next epoch.
      */
     calcEpochRemainingTime(attesterId: bigint | string = this.attesterId) {
         const timestamp = Math.floor(+new Date() / 1000)

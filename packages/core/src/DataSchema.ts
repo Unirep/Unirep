@@ -148,8 +148,8 @@ export class DataSchema {
 
     /**
      * Build an `Attestation` object to be used for a UniRep contract
-     * @param change The data change. If it is `sum` field, then the data will be changed by an addition. If it is `replacement` field, then the data will be changed by replacement.
-     * @returns The attestation object could be submitted through Unirep contract.
+     * @param change The data change. If it is `sum` field, the data will be changed by addition. If it is `replacement` field, the data will be changed by replacement.
+     * @returns The attestation object will be submitted to the Unirep contract.
      * @example
      * **Sum field**
      * ```ts
@@ -191,10 +191,10 @@ export class DataSchema {
     /**
      * Build multiple `Attestation` objects to be used for a UniRep contract
      * @param changes The array of data change.
-     * @returns The array of attestations could be submitted through Unirep contract.
+     * @returns The array of attestations will be submitted to the Unirep contract.
      * @example
      * ```ts
-     * // Multiple attestations can build using `buildAttestations()`
+     * // Multiple attestations can be built using `buildAttestations()`
      * const changes = [
      *   { name: 'posRep', val: BigInt(10) },
      *   { name: 'negRep', val: BigInt(10) },
@@ -246,8 +246,8 @@ export class DataSchema {
     }
 
     /**
-     * Parse encoded schema, producing a dictionary of user-defined field names and attestation value
-     * @param data The raw data happends in UniRep contract.
+     * Parse encoded schema, producing a dictionary of user-defined field names and attestation values
+     * @param data The raw data appended to the Unirep contract.
      * @returns The names of the data and its values.
      * @example
      * ```ts

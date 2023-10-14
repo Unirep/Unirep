@@ -50,7 +50,7 @@ export const defaultProver = {
     /**
      * Verify the snark proof and public signals with `snarkjs.groth16.verify`
      * @param circuitName Name of the circuit, which can be chosen from `Circuit`
-     * @param publicSignals The snark public signals that is generated from `genProofAndPublicSignals`
+     * @param publicSignals The snark public signals that are generated from `genProofAndPublicSignals`
      * @param proof The snark proof that is generated from `genProofAndPublicSignals`
      * @returns True if the proof is valid, false otherwise
      */

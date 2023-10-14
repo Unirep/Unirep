@@ -79,9 +79,9 @@ export class WebProver {
     }
 
     /**
-     * The function should returns true if the proof of the circuit is valid, false otherwise.
+     * The function returns true if the proof of the circuit is valid, false otherwise.
      * @param circuitName Name of the circuit, which can be chosen from `Circuit`
-     * @param publicSignals The snark public signals that is generated from `genProofAndPublicSignals`
+     * @param publicSignals The snark public signals that are generated from `genProofAndPublicSignals`
      * @param proof The snark proof that is generated from `genProofAndPublicSignals`
      * @returns True if the proof is valid, false otherwise
      */

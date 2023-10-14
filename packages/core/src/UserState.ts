@@ -188,7 +188,7 @@ export default class UserState {
     /**
      * Query the current database for a user's signup event or latest user state transition [nullifier](https://developer.unirep.io/docs/protocol/nullifiers).
      * @param attesterId The attester to be queried. Default: `this.attesterId`
-     * @returns The latest epoch where user performs user state transition.
+     * @returns The latest epoch where a user performed a user state transition.
      */
     async latestTransitionedEpoch(
         attesterId: bigint | string = this.sync.attesterId
@@ -545,7 +545,7 @@ export default class UserState {
 
     /**
      * @private
-     * Check if a chain ID is set. If a chain ID is not set, it queries to provider and set chain ID.
+     * Check if a chain ID is set. If a chain ID is not set, it queries the provider and sets chain ID.
      */
     private _checkChainId = async () => {
         if (this.chainId === -1) {
@@ -592,7 +592,7 @@ export default class UserState {
 
     /**
      * Generate a user state transition proof. Returns a [`UserStateTransitionProof`](https://developer.unirep.io/docs/circuits-api/classes/src.UserStateTransitionProof.md).
-     * @param options.toEpoch `toEpoch` is used to indicate the proof will be used in which epoch. Default: current epoch.
+     * @param options.toEpoch `toEpoch` is used to indicate in which epoch the proof will be used. Default: current epoch.
      * @param options.attesterId `attesterId` is used to generate proof for certain attester. Default: `this.attesterId`.
      * @returns The `UserStateTransitionProof` object.
      * @example
@@ -727,9 +727,9 @@ export default class UserState {
      * @param options.minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`. Default: `0`
      * @param options.maxRep The amount of reputation that user wants to prove. It should satisfy: `negRep - posRep >= maxRep`. Default: `0`
      * @param options.graffiti The graffiti that user wants to prove. It should satisfy: `graffiti == (data[SUM_FIELD_COUNT] / (2 ** REPL_NONCE_BITS))`. Default: `0`.
-     * @param options.proveZeroRep Indicate if user wants to prove `posRep - negRep == 0`. Default: `0`.
-     * @param options.revealNonce Indicate if user wants to reveal epoch key nonce. Default: `false`.
-     * @param options.data Indicate if user wants to endorse a 253-bits data. Default: `0`.
+     * @param options.proveZeroRep Indicates if user wants to prove `posRep - negRep == 0`. Default: `0`.
+     * @param options.revealNonce Indicates if user wants to reveal epoch key nonce. Default: `false`.
+     * @param options.data Indicates if user wants to endorse a 253-bits data. Default: `0`.
      * @param options.attesterId `attesterId` is used to generate proof for certain attester. Default: `this.attesterId`
      * @returns The reputation proof of type `ReputationProof`.
      * @example
@@ -797,8 +797,8 @@ export default class UserState {
 
     /**
      * Generate a proof that can be used to signup. Returns a [`SignupProof`](https://developer.unirep.io/docs/circuits-api/classes/src.SignupProof.md)
-     * @param options.epoch Indicate the proof will be used in which epoch. Default: current epoch.
-     * @param options.attesterId Indicate the proof will be used in which attester. Default: `this.attesterId`
+     * @param options.epoch Indicates in which epoch the proof will be used. Default: current epoch.
+     * @param options.attesterId Indicates for which attester the proof will be used. Default: `this.attesterId`
      * @returns The sign up proof of type `SignUpProof`.
      * @example
      * ```ts
@@ -836,9 +836,9 @@ export default class UserState {
      * Returns an [`EpochKeyProof`](https://developer.unirep.io/docs/circuits-api/classes/src.EpochKeyProof.md).
      * @param options.nonce The specified epoch key nonce. Default: `0`.
      * @param options.epoch The specified epoch. Default: current epoch.
-     * @param options.data Indicate if user wants to endorse a 253-bits data. Default: `0`
-     * @param options.revealNonce Indicate if user wants to reveal epoch key nonce. Default: `false`.
-     * @param options.attesterId Indicate the proof will be used in which attester. Default: `this.attesterId`
+     * @param options.data Indicates if user wants to endorse a 253-bits data. Default: `0`
+     * @param options.revealNonce Indicates if user wants to reveal epoch key nonce. Default: `false`.
+     * @param options.attesterId Indicates for which attester the proof will be used. Default: `this.attesterId`
      * @returns The epoch key proof of type `EpochKeyProof`.
      * @example
      * ```ts
@@ -899,9 +899,9 @@ export default class UserState {
      * It can be used to prove a seen and valid epoch key.
      * @param options.nonce The specified epoch key nonce. Default: `0`.
      * @param options.epoch The specified epoch. Default: current epoch.
-     * @param options.data Indicate if user wants to endorse a 253-bits data. Default: `0`.
-     * @param options.revealNonce Indicate if user wants to reveal epoch key nonce. Default: `false`.
-     * @param options.attesterId Indicate the proof will be used in which attester. Default: `this.attesterId`
+     * @param options.data Indicates if user wants to endorse a 253-bits data. Default: `0`.
+     * @param options.revealNonce Indicates if user wants to reveal epoch key nonce. Default: `false`.
+     * @param options.attesterId Indicates for which attester the proof will be used. Default: `this.attesterId`
      * @returns The epoch key lite proof of type `EpochKeyLiteProof`.
      * @example
      * ```ts
