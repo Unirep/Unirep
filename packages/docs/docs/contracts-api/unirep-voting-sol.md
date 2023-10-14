@@ -1,8 +1,9 @@
 ---
-title: UniRep Voting contract
+title: "Example: UniRep Voting contract"
 ---
 
-This is an example contract that utilizes the core UniRep contract and the Voting Prize NFT contract. `UnirepoVoting.sol` is initialized with the number of projects and `VotingPrizeNFT.sol`. 
+This is an example contract that utilizes the core UniRep contract and the Voting Prize NFT contract. It can help users anonymously join a hackathon project, anonymously vote, and anonymously claim prize.
+`UnirepoVoting.sol` is initialized with the number of projects and `VotingPrizeNFT.sol`. 
 
 There are two types of users: hackers and voters. A hacker can join a project of a certain project ID. The voters and hackers can vote for a project ID with one upvote or one downvote. 
 
@@ -16,11 +17,11 @@ import {
     VotingPrizeNFT__factory,
 } from '@unirep/contracts/typechain'
 
-  unirep = await deployUnirep(deployer)
+  const unirep = await deployUnirep(deployer)
   const reputationVerifierHelper = await deployVerifierHelper(
       unirep.address,
       deployer,
-      Circuit.proveReputation
+      Circuit.reputation
   )
   const epochKeyVerifierHelper = await deployVerifierHelper(
       unirep.address,
@@ -28,13 +29,13 @@ import {
       Circuit.epochKey
   )
   const nftF = new VotingPrizeNFT__factory(deployer)
-  nft = await nftF.deploy(
+  const nft = await nftF.deploy(
       'ipfs://QmNtYnjqeqWbRGC4R7fd9DCXWnQF87ufv7S2zGULtbSpLA'
   )
   await nft.deployed()
 
   const votingF = new UnirepVoting__factory(deployer)
-  voting = await votingF.deploy(
+  const voting = await votingF.deploy(
       unirep.address,
       reputationVerifierHelper.address,
       epochKeyVerifierHelper.address,
@@ -60,7 +61,13 @@ function userSignUp(
 
 A hacker can join a project by submitting the project ID, the epoch key proof and public signals. 
 
-The projectID must be within the range of numProjects. The public signal must contain revealNonce = true and nonce = 0. At most 10 hackers can join one project. Epoch key proof must be valid, see [`EpochKeyVerifierHelper`](./verifiers/epoch-key-verifier-helper.md). 
+The projectID must be within the range of numProjects. The public signals must contain `revealNonce = true` and `nonce = 0`. At most 10 hackers can join one project. Epoch key proof must be valid, see [`EpochKeyVerifierHelper`](./verifiers/epoch-key-verifier-helper.md). To generate the epoch key proof: 
+```typescript
+const { publicSignals, proof } = await userState.genEpochKeyProof({
+     nonce: 0,
+     revealNonce: true,
+})
+```
 
 ```sol
 function joinProject(

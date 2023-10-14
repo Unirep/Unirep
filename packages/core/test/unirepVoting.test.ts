@@ -41,7 +41,7 @@ describe('Voting', function () {
         const reputationVerifierHelper = await deployVerifierHelper(
             unirep.address,
             deployer,
-            Circuit.proveReputation
+            Circuit.reputation
         )
         const epochKeyVerifierHelper = await deployVerifierHelper(
             unirep.address,
