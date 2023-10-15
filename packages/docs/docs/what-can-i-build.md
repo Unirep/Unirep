@@ -16,7 +16,7 @@ title: what can i build with unirep
 **Anonymous GitHub:**
 - Some developers may desire the ability to publish code anonymously. In A GitHub-type application built with UniRep, the data values could be assigned to represent the number of commits a developer has made to a repository, the number of stars they have on their profile, or if they have made successful PRs to a project. These reputation metrics can then be evaluated to grant the anonymous developer access to push to the main branch of a particular repository.
 
-**Journalism Applicaitons:**
+**Journalism Applications:**
 - Some countries have restrictive laws governing speech. If a journalist makes a statement or reveals information that is in conflict with their government's messaging, there may be serious repercussions for that individual. With a UniRep application built to support freedom of the press, a journalist could prove that they are associated with a reputable news organization without revealing their identity, and display a badge from that organization when they publish their work. This would enable readers to trust the source of the reporting, and prevent governments or other power-wielding entities from discovering it.
 
 **Reddit built with UniRep:**
