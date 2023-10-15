@@ -2,19 +2,49 @@
 import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
-import { deployUnirep } from '@unirep/contracts/deploy'
+import { deployUnirep, deployVerifierHelper } from '@unirep/contracts/deploy'
 
 import { EPOCH_LENGTH, genUserState } from './utils'
 import { genEpochKey } from '@unirep/utils'
+import { Circuit } from '@unirep/circuits'
+
+const checkSignals = (signals, proof) => {
+    expect(signals.epochKey.toString()).equal(proof.epochKey.toString())
+    expect(signals.stateTreeRoot.toString()).equal(
+        proof.stateTreeRoot.toString()
+    )
+    expect(signals.nonce.toString()).equal(proof.nonce.toString())
+    expect(signals.epoch.toString()).equal(proof.epoch.toString())
+    expect(signals.attesterId.toString()).equal(proof.attesterId.toString())
+    expect(signals.revealNonce).equal(Boolean(proof.revealNonce))
+    expect(signals.chainId.toString()).equal(proof.chainId.toString())
+    expect(signals.minRep.toString()).equal(proof.minRep.toString())
+    expect(signals.maxRep.toString()).equal(proof.maxRep.toString())
+    expect(signals.proveMinRep).equal(Boolean(proof.proveMinRep))
+    expect(signals.proveMaxRep).equal(Boolean(proof.proveMaxRep))
+    expect(signals.proveZeroRep).equal(Boolean(proof.proveZeroRep))
+    expect(signals.proveGraffiti).equal(Boolean(proof.proveGraffiti))
+    expect(signals.graffiti.toString()).equal(proof.graffiti.toString())
+    expect(signals.data.toString()).equal(proof.data.toString())
+}
 
 describe('Reputation proof', function () {
     this.timeout(0)
 
     let unirepContract
+    let repVerifierHelper
+    let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        repVerifierHelper = await deployVerifierHelper(
+            unirepContract.address,
+            accounts[0],
+            Circuit.reputation
+        )
+        const network = await accounts[0].provider.getNetwork()
+        chainId = network.chainId
     })
 
     {
@@ -61,7 +91,13 @@ describe('Reputation proof', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        userState.sync.stop()
+
+        const signals = await repVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 
     it('should reveal epoch key nonce', async () => {
@@ -96,7 +132,13 @@ describe('Reputation proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal(epkNonce)
-        userState.sync.stop()
+
+        const signals = await repVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 
     it('should not reveal epoch key nonce', async () => {
@@ -131,10 +173,15 @@ describe('Reputation proof', function () {
         const valid = await proof.verify()
         expect(valid).to.be.true
         expect(proof.nonce).to.equal('0')
-        userState.sync.stop()
+
+        const signals = await repVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 
-    // TODO: should prove minRep, maxRep, graffiti
     it('should prove minRep', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
@@ -159,7 +206,13 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const minRep = 1
-        const epochKey = genEpochKey(id.secret, attester.address, epoch, 0)
+        const epochKey = genEpochKey(
+            id.secret,
+            attester.address,
+            epoch,
+            0,
+            chainId
+        )
         const field = userState.sync.settings.sumFieldCount
 
         await unirepContract
@@ -206,7 +259,13 @@ describe('Reputation proof', function () {
         expect(valid).to.be.true
         expect(proof.minRep).to.equal(minRep.toString())
         expect(proof.proveMinRep).to.equal('1')
-        userState.sync.stop()
+
+        const signals = await repVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 
     it('should prove maxRep', async () => {
@@ -233,7 +292,13 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const maxRep = 2
-        const epochKey = genEpochKey(id.secret, attester.address, epoch, 0)
+        const epochKey = genEpochKey(
+            id.secret,
+            attester.address,
+            epoch,
+            0,
+            chainId
+        )
         const field = userState.sync.settings.sumFieldCount
 
         await unirepContract
@@ -280,7 +345,13 @@ describe('Reputation proof', function () {
         expect(valid).to.be.true
         expect(proof.maxRep).to.equal(maxRep.toString())
         expect(proof.proveMaxRep).to.equal('1')
-        userState.sync.stop()
+
+        const signals = await repVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 
     it('should prove graffiti', async () => {
@@ -307,7 +378,13 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const graffiti = BigInt(12345)
-        const epochKey = genEpochKey(id.secret, attester.address, epoch, 0)
+        const epochKey = genEpochKey(
+            id.secret,
+            attester.address,
+            epoch,
+            0,
+            chainId
+        )
         const field = userState.sync.settings.sumFieldCount
         await unirepContract
             .connect(attester)
@@ -339,12 +416,14 @@ describe('Reputation proof', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        expect(proof.graffiti).to.equal(
-            (
-                graffiti << BigInt(userState.sync.settings.replNonceBits)
-            ).toString()
-        )
+        expect(proof.graffiti).to.equal(graffiti.toString())
         expect(proof.proveGraffiti).to.equal('1')
-        userState.sync.stop()
+
+        const signals = await repVerifierHelper.verifyAndCheck(
+            proof.publicSignals,
+            proof.proof
+        )
+        checkSignals(signals, proof)
+        userState.stop()
     })
 })

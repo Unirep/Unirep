@@ -68,10 +68,37 @@ The nonce used to generate the epoch key. To determine if this value is set chec
 this.nonce
 ```
 
+## chainId
+
+The chain id for the proof.
+
+```ts
+this.chainId
+```
+
 ## control
 
-The control field used for the proof. This field contains many signals binary encoded into a single 256 bit value. This value is automatically decoded into the other properties on this class.
+The control field used for the proof. This field contains many signals binary encoded into a single 253 bit value. This value is automatically decoded into the other properties on this class.
 
 ```ts
 this.control
+```
+
+## buildControl
+
+Build control from the following parameters:
+- `nonce`: `bigint`
+- `epoch`: `bigint`
+- `attesterId`: `bigint`
+- `revealNonce`: `bigint`
+- `chainId`: `bigint`
+
+```ts
+EpochKeyProof.buildControl({
+    nonce,
+    epoch,
+    attesterId,
+    revealNonce,
+    chainId
+})
 ```

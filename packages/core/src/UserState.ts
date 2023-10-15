@@ -28,6 +28,7 @@ export default class UserState {
     private _prover: Prover
     private _id: Identity
     private _sync: Synchronizer
+    private _chainId: number
 
     get commitment() {
         return this.id.commitment
@@ -43,6 +44,10 @@ export default class UserState {
 
     get prover() {
         return this._prover
+    }
+
+    get chainId() {
+        return this._chainId
     }
 
     constructor(config: {
@@ -90,10 +95,12 @@ export default class UserState {
         }
         this._id = id
         this._prover = prover
+        this._chainId = -1 // need to be setup in async function
     }
 
     async start() {
         await this.sync.start()
+        await this._checkChainId()
     }
 
     async waitForSync(n?: number) {
@@ -140,7 +147,13 @@ export default class UserState {
                 0,
                 this.sync.settings.numEpochKeyNoncePerEpoch,
             ].map((v) =>
-                genEpochKey(this.id.secret, attesterId, x, v).toString()
+                genEpochKey(
+                    this.id.secret,
+                    attesterId,
+                    x,
+                    v,
+                    this.chainId
+                ).toString()
             )
             const n = await this.sync.db.findOne('Nullifier', {
                 where: {
@@ -189,7 +202,8 @@ export default class UserState {
             this.id.secret,
             attesterId,
             latestTransitionedEpoch,
-            data
+            data,
+            this.chainId
         )
         const foundLeaf = await this.sync.db.findOne('StateTreeLeaf', {
             where: {
@@ -214,11 +228,19 @@ export default class UserState {
         const epoch = _epoch ?? this.sync.calcCurrentEpoch(attesterId)
         this._checkEpkNonce(nonce ?? 0)
         if (typeof nonce === 'number') {
-            return genEpochKey(this.id.secret, attesterId, epoch, nonce)
+            return genEpochKey(
+                this.id.secret,
+                attesterId,
+                epoch,
+                nonce,
+                this.chainId
+            )
         }
         return Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
-            .map((_, i) => genEpochKey(this.id.secret, attesterId, epoch, i))
+            .map((_, i) =>
+                genEpochKey(this.id.secret, attesterId, epoch, i, this.chainId)
+            )
     }
 
     parseReplData(replData: bigint) {
@@ -262,7 +284,13 @@ export default class UserState {
         for (let x = signup?.epoch ?? 0; x <= toEpoch; x++) {
             allNullifiers.push(
                 ...[0, this.sync.settings.numEpochKeyNoncePerEpoch].map((v) =>
-                    genEpochKey(this.id.secret, attesterId, x, v).toString()
+                    genEpochKey(
+                        this.id.secret,
+                        attesterId,
+                        x,
+                        v,
+                        this.chainId
+                    ).toString()
                 )
             )
         }
@@ -279,13 +307,25 @@ export default class UserState {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
-                    genEpochKey(this.id.secret, attesterId, x, i).toString()
+                    genEpochKey(
+                        this.id.secret,
+                        attesterId,
+                        x,
+                        i,
+                        this.chainId
+                    ).toString()
                 )
             const nullifiers = [
                 0,
                 this.sync.settings.numEpochKeyNoncePerEpoch,
             ].map((v) =>
-                genEpochKey(this.id.secret, attesterId, x, v).toString()
+                genEpochKey(
+                    this.id.secret,
+                    attesterId,
+                    x,
+                    v,
+                    this.chainId
+                ).toString()
             )
             let usted = false
             for (const { nullifier, epoch } of sortedNullifiers) {
@@ -394,6 +434,13 @@ export default class UserState {
             throw new Error('@unirep/core:UserState: no synchronizer is set')
     }
 
+    private _checkChainId = async () => {
+        if (this.chainId === -1) {
+            const { chainId } = await this.sync.provider.getNetwork()
+            this._chainId = chainId
+        }
+    }
+
     public getEpochKeyIndex = async (
         epoch: number,
         _epochKey: bigint | string,
@@ -428,6 +475,7 @@ export default class UserState {
             attesterId?: bigint | string
         } = {}
     ): Promise<UserStateTransitionProof> => {
+        await this._checkChainId()
         const { toEpoch: _toEpoch } = options
         const attesterId = toDecString(
             options.attesterId ?? this.sync.attesterId
@@ -445,7 +493,13 @@ export default class UserState {
         const epochKeys = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
-                genEpochKey(this.id.secret, attesterId, fromEpoch, i)
+                genEpochKey(
+                    this.id.secret,
+                    attesterId,
+                    fromEpoch,
+                    i,
+                    this.chainId
+                )
             )
         const historyTree = await this.sync.genHistoryTree(attesterId)
         const leafHash = poseidon2([stateTree.root, epochTree.root])
@@ -505,7 +559,7 @@ export default class UserState {
             from_epoch: fromEpoch,
             to_epoch: toEpoch,
             identity_secret: this.id.secret,
-            state_tree_indexes: stateTreeProof.pathIndices,
+            state_tree_indices: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             attester_id: attesterId.toString(),
             history_tree_indices: historyTreeProof.pathIndices,
@@ -517,6 +571,7 @@ export default class UserState {
                 ({ proof }) => proof.pathIndices
             ),
             epoch_tree_root: epochTree.root,
+            chain_id: this.chainId,
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.userStateTransition,
@@ -548,6 +603,7 @@ export default class UserState {
         data?: bigint | string
         attesterId?: bigint | string
     }): Promise<ReputationProof> => {
+        await this._checkChainId()
         const { minRep, maxRep, graffiti, proveZeroRep, revealNonce } = options
         const nonce = options.epkNonce ?? 0
         const attesterId = toDecString(
@@ -562,13 +618,11 @@ export default class UserState {
 
         const circuitInputs = {
             identity_secret: this.id.secret,
-            state_tree_indexes: stateTreeProof.pathIndices,
+            state_tree_indices: stateTreeProof.pathIndices,
             state_tree_elements: stateTreeProof.siblings,
             data,
             prove_graffiti: graffiti ? 1 : 0,
-            graffiti:
-                BigInt(graffiti ?? 0) <<
-                BigInt(this.sync.settings.replNonceBits),
+            graffiti: BigInt(graffiti ?? 0),
             reveal_nonce: revealNonce ?? 0,
             attester_id: attesterId,
             epoch,
@@ -579,10 +633,11 @@ export default class UserState {
             prove_max_rep: !!(maxRep ?? 0) ? 1 : 0,
             prove_zero_rep: proveZeroRep ?? 0,
             sig_data: options.data ?? 0,
+            chain_id: this.chainId,
         }
 
         const results = await this.prover.genProofAndPublicSignals(
-            Circuit.proveReputation,
+            Circuit.reputation,
             stringifyBigInts(circuitInputs)
         )
 
@@ -600,15 +655,16 @@ export default class UserState {
     public genUserSignUpProof = async (
         options: { epoch?: number; attesterId?: bigint | string } = {}
     ): Promise<SignupProof> => {
+        await this._checkChainId()
         const attesterId = toDecString(
             options.attesterId ?? this.sync.attesterId
         )
         const epoch = options.epoch ?? this.sync.calcCurrentEpoch(attesterId)
         const circuitInputs = {
             epoch,
-            identity_nullifier: this.id.nullifier,
-            identity_trapdoor: this.id.trapdoor,
+            identity_secret: this.id.secret,
             attester_id: attesterId,
+            chain_id: this.chainId,
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.signup,
@@ -630,6 +686,7 @@ export default class UserState {
             attesterId?: bigint | string
         } = {}
     ): Promise<EpochKeyProof> => {
+        await this._checkChainId()
         const nonce = options.nonce ?? 0
         const attesterId = toDecString(
             options.attesterId ?? this.sync.attesterId
@@ -645,11 +702,12 @@ export default class UserState {
             data,
             sig_data: options.data ?? BigInt(0),
             state_tree_elements: proof.siblings,
-            state_tree_indexes: proof.pathIndices,
+            state_tree_indices: proof.pathIndices,
             epoch,
             nonce,
             attester_id: attesterId,
             reveal_nonce: options.revealNonce ? 1 : 0,
+            chain_id: this.chainId,
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.epochKey,
@@ -671,6 +729,7 @@ export default class UserState {
             attesterId?: bigint | string
         } = {}
     ): Promise<EpochKeyLiteProof> => {
+        await this._checkChainId()
         const nonce = options.nonce ?? 0
         const attesterId = toDecString(
             options.attesterId ?? this.sync.attesterId
@@ -684,6 +743,7 @@ export default class UserState {
             nonce,
             attester_id: attesterId,
             reveal_nonce: options.revealNonce ? 1 : 0,
+            chain_id: this.chainId,
         }
         const results = await this.prover.genProofAndPublicSignals(
             Circuit.epochKeyLite,

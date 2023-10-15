@@ -13,10 +13,13 @@ describe('Attester getters', function () {
     this.timeout(120000)
 
     let unirepContract
+    let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        const network = await accounts[0].provider.getNetwork()
+        chainId = network.chainId
     })
 
     {
@@ -52,9 +55,9 @@ describe('Attester getters', function () {
                 Circuit.signup,
                 stringifyBigInts({
                     epoch,
-                    identity_nullifier: id.nullifier,
-                    identity_trapdoor: id.trapdoor,
+                    identity_secret: id.secret,
                     attester_id: attester.address,
+                    chain_id: chainId,
                 })
             )
             const { publicSignals, proof } = new SignupProof(

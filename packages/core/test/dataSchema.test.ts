@@ -2,6 +2,8 @@
 import { expect } from 'chai'
 import { DataSchema, SchemaField } from '../src/DataSchema'
 import { poseidon1 } from 'poseidon-lite'
+import { CircuitConfig } from '@unirep/circuits'
+const { REP_BITS, REPL_FIELD_BITS } = CircuitConfig.default
 
 const smallRandom = (x: number) => Math.floor(Math.random() * x)
 const random = () => poseidon1([smallRandom(10000000)])
@@ -299,7 +301,7 @@ describe('Build an attestation', function () {
             expect(() =>
                 d.buildAttestation({
                     name: 'posRep',
-                    val: BigInt(1) << BigInt(64),
+                    val: BigInt(1) << REP_BITS,
                 })
             ).to.throw('posRep exceeds allocated space')
         }
@@ -308,7 +310,7 @@ describe('Build an attestation', function () {
             expect(() =>
                 d.buildAttestation({
                     name: 'graffiti',
-                    val: BigInt(1) << BigInt(206),
+                    val: BigInt(1) << BigInt(REPL_FIELD_BITS),
                 })
             ).to.throw('graffiti exceeds allocated space')
         }

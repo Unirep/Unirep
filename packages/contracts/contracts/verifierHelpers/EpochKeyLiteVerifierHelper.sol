@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Unirep} from '../Unirep.sol';
 import {IVerifier} from '../interfaces/IVerifier.sol';
 import {BaseVerifierHelper} from './BaseVerifierHelper.sol';
 
 contract EpochKeyLiteVerifierHelper is BaseVerifierHelper {
-    constructor(IVerifier _verifier) BaseVerifierHelper(_verifier) {}
+    constructor(
+        Unirep _unirep,
+        IVerifier _verifier
+    ) BaseVerifierHelper(_unirep, _verifier) {}
 
     function decodeEpochKeyLiteSignals(
         uint256[] calldata publicSignals
@@ -15,10 +19,11 @@ contract EpochKeyLiteVerifierHelper is BaseVerifierHelper {
         signals.data = publicSignals[2];
         // now decode the control values
         (
-            signals.revealNonce,
-            signals.attesterId,
+            signals.nonce,
             signals.epoch,
-            signals.nonce
+            signals.attesterId,
+            signals.revealNonce,
+            signals.chainId
         ) = super.decodeEpochKeyControl(publicSignals[0]);
 
         if (signals.epochKey >= SNARK_SCALAR_FIELD) revert InvalidEpochKey();
@@ -34,9 +39,13 @@ contract EpochKeyLiteVerifierHelper is BaseVerifierHelper {
         EpochKeySignals memory signals = decodeEpochKeyLiteSignals(
             publicSignals
         );
-        bool valid = verifier.verifyProof(publicSignals, proof);
 
-        if (!valid) revert InvalidProof();
+        if (!verifier.verifyProof(publicSignals, proof)) revert InvalidProof();
+
+        uint48 epoch = unirep.attesterCurrentEpoch(signals.attesterId);
+        if (signals.epoch > epoch) revert InvalidEpoch();
+
+        if (signals.chainId != chainid) revert ChainIdNotMatch(signals.chainId);
 
         return signals;
     }

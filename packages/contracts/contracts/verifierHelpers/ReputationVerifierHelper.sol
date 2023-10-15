@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Unirep} from '../Unirep.sol';
 import {IVerifier} from '../interfaces/IVerifier.sol';
 import {BaseVerifierHelper} from './BaseVerifierHelper.sol';
 
 contract ReputationVerifierHelper is BaseVerifierHelper {
-    constructor(IVerifier _verifier) BaseVerifierHelper(_verifier) {}
+    constructor(
+        Unirep _unirep,
+        IVerifier _verifier
+    ) BaseVerifierHelper(_unirep, _verifier) {}
 
     function decodeReputationSignals(
         uint256[] calldata publicSignals
@@ -14,12 +18,14 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         signals.epochKey = publicSignals[0];
         signals.stateTreeRoot = publicSignals[1];
         signals.graffiti = publicSignals[4];
+        signals.data = publicSignals[5];
         // now decode the control values
         (
-            signals.revealNonce,
-            signals.attesterId,
+            signals.nonce,
             signals.epoch,
-            signals.nonce
+            signals.attesterId,
+            signals.revealNonce,
+            signals.chainId
         ) = super.decodeEpochKeyControl(publicSignals[2]);
 
         (
@@ -43,28 +49,34 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
         public
         pure
         returns (
-            uint256 minRep,
-            uint256 maxRep,
+            uint64 minRep,
+            uint64 maxRep,
             bool proveMinRep,
             bool proveMaxRep,
             bool proveZeroRep,
             bool proveGraffiti
         )
     {
-        minRep = control & ((1 << 64) - 1);
-        maxRep = (control >> 64) & ((1 << 64) - 1);
-        proveMinRep = ((control >> 128) & 1) != 0;
-        proveMaxRep = ((control >> 129) & 1) != 0;
-        proveZeroRep = ((control >> 130) & 1) != 0;
-        proveGraffiti = ((control >> 131) & 1) != 0;
-        return (
-            minRep,
-            maxRep,
-            proveMinRep,
-            proveMaxRep,
-            proveZeroRep,
-            proveGraffiti
-        );
+        uint8 repBits = 64;
+        uint8 oneBit = 1;
+        uint8 accBits = 0;
+        minRep = uint64(shiftAndParse(control, accBits, repBits));
+        accBits += repBits;
+
+        maxRep = uint64(shiftAndParse(control, accBits, repBits));
+        accBits += repBits;
+
+        proveMinRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
+        accBits += oneBit;
+
+        proveMaxRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
+        accBits += oneBit;
+
+        proveZeroRep = bool(shiftAndParse(control, accBits, oneBit) != 0);
+        accBits += oneBit;
+
+        proveGraffiti = bool(shiftAndParse(control, accBits, oneBit) != 0);
+        accBits += oneBit;
     }
 
     function verifyAndCheck(
@@ -75,9 +87,20 @@ contract ReputationVerifierHelper is BaseVerifierHelper {
             publicSignals
         );
 
-        bool valid = verifier.verifyProof(publicSignals, proof);
+        if (!verifier.verifyProof(publicSignals, proof)) revert InvalidProof();
 
-        if (!valid) revert InvalidProof();
+        uint48 epoch = unirep.attesterCurrentEpoch(signals.attesterId);
+        if (signals.epoch > epoch) revert InvalidEpoch();
+
+        if (
+            !unirep.attesterStateTreeRootExists(
+                signals.attesterId,
+                signals.epoch,
+                signals.stateTreeRoot
+            )
+        ) revert InvalidStateTreeRoot(signals.stateTreeRoot);
+
+        if (signals.chainId != chainid) revert ChainIdNotMatch(signals.chainId);
 
         return signals;
     }

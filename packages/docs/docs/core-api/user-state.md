@@ -52,7 +52,7 @@ constructor(
 
 ## commitment
 
-The [Semaphore](https://semaphore.appliedzkp.org/) identity commitment of the user.
+The [Semaphore](https://semaphore.pse.dev/) identity commitment of the user.
 
 ```ts
 state.commitment: bigint
@@ -60,7 +60,7 @@ state.commitment: bigint
 
 ## id
 
-The [Semaphore](https://semaphore.appliedzkp.org/) identity of the user.
+The [Semaphore](https://semaphore.pse.dev/) identity of the user.
 
 ```ts
 state.id: Identity
@@ -80,6 +80,14 @@ The prover object.
 
 ```ts
 state.prover: Prover
+```
+
+## chainId
+
+The current chain ID of UniRep contract.
+
+```ts
+state.chainId: number
 ```
 
 ## start
@@ -108,7 +116,7 @@ state.stop(): void
 
 ## hasSignedUp
 
-Query the current database if the [Semaphore](https://semaphore.appliedzkp.org/) identity commitment is stored.
+Query the current database if the [Semaphore](https://semaphore.pse.dev/) identity commitment is stored.
 
 ```ts
 state.hasSignedUp(attesterId?: bigint | string): Promise<boolean>
@@ -153,7 +161,7 @@ state.parseReplData(replData: bigint): <{data: bigint, nonce: bigint}>
 Get the data for a user up to and including the provided epoch. By default data up to and including the current epoch is returned.
 
 :::tip
-If you want to make a proof of data make sure to use [`getProvableData`](#getprovabledata). Data can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#prove-reputation-proof).
+If you want to make a proof of data make sure to use [`getProvableData`](#getprovabledata). Data can only be proven once it has been included in a state tree leaf. Learn more about reputation proofs [here](../circuits-api/circuits#reputation-proof).
 :::
 
 ```ts

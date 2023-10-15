@@ -132,7 +132,8 @@ function decodeSignupControl(
   uint256 control
 ) public pure returns (
   uint160 attesterId,
-  uint48 epoch
+  uint48 epoch,
+  uint48 chainId
 )
 ```
 
@@ -151,7 +152,40 @@ struct SignupSignals {
   uint256 stateTreeLeaf;
   uint48 epoch;
   uint160 attesterId;
-  uint256 idCommitment;
+  uint256 identityCommitment;
+}
+```
+
+## decodeUserStateTransitionControl
+
+Decode the control signal of [user state transition proof](../circuits-api/user-state-transition-proof.md)
+
+```sol
+function decodeUserStateTransitionControl(
+  uint256 control
+) public pure returns (
+  uint160 attesterId, 
+  uint48 toEpoch
+)
+```
+
+## decodeUserStateTransitionSignals
+
+Decode all public signals of [user state transition proof](../circuits-api//user-state-transition-proof.md)
+
+```sol
+function decodeUserStateTransitionSignals(
+  uint256[] calldata publicSignals
+) public pure returns (UserStateTransitionSignals memory)
+```
+
+```sol
+struct UserStateTransitionSignals {
+  uint256 historyTreeRoot;
+  uint256 stateTreeLeaf;
+  uint48 toEpoch;
+  uint160 attesterId;
+  uint256[] epochKeys;
 }
 ```
 
@@ -335,6 +369,23 @@ How many nonce bits are in a replacement data field.
 ```sol
 function replNonceBits() public view returns (uint8)
 ```
+
+## replFieldBits
+
+How many data bits are in a replacement data field.
+
+```sol
+function replFieldBits() public view returns (uint8)
+```
+
+## chainid
+
+Current chain ID of the UniRep contract.
+
+```sol
+function chainid() public view returns (uint48)
+```
+
 
 ## defaultDataHash
 

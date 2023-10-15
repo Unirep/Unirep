@@ -22,13 +22,8 @@
         "build": "yarn buildTs && yarn buildParallel && yarn copyCircom",
         "buildSnarks": "node --max-old-space-size=8192 scripts/buildSnarks.mjs",
         "buildParallel": "node --max-old-space-size=8192 scripts/buildParallel.mjs",
-        "buildVerifyEpochKeySnark": "yarn buildSnarks verifyEpochKey",
-        "buildUserStateTransitionSnark": "yarn buildParallel startTransition userStateTransition processAttestations",
-        "buildProveReputationSnark": "yarn buildSnarks proveReputation",
-        "buildProveUserSignUpSnark": "yarn buildSnarks userSignUpSnark",
         "buildTs": "tsc",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
-        "time": "ts-node scripts/time.ts",
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "buildOverwrite": "find ./zksnarkBuild -type f -not -name '*.ptau' -delete && yarn build"
     },

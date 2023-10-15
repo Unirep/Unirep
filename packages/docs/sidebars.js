@@ -261,6 +261,11 @@ const sidebars = {
                     label: 'UserStateTransitionProof',
                     id: 'circuits-api/user-state-transition-proof',
                 },
+                {
+                    type: 'doc',
+                    label: 'ScopeNullifierProof',
+                    id: 'circuits-api/scope-nullifier-proof',
+                },
             ],
         },
         {

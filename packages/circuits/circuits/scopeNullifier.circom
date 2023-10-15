@@ -4,44 +4,35 @@ include "./circomlib/circuits/poseidon.circom";
 include "./epochKey.circom";
 include "./identity.circom";
 
-template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
+template ScopeNullifier(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
 
     // Global state tree
-    signal input state_tree_indexes[STATE_TREE_DEPTH];
+    signal input state_tree_indices[STATE_TREE_DEPTH];
     signal input state_tree_elements[STATE_TREE_DEPTH];
-
     // Global state tree leaf: Identity & user state root
     signal input reveal_nonce;
     signal input attester_id;
     signal input epoch;
     signal input nonce;
+     // Some arbitrary data to endorse
+    signal input sig_data; // public input
+    signal input identity_secret;
+    signal input scope; // public input
+    signal input data[FIELD_COUNT];
+    signal input chain_id;
+
     signal output epoch_key;
     signal output state_tree_root;
-
-    // Some arbitrary data to endorse
-    signal input sig_data; // public input
-
-    // Optionally reveal nonce, epoch, attester_id
+    // Optionally reveal nonce, epoch, attester_id, chain_id
     signal output control;
-
-    signal input identity_nullifier;
-    signal input external_nullifier;
     signal output nullifier;
 
-    signal input identity_trapdoor;
-
-    signal input data[FIELD_COUNT];
-
     /* 1. Compute nullifier */
-    nullifier <== Poseidon(2)([identity_nullifier, external_nullifier]);
+    nullifier <== Poseidon(2)([scope, identity_secret]);
 
-     /* 2. Compute identity commitment */
-    signal identity_secret;
-    (identity_secret, _) <== IdentityCommitment()(identity_nullifier, identity_trapdoor);
-
-    /* 3. Check epoch key is valid */
+    /* 2. Check epoch key is valid */
     (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
-        state_tree_indexes,
+        state_tree_indices,
         state_tree_elements,
         identity_secret,
         reveal_nonce,
@@ -49,6 +40,7 @@ template PreventDoubleAction(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_
         epoch,
         nonce,
         data,
-        sig_data
+        sig_data,
+        chain_id
     );
 }
