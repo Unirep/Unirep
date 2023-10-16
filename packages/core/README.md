@@ -1,4 +1,4 @@
-# Unirep procotol package
+# Unirep protocol package
 
 Client library for protocol related functions which are used in UniRep protocol.
 
