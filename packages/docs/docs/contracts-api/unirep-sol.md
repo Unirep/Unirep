@@ -1,5 +1,5 @@
 ---
-title: UniRep contract
+title: Unirep.sol
 ---
 
 This is the core UniRep contract.
@@ -33,7 +33,7 @@ function userSignUp(
 
 ## manualUserSignUp
 
-Sign up a new user by manually supplying an identity commitment and an [identity hash](../utils-api/helpers.md#genidentityhash). The `initialData` should be the values of the user data in the state tree leaf (if non-zero). This is designed to be used by applications that want custom signup proofs.
+Sign up a new user by manually supplying an identity commitment and an [identity hash](utils-api/modules.md#genidentityhash). The `initialData` should be the values of the user data in the state tree leaf (if non-zero). This is designed to be used by applications that want custom signup proofs.
 
 :::caution
 `msg.sender` must be the attester.
@@ -87,7 +87,7 @@ Apply a change to a user data field at index `fieldIndex`. Changes will be appli
 It is expected that the attester will validate an epoch key before performing an attestation. <br/>
 To check the validity of an epoch key: <br/>
 - [Epoch key proof](../circuits-api/circuits.md#epoch-key-proof) should be valid. (See [`EpochKeyVerifierHelper`](./verifiers/epoch-key-verifier-helper.md)). <br/>
-- [State tree root](../protocol/trees.md#state-tree) should exist. (See [`attesterStateTreeRootExists`](#attesterstatetreerootexists)) <br/>
+- [State tree root](protocol/trees.md#state-tree) should exist. (See [`attesterStateTreeRootExists`](#attesterstatetreerootexists)) <br/>
 - Epoch should match the current epoch (See: [`attesterCurrentEpoch`](#attestercurrentepoch)) <br/>
 
 All of these must be verified to confirm epoch key validity. Attestations may be lost if these are not verified.
@@ -125,7 +125,7 @@ function updateEpochIfNeeded(
 
 ## decodeSignupControl
 
-Decode the control signal of [signup proof](../circuits-api/signup-proof.md)
+Decode the control signal of [signup proof](../circuits-api/classes/src.SignupProof.md)
 
 ```sol
 function decodeSignupControl(
@@ -139,7 +139,7 @@ function decodeSignupControl(
 
 ## decodeSignupSignals
 
-Decode all public signals of [signup proof](../circuits-api/signup-proof.md)
+Decode all public signals of [signup proof](../circuits-api/classes/src.SignupProof.md)
 
 ```sol
 function decodeSignupSignals(
@@ -158,7 +158,7 @@ struct SignupSignals {
 
 ## decodeUserStateTransitionControl
 
-Decode the control signal of [user state transition proof](../circuits-api/user-state-transition-proof.md)
+Decode the control signal of [user state transition proof](../circuits-api/classes/src.UserStateTransitionProof.md)
 
 ```sol
 function decodeUserStateTransitionControl(
@@ -171,7 +171,7 @@ function decodeUserStateTransitionControl(
 
 ## decodeUserStateTransitionSignals
 
-Decode all public signals of [user state transition proof](../circuits-api//user-state-transition-proof.md)
+Decode all public signals of [user state transition proof](../circuits-api/classes/src.UserStateTransitionProof.md)
 
 ```sol
 function decodeUserStateTransitionSignals(

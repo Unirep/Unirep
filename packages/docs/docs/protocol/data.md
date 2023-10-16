@@ -8,7 +8,7 @@ Attesters define the data system for their application on top of the UniRep prot
 
 ## Addition field
 
-The elements in addition field are combined with addition and modulo by [`SNARK_SCALAR_FIELD`](../utils-api/helpers.md#snark_scalar_field). E.g. `data[0] = (old_data[0] + new_data[0]) % SNARK_SCALAR_FIELD`. There are `SUM_FIELD_COUNT` addition fields.
+The elements in addition field are combined with addition and modulo by [`SNARK_SCALAR_FIELD`](utils-api/modules.md#snark_scalar_field). E.g. `data[0] = (old_data[0] + new_data[0]) % SNARK_SCALAR_FIELD`. There are `SUM_FIELD_COUNT` addition fields.
 
 ## Replacement field
 

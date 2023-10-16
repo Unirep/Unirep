@@ -85,7 +85,7 @@ contract App {
 
 ## decodeReputationControl
 
-Decode a reputation related control from [reputation proof](../../circuits-api/circuits.md#reputation-proof) into named variables.
+Decode a reputation related control from [reputation proof](../../circuits-api/classes/src.ReputationProof.md) into named variables.
 
 ```sol
 function decodeReputationControl(uint256 control)
@@ -103,7 +103,7 @@ function decodeReputationControl(uint256 control)
 
 ## decodeReputationSignals
 
-Decode the public signals from a [reputation proof](../../circuits-api/circuits#reputation-proof) into named variables.
+Decode the public signals from a [reputation proof](../../circuits-api/classes/src.ReputationProof.md) into named variables.
 
 ```sol
 function decodeReputationSignals(uint256[] memory publicSignals)
@@ -134,7 +134,7 @@ struct ReputationSignals {
 
 ## verifyAndCheck 
 
-Verify a [reputation proof](../../circuits-api/circuits#reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
+Verify a [reputation proof](../../circuits-api/classes/src.ReputationProof.md) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
 This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](../unirep-sol.md#attestercurrentepoch).
@@ -156,7 +156,7 @@ function verifyAndCheck(
 
 ## verifyAndCheckCaller
 
-Verify a [reputation proof](../../circuits-api/circuits#reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
+Verify a [reputation proof](../../circuits-api/classes/src.ReputationProof.md) and validate the public signals against the onchain state. This function will revert if any inputs are invalid. This is identical to `verifyAndCheck` but also checks that the caller is the attester.
 
 :::caution
 This function **does not** require the epoch for the proof to be the **current epoch**. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](../unirep-sol.md#attestercurrentepoch).

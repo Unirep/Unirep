@@ -1,5 +1,5 @@
 ---
-title: Circuits
+title: Circom Circuits
 ---
 
 A circuits enum is exported from the package.

@@ -10,7 +10,7 @@ Get the current chain ID.
 
 ## EpochKeySignals
 
-Signals inside a [epoch key proof](../../circuits-api/epoch-key-proof.md) and [epoch key lite proof](../../circuits-api/epoch-key-lite-proof.md).
+Signals inside a [epoch key proof](../../circuits-api/classes/src.EpochKeyProof.md) and [epoch key lite proof](../../circuits-api/classes/src.EpochKeyLiteProof.md).
 
 :::caution
 `stateTreeRoot` will be 0 in an epoch key lite proof.
@@ -31,7 +31,7 @@ struct EpochKeySignals {
 
 ## ReputationSignals
 
-Signals inside a [reputation proof](../../circuits-api/reputation-proof.md).
+Signals inside a [reputation proof](../../circuits-api/classes/src.ReputationProof.md).
 
 ```sol
 struct ReputationSignals {
@@ -55,7 +55,7 @@ struct ReputationSignals {
 
 ## decodeEpochKeyControl
 
-Decode an epoch key related control from [epoch key lite proof](../../circuits-api/circuits#epoch-key-lite-proof), [epoch key proof](../../circuits-api/circuits.md#epoch-key-proof), and [reputation proof](../../circuits-api/circuits.md#reputation-proof) into named variables.
+Decode an epoch key related control from [epoch key lite proof](../../circuits-api/classes/src.EpochKeyLiteProof.md), [epoch key proof](../../circuits-api/classes/src.EpochKeyProof.md), and [reputation proof](../../circuits-api/classes/src.ReputationProof.md) into named variables.
 
 ```sol
 function decodeEpochKeyControl(uint256 control)

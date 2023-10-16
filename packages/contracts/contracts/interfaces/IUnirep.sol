@@ -5,6 +5,8 @@ import {IncrementalBinaryTree, IncrementalTreeData} from '@zk-kit/incremental-me
 import {ReusableMerkleTree, ReusableTreeData} from '../libraries/ReusableMerkleTree.sol';
 import {LazyMerkleTree, LazyTreeData} from '../libraries/LazyMerkleTree.sol';
 
+/// @title IUnirep
+/// @dev https://developer.unirep.io/docs/contracts-api/iunirep-sol
 interface IUnirep {
     event AttesterSignedUp(
         uint160 indexed attesterId,

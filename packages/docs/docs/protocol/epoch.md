@@ -21,5 +21,4 @@ See also
 * [Trees](trees.md)
 * [Epoch Key](epoch-key.md)
 * [User State Transition](user-state-transition.md)
-* [Build Ordered Tree Proof](../circuits-api/circuits.md#build-ordered-tree)
 :::

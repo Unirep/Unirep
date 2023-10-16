@@ -27,6 +27,14 @@ generated
 
 .docusaurus
 .cache-loader
+packages/docs/**/classes
+packages/docs/**/interfaces
+packages/docs/**/enums
+packages/docs/**/modules
+packages/docs/**/namespaces
+_category_.yml
+packages/docs/**/index.md
+packages/docs/**/modules.md
 
 .DS_Store
 .node-version
