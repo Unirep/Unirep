@@ -1,5 +1,5 @@
 import { Circuit, Prover } from './type'
-import { SnarkProof } from '@unirep/utils'
+import { Groth16Proof } from 'snarkjs'
 import { BaseProof } from './BaseProof'
 import { buildSignupControl, decodeSignupControl } from './utils'
 
@@ -29,7 +29,7 @@ export class SignupProof extends BaseProof {
      */
     constructor(
         publicSignals: (bigint | string)[],
-        proof: SnarkProof,
+        proof: Groth16Proof,
         prover?: Prover
     ) {
         super(publicSignals, proof, prover)

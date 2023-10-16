@@ -1,5 +1,5 @@
 import { Circuit, Prover, EpochKeyControl } from './type'
-import { SnarkProof } from '@unirep/utils'
+import { Groth16Proof } from 'snarkjs'
 import { BaseProof } from './BaseProof'
 import { buildEpochKeyControl, decodeEpochKeyControl } from './utils'
 
@@ -32,7 +32,7 @@ export class EpochKeyProof extends BaseProof {
      */
     constructor(
         publicSignals: (bigint | string)[],
-        proof: SnarkProof,
+        proof: Groth16Proof,
         prover?: Prover
     ) {
         super(publicSignals, proof, prover)
