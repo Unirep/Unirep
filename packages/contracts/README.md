@@ -60,33 +60,7 @@ or yarn:
 yarn add @unirep/contracts
 ```
 
-## 👩🏻‍⚕️ Haven't deployed a contract yet?
-
-### Get circuit keys from one of the following methods
-
-**🍀 Solution 1. Download circuit keys from server**
-
-Get circuits files from [key server](https://developer.unirep.io/docs/testnet-deployment#keys).
-
-**🍀 Solution 2. Access the keys from node_modules**
-
-By default, The `zksnarkBuild` directory will be found in `node_modules/@unirep/circuits/circuits/zksnarkBuild/`
-
-### Compile contracts from the keys
-
-**Step 1. Set the `zksnarkBuild` path in [buildVerifier.ts](https://github.com/Unirep/Unirep/blob/main/packages/contracts/scripts/buildVerifiers.ts)**
-
-**Step 2. Run compile command**
-
-```bash
-yarn contracts compile
-```
-
-By default, The `artifacts` directory will be found in `./packages/contracts/build`
-
-## 🙆🏻‍♀️ UniRep contract has been compiled
-
-### Deploy UniRep contract
+## 👩🏻‍⚕️ Deploy UniRep contract
 
 Deploy Unirep smart contract with default [config](https://github.com/Unirep/Unirep/blob/main/packages/circuits/src/CircuitConfig.ts):
 
@@ -102,10 +76,9 @@ const deployer = new ethers.Wallet(privateKey, provider);
 const unirepContract: Unirep = await deployUnirep(deployer)
 ```
 
-### Get UniRep contract with address
+## 🙆🏻‍♀️ Get UniRep contract with address
 
 ```typescript
-import { ethers } from 'ethers'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 const address = '0x....'
