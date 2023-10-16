@@ -71,7 +71,7 @@ const provider = 'YOUR/ETH/PROVIDER'
 // 1. initialize a synchronizer
 const synchronizer = new Synchronizer({
     unirepAddress: address,
-    provider,
+    provider: provider,
 })
 // 2. start listening to unriep contract events
 await synchronizer.start()
@@ -103,13 +103,16 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 // random generate a user identity
 const identity = new Identity()
+const provider = 'YOUR/ETH/PROVIDER'
+const attesterId = 'ATTESTER/ADDRESS' // the msg.sender signs up through `attesterSignUp()`
 
 // 1. initialize a user state object
 const userState = new UserState({
     unirepAddress: address,
-    provider,
+    provider: provider,
     prover: defaultProver,
-    id: identity
+    id: identity,
+    attesterId: attesterId,
 })
 // or through a synchronicr
 // const userState = new UserState({synchronizer, id: identity})
@@ -119,6 +122,30 @@ await userState.start()
 await userState.waitForSync()
 // 4. stop the synchronizer deamon
 userState.stop()
+```
+
+### Schema 📁
+
+**Generate a database with the schema**
+```typescript
+import { schema } from '@unirep/core'
+import { SQLiteConnector } from 'anondb/node'
+import { IndexedDBConnector } from 'anondb/web'
+
+// in nodejs
+const db_mem = await SQLiteConnector.create(schema, ':memory:')
+const db_storage = await SQLiteConnector.create(schema, 'db.sqlite')
+// in browser
+const db_browser = await IndexedDBConnector.create(schema)
+```
+
+**Use the database in a synchronizer**
+```typescript
+const synchronizer = new Synchronizer({
+    unirepAddress: address,
+    provider: provider,
+    db: db_storage
+})
 ```
 
 **Example: use the user state to generate proofs**

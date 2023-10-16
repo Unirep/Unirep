@@ -61,42 +61,19 @@ yarn add @unirep/circuits
 
 ### Prover
 
-**Build a prover for UniRep protocol**
+**Use default nodejs prover**
 ```typescript
-import * as snarkjs from 'snarkjs'
-import { Circuit, Prover } from '@unirep/circuits'
-import { SnarkProof, SnarkPublicSignals } from '@unirep/utils'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+```
 
-const buildPath = 'PATH/TO/CIRCUIT/FOLDER/'
+**Use web prover**
+```typescript
+// default web prover from url: https://keys.unirep.io/${version}/.
+import prover from '@unirep/circuits/provers/web'
 
-const prover: Prover = {
-    genProofAndPublicSignals: async (
-        proofType: string | Circuit,
-        inputs: any
-    ): Promise<{
-        proof: any,
-        publicSignals: any
-    }> => {
-        const circuitWasmPath = buildPath + `${proofType}.wasm`
-        const zkeyPath = buildPath + `${proofType}.zkey`
-        const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-            inputs,
-            circuitWasmPath,
-            zkeyPath
-        )
-
-        return { proof, publicSignals }
-    },
-
-    verifyProof: async (
-        name: string | Circuit,
-        publicSignals: SnarkPublicSignals,
-        proof: SnarkProof
-    ): Promise<boolean> => {
-        const vkey = require(buildPath +  `${name}.vkey.json`)
-        return snarkjs.groth16.verify(vkey, publicSignals, proof)
-    },
-}
+// construct web prover from other url
+import { WebProver } from '@unirep/circuits/provers/web'
+const prover = new WebProver('https://YOUR/KEYS/URL')
 ```
 
 **Generate proof and verify it with the above prover**
@@ -123,7 +100,7 @@ const isValid = await prover.verifyProof(
 
 ### Circom
 
-Use the unirep circom circuits like so:
+Use the unirep [circom](https://docs.circom.io/) circuits like so:
 
 ```circom
 pragma circom 2.1.0;
@@ -143,7 +120,8 @@ template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     signal input chain_id;
 
     signal output epoch_key;
-    signal output state_tree_root;   
+    signal output state_tree_root;
+    signal output control;
 
     (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
         state_tree_indices, 

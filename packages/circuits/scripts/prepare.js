@@ -26,7 +26,7 @@ try {
     fs.unlinkSync(
         path.join(
             __dirname,
-            '../dist/zksnarkBuild/powersOfTau28_hez_final_17.ptau'
+            '../dist/zksnarkBuild/powersOfTau28_hez_final_18.ptau'
         )
     )
 } catch (_) {}
@@ -34,7 +34,12 @@ try {
 // remove test keys
 const zkPath = path.join(__dirname, '../dist/zksnarkBuild')
 fs.readdirSync(zkPath)
-    .filter((filename) => /^bigComparators/.test(filename))
+    .filter((filename) => {
+        if (/^lowerComparators/.test(filename)) return true
+        else if (/^incrementalMerkleTree/.test(filename)) return true
+        else if (/^[a-zA-Z]+_main/.test(filename)) return true
+        return false
+    })
     .map((file) => fs.rmSync(path.join(zkPath, file), { recursive: true }))
 
 copy(
