@@ -1,15 +1,52 @@
-import { SNARK_SCALAR_FIELD } from '@unirep/utils'
+import {
+    EPOCH_BITS,
+    NONCE_BITS,
+    ATTESTER_ID_BITS,
+    CHAIN_ID_BITS,
+    REVEAL_NONCE_BITS,
+    SNARK_SCALAR_FIELD,
+    REP_BITS,
+    ONE_BIT,
+} from '@unirep/utils'
 
 const defaultConfig = {
     STATE_TREE_DEPTH: 17,
     EPOCH_TREE_DEPTH: 17,
     HISTORY_TREE_DEPTH: 17,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH: 2,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH: 3,
     FIELD_COUNT: 6, // total number of fields
     SUM_FIELD_COUNT: 4, // number of fields combined using addition
     REPL_NONCE_BITS: 48,
 }
 
+/**
+ * Use the default circuit config like so:
+ * @example
+ * ```ts
+ * import { CircuitConfig } from '@unirep/circuits'
+ * 
+ * const { 
+ *  STATE_TREE_DEPTH,
+ *  EPOCH_TREE_DEPTH,
+ *  HISTORY_TREE_DEPTH,
+ *  NUM_EPOCH_KEY_NONCE_PER_EPOCH,
+ *  FIELD_COUNT,
+ *  SUM_FIELD_COUNT,
+ *  REPL_NONCE_BITS,
+ *  SNARK_SCALAR_FIELD,
+ *  EPOCH_BITS,
+ *  NONCE_BITS,
+ *  ATTESTER_ID_BITS,
+ *  CHAIN_ID_BITS,
+ *  REVEAL_NONCE_BITS,
+ *  REP_BITS,
+ *  ONE_BIT
+ * } = CircuitConfig.default
+```
+ * :::info
+ * See current deployment config: [testnet-deployment](https://developer.unirep.io/docs/testnet-deployment)
+ * :::
+ */
 export class CircuitConfig {
     STATE_TREE_DEPTH: number
     EPOCH_TREE_DEPTH: number
@@ -20,6 +57,15 @@ export class CircuitConfig {
     REPL_NONCE_BITS: number
 
     SNARK_SCALAR_FIELD: string
+
+    MAX_SAFE_BITS: bigint = BigInt(253)
+    EPOCH_BITS: bigint = EPOCH_BITS
+    NONCE_BITS: bigint = NONCE_BITS
+    ATTESTER_ID_BITS: bigint = ATTESTER_ID_BITS
+    CHAIN_ID_BITS: bigint = CHAIN_ID_BITS
+    REVEAL_NONCE_BITS: bigint = REVEAL_NONCE_BITS
+    REP_BITS: bigint = REP_BITS
+    ONE_BIT: bigint = ONE_BIT
 
     static get default() {
         return new CircuitConfig(defaultConfig)
@@ -39,17 +85,7 @@ export class CircuitConfig {
     }
 
     get REPL_FIELD_BITS() {
-        return 253 - this.REPL_NONCE_BITS
-    }
-
-    static get EPOCH_BITS() {
-        return BigInt(48)
-    }
-    static get NONCE_BITS() {
-        return BigInt(8)
-    }
-    static get ATTESTER_ID_BITS() {
-        return BigInt(160)
+        return Number(this.MAX_SAFE_BITS) - this.REPL_NONCE_BITS
     }
 
     constructor(

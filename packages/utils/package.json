@@ -1,6 +1,6 @@
 {
     "name": "@unirep/utils",
-    "version": "2.0.0-beta-3",
+    "version": "2.0.0-beta-5",
     "main": "build/index.js",
     "types": "build/index.d.ts",
     "repository": "https://github.com/unirep/unirep.git",
@@ -24,12 +24,12 @@
         "lint": "prettier --write ."
     },
     "dependencies": {
-        "@zk-kit/incremental-merkle-tree": "^0.4.3",
+        "@zk-kit/incremental-merkle-tree": "^1.1.0",
         "poseidon-lite": "^0.2.0",
         "randomf": "^0.0.3"
     },
     "devDependencies": {
-        "mocha": "^10.0.0",
-        "typescript": "^4.7.3"
+        "mocha": "^10.2.0",
+        "typescript": "^5.1.6"
     }
 }

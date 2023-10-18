@@ -20,7 +20,7 @@ describe('Incremental Merkle Tree', function () {
         }
 
         const treeProof = tree.createProof(index)
-        const { isValid, publicSignals, proof } = await genProofAndVerify(
+        const { isValid, publicSignals } = await genProofAndVerify(
             'incrementalMerkleTree' as any,
             {
                 leaf: leaves[index],
@@ -43,7 +43,7 @@ describe('Incremental Merkle Tree', function () {
         }
 
         const treeProof = tree.createProof(index)
-        const { isValid, publicSignals, proof } = await genProofAndVerify(
+        const { isValid, publicSignals } = await genProofAndVerify(
             'incrementalMerkleTree' as any,
             {
                 leaf: leaves[index] + 1,
@@ -61,7 +61,7 @@ describe('Incremental Merkle Tree', function () {
             path_index: Array(STATE_TREE_DEPTH).fill(0),
             path_elements: Array(STATE_TREE_DEPTH).fill(0),
         }
-        const { isValid, publicSignals, proof } = await genProofAndVerify(
+        const { isValid } = await genProofAndVerify(
             'incrementalMerkleTree' as any,
             circuitInputs
         )

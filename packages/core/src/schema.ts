@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid'
 const _schema = [
     {
         name: 'SynchronizerState',
+        indexes: [{ keys: ['latestCompleteBlock'] }],
         rows: [
             ['attesterId', 'String', { unique: true }],
             {
@@ -30,10 +31,7 @@ const _schema = [
     },
     {
         name: 'Attestation',
-        indexes: [
-            { keys: ['index'] },
-            { keys: ['index', 'epochKey', 'epoch'] },
-        ],
+        indexes: [{ keys: ['index'] }],
         rows: [
             ['epoch', 'Int'],
             ['epochKey', 'String'],
@@ -57,7 +55,7 @@ const _schema = [
     },
     {
         name: 'EpochTreeLeaf',
-        primaryKey: 'id',
+        indexes: [{ keys: ['index'] }],
         rows: [
             ['id', 'String'],
             ['epoch', 'Int'],
@@ -69,7 +67,9 @@ const _schema = [
     },
     {
         name: 'HistoryTreeLeaf',
+        indexes: [{ keys: ['index'] }],
         rows: [
+            ['id', 'String'],
             ['index', 'Int'],
             ['attesterId', 'String'],
             ['leaf', 'String', { unique: true }],
@@ -77,7 +77,7 @@ const _schema = [
     },
     {
         name: 'Epoch',
-        indexes: [{ keys: ['attesterId', 'number'] }],
+        indexes: [{ keys: ['number'] }],
         rows: [
             ['number', 'Int'],
             ['attesterId', 'String'],
@@ -86,6 +86,7 @@ const _schema = [
     },
     {
         name: 'Nullifier',
+        indexes: [{ keys: ['epoch'] }],
         rows: [
             ['epoch', 'Int'],
             ['attesterId', 'String'],
@@ -96,9 +97,12 @@ const _schema = [
     },
     {
         name: 'UserSignUp',
-        indexes: [{ keys: ['commitment', 'attesterId'] }],
+        indexes: [
+            { keys: ['commitment', 'attesterId'] },
+            { keys: ['commitment', 'attesterId', 'epoch'] },
+        ],
         rows: [
-            ['commitment', 'String', { index: true }],
+            ['commitment', 'String'],
             ['epoch', 'Int'],
             ['attesterId', 'String'],
             ['blockNumber', 'Int'],
@@ -106,7 +110,6 @@ const _schema = [
     },
     {
         name: 'Attester',
-        primaryKey: '_id',
         rows: [
             ['startTimestamp', 'Int'],
             ['epochLength', 'Int'],
@@ -115,7 +118,24 @@ const _schema = [
 ]
 
 /**
- * The schema of the database that is used in storing Unirep data
+ * UniRep needs to persist data in order to construct state and make proofs.
+ * To do this we use a generic database wrapper called [anondb](https://github.com/vimwitch/anondb).
+ * This wrapper has support for desktop environment databases like SQLite, as well as the IndexedDB browser database.
+ *
+ * `@unirep/core` ships a schema that should be used with the database.
+ * This schema can be extended by adding additional collections for application specific data storage.
+ * @see http://developer.unirep.io/docs/core-api/schema
+ * @example
+ * ```ts
+ * import { schema } from '@unirep/core'
+ * import { SQLiteConnector } from 'anondb/node'
+ * import { IndexedDBConnector } from 'anondb/web'
+ * // in nodejs
+ * const db_mem = await SQLiteConnector.create(schema, ':memory:')
+ * const db_storage = await SQLiteConnector.create(schema, 'db.sqlite')
+ * // in browser
+ * const db_browser = await IndexedDBConnector.create(schema)
+ * ```
  */
 export const schema = _schema.map((obj) => ({
     primaryKey: '_id',

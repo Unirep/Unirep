@@ -3,12 +3,11 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { genStateTreeLeaf } from '@unirep/utils'
-import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 import { bootstrapAttestations, bootstrapUsers } from './test'
 
 import { Synchronizer } from '../src'
-import { genUserState, compareDB, genUnirepState } from './utils'
+import { genUserState, compareDB, genUnirepState, EPOCH_LENGTH } from './utils'
 
 let synchronizer: Synchronizer
 
@@ -16,11 +15,14 @@ describe('Synchronizer process events', function () {
     this.timeout(0)
     let unirepContract
     let attester
+    let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         attester = accounts[1]
         unirepContract = await deployUnirep(accounts[0])
+        const network = await accounts[0].provider.getNetwork()
+        chainId = network.chainId
     })
 
     {
@@ -150,7 +152,8 @@ describe('Synchronizer process events', function () {
             id.secret,
             BigInt(attester.address),
             contractEpoch,
-            Array(synchronizer.settings.fieldCount).fill(0)
+            Array(synchronizer.settings.fieldCount).fill(0),
+            chainId
         )
         const storedLeaves = await synchronizer.db.findMany('StateTreeLeaf', {
             where: {
@@ -170,7 +173,7 @@ describe('Synchronizer process events', function () {
                 Number(epoch)
             )
         ).to.be.true
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should process attestations', async () => {
@@ -250,7 +253,7 @@ describe('Synchronizer process events', function () {
         expect(docs[0].attesterId).to.equal(attesterId.toString())
         const finalAttestCount = await synchronizer.db.count('Attestation', {})
         expect(finalAttestCount).to.equal(attestCount + 1)
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should process ust events', async () => {
@@ -346,6 +349,6 @@ describe('Synchronizer process events', function () {
                 expect(d).to.equal(0)
             })
         }
-        userState.sync.stop()
+        userState.stop()
     })
 })

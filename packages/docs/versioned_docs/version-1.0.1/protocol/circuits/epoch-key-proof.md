@@ -31,8 +31,8 @@ The epoch key proof in UniRep is used to prove that
 ## Private inputs
 
 * `nonce`: the nonce of epoch key. It should be in range `[0, numEpochKeyNoncePerEpoch)`
-* `identity_nullifier`: the identity that the semaphore protocol uses, and it is also used to generate an epoch key.
-* `identity_trapdoor`: the identity trapdoor key that the semaphore protocol uses. The hash output of `identity_nullifier`, and `identity_trapdoor` is the `identity_commitment` and it is used to generate a global state tree leaf by
+* `identity_nullifier`: the identity that the Semaphore protocol uses, and it is also used to generate an epoch key.
+* `identity_trapdoor`: the identity trapdoor key that the Semaphore protocol uses. The hash output of `identity_nullifier`, and `identity_trapdoor` is the `identity_commitment` and it is used to generate a global state tree leaf by
 
 ```typescript
 const GST_leaf = hash(identity_commitment, UST_root)

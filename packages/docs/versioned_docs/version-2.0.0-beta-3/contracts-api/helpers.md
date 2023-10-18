@@ -4,7 +4,7 @@ title: UniRep contract helpers
 
 ## getUnirepContract
 
-Connect to a Unirep contract with a given Unirep address.
+Connect to a UniRep contract with a given UniRep address.
 
 ```ts
 const getUnirepContract = (

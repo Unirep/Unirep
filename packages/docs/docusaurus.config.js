@@ -40,7 +40,7 @@ const config = {
                     // Remove this to remove the "edit this page" links.
                     editUrl:
                         'https://github.com/Unirep/Unirep/tree/main/packages/docs',
-                    lastVersion: '2.0.0-beta-3',
+                    lastVersion: '2.0.0-beta-5',
                     versions: {
                         current: {
                             label: 'next',
@@ -68,7 +68,7 @@ const config = {
         /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
         ({
             navbar: {
-                title: 'Universal Reputation',
+                title: 'UniRep',
                 logo: {
                     alt: 'UniRep logo',
                     src: 'img/unirep-icon.png',
@@ -80,20 +80,15 @@ const config = {
                         position: 'left',
                         label: 'Docs',
                     },
+                    {
+                        to: 'docs/faqs',
+                        label: 'FAQs',
+                        position: 'left',
+                    },
                     { to: '/blog', label: 'Blog', position: 'left' },
                     {
                         type: 'docsVersionDropdown',
                         dropdownActiveClassDisabled: true,
-                        position: 'right',
-                    },
-                    {
-                        href: 'https://airtable.com/shroZ9JGQLMznKU18',
-                        label: 'Feedback',
-                        position: 'right',
-                    },
-                    {
-                        href: 'https://explorer.unirep.io',
-                        label: 'Explorer',
                         position: 'right',
                     },
                     {
@@ -157,6 +152,18 @@ const config = {
                 darkTheme: darkCodeTheme,
                 additionalLanguages: ['typescript', 'solidity'],
             },
+            algolia: {
+                appId: 'HEISL6JPF1',
+                apiKey: '698ea9abfb5063c0b29978afaeda4288',
+                indexName: 'developer-unirep',
+                contextualSearch: true,
+            },
+            matomo: {
+                matomoUrl: 'https://psedev.matomo.cloud/',
+                siteId: '6',
+                phpLoader: 'matomo.php',
+                jsLoader: 'matomo.js',
+            },
         }),
     plugins: [
         function svgFix() {
@@ -181,6 +188,67 @@ const config = {
                 },
             }
         },
+        'docusaurus-plugin-matomo',
+        [
+            'docusaurus-plugin-typedoc',
+            {
+                id: 'utils',
+                entryPoints: ['../utils/src/index.ts'],
+                tsconfig: '../utils/tsconfig.json',
+                out: 'utils-api',
+                sidebar: {
+                    categoryLabel: 'Utils',
+                    position: 0,
+                },
+            },
+        ],
+        [
+            'docusaurus-plugin-typedoc',
+            {
+                id: 'circuits',
+                entryPoints: [
+                    '../circuits/src/index.ts',
+                    '../circuits/provers/web.ts',
+                    '../circuits/provers/defaultProver.ts',
+                ],
+                tsconfig: '../circuits/tsconfig.json',
+                out: 'circuits-api',
+                sidebar: {
+                    categoryLabel: 'Circuits',
+                    position: 0,
+                },
+            },
+        ],
+        [
+            'docusaurus-plugin-typedoc',
+            {
+                id: 'contracts',
+                entryPoints: [
+                    '../contracts/src/index.ts',
+                    '../contracts/typechain/index.ts',
+                    '../contracts/deploy/index.ts',
+                ],
+                tsconfig: '../contracts/tsconfig.json',
+                out: 'contracts-api',
+                sidebar: {
+                    categoryLabel: 'Conctracts',
+                    position: 0,
+                },
+            },
+        ],
+        [
+            'docusaurus-plugin-typedoc',
+            {
+                id: 'core',
+                entryPoints: ['../core/src/index.ts'],
+                tsconfig: '../core/tsconfig.json',
+                out: 'core-api',
+                sidebar: {
+                    categoryLabel: 'Core',
+                    position: 0,
+                },
+            },
+        ],
     ],
 }
 

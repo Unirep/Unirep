@@ -3,9 +3,10 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { IncrementalMerkleTree, genRandomSalt } from '@unirep/utils'
 
-import { EPOCH_LENGTH, genSignature } from '../src'
+import { genSignature } from '../src'
 import { deployUnirep } from '../deploy'
 import { CircuitConfig } from '@unirep/circuits'
+import { EPOCH_LENGTH } from './config'
 
 const { STATE_TREE_DEPTH } = CircuitConfig.default
 
@@ -13,10 +14,13 @@ describe('Attester Signup', function () {
     this.timeout(120000)
 
     let unirepContract
+    let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        const network = await accounts[0].provider.getNetwork()
+        chainId = network.chainId
     })
 
     {
@@ -104,6 +108,29 @@ describe('Attester Signup', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignature')
     })
 
+    it('should fail to signup attester via relayer if chain ID is wrong', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[10]
+        const relayer = accounts[0]
+        const chainId = 0
+
+        const signature = await genSignature(
+            unirepContract.address,
+            attester,
+            EPOCH_LENGTH,
+            chainId
+        )
+        await expect(
+            unirepContract
+                .connect(relayer)
+                .attesterSignUpViaRelayer(
+                    attester.address,
+                    EPOCH_LENGTH,
+                    signature
+                )
+        ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignature')
+    })
+
     it('should signup attester via relayer', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[10]
@@ -112,7 +139,8 @@ describe('Attester Signup', function () {
         const signature = await genSignature(
             unirepContract.address,
             attester,
-            EPOCH_LENGTH
+            EPOCH_LENGTH,
+            chainId
         )
         const tx = await unirepContract
             .connect(relayer)
@@ -157,7 +185,8 @@ describe('Attester Signup', function () {
         const signature = await genSignature(
             unirepContract.address,
             attester,
-            EPOCH_LENGTH
+            EPOCH_LENGTH,
+            chainId
         )
         await unirepContract
             .connect(relayer)

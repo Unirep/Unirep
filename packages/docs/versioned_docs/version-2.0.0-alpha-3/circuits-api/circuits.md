@@ -64,7 +64,7 @@ Outputs:
 - `control_output`
 
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## Epoch Key Lite Proof
@@ -95,7 +95,7 @@ Outputs:
 - `control_output`
 
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## Prove Reputation Proof
@@ -134,7 +134,7 @@ Outputs:
 - `state_tree_root`
 
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## User State Transition Proof

@@ -1,30 +1,83 @@
-import { CircuitConfig } from '@unirep/circuits'
+import { CircuitConfig, shiftBits } from '@unirep/circuits'
 
+/**
+ * Type describing each field in the user-defined schema. Schema field type must be a `uint`.
+ * :::caution
+ * Replacement field must be `uint205`
+ * :::
+ * @example
+ * ```ts
+ * const schema: SchemaField = {
+ *   name: 'posRep', // field name
+ *   type: 'uint64', // uint*
+ *   updatedBy: 'sum', // either update by adding or replacing user data
+ * }
+ * ```
+ */
 export type SchemaField = {
     name: string
     type: string
     updateBy: 'sum' | 'replace'
 }
 
+/**
+ * Type to be used with a deployed Unirep contract object
+ */
 export type Attestation = {
     fieldIndex: number
     change: bigint
 }
+
+/**
+ * The `DataSchema` class abstracts UniRep data into a JavaScript object.
+ * This class can be used to encode and decode attestation data,
+ * and build attestations that are ready to be submitted to the UniRep smart contract.
+ * @example
+ * ```ts
+ * import { Attestation, DataSchema, SchemaField } from '@unirep/core'
+ *
+ * const schema: SchemaField[] = [
+ *   {name: 'posRep', type: 'uint64', updateBy: 'sum',},
+ *   {name: 'negRep', type: 'uint64', updateBy: 'sum',},
+ *   {name: 'graffiti', type: 'uint205', updateBy: 'replace',},
+ *   {name: 'postCount', type: 'uint49', updateBy: 'sum',},
+ *   {name: 'commentCount', type: 'uint49', updateBy: 'sum',},
+ *   {name: 'voteCount', type: 'uint49', updateBy: 'sum',},
+ * ]
+ *
+ * const d = new DataSchema(schema)
+ * ```
+ */
 export class DataSchema {
     public schema: any[]
     public config: CircuitConfig
 
-    constructor(schema, config = CircuitConfig.default) {
+    constructor(schema: SchemaField[], config = CircuitConfig.default) {
         this.config = config
         this.schema = this.parseSchema(schema)
     }
 
+    /**
+     * Verify a user-defined data schema
+     * @param schema The array of `SchemaField`
+     * @returns
+     * ```ts
+     * {
+     *   ...schema: SchemaField, // exploded `SchemaField` fields
+     *   dataIndex: number,
+     *   offset: number, // bit offset in attester change
+     *   bits: number // bits allocated
+     * }
+     * ```
+     */
     parseSchema(schema: SchemaField[]): any[] {
         let sumOffset = 0
         let replOffset = 0
-        const maxSumOffset = 253 * this.config.SUM_FIELD_COUNT
+        const MAX_SAFE_BITS = Number(this.config.MAX_SAFE_BITS)
+        const maxSumOffset = MAX_SAFE_BITS * this.config.SUM_FIELD_COUNT
         const maxReplOffset =
-            253 * (this.config.FIELD_COUNT - this.config.SUM_FIELD_COUNT)
+            MAX_SAFE_BITS *
+            (this.config.FIELD_COUNT - this.config.SUM_FIELD_COUNT)
 
         return schema.map((field, idx) => {
             const { name, type, updateBy, ...extraFields } = field
@@ -49,29 +102,29 @@ export class DataSchema {
             }
 
             const bits = +match[1]
-            if (bits < 1 || bits > 253)
+            if (bits < 1 || bits > MAX_SAFE_BITS)
                 throw new Error(`Invalid uint size for field ${name}: ${bits}`)
             if (updateBy === 'sum') {
                 if (
-                    Math.floor(sumOffset / 253) !==
-                    Math.floor((sumOffset + bits - 1) / 253)
+                    Math.floor(sumOffset / MAX_SAFE_BITS) !==
+                    Math.floor((sumOffset + bits - 1) / MAX_SAFE_BITS)
                 ) {
-                    sumOffset += 253 - (sumOffset % 253)
+                    sumOffset += MAX_SAFE_BITS - (sumOffset % MAX_SAFE_BITS)
                 }
                 if (sumOffset + bits > maxSumOffset) {
                     throw new Error(
                         `Invalid schema, field "${name}" exceeds available storage`
                     )
                 }
-                const dataIndex = Math.floor(sumOffset / 253)
-                const offset = sumOffset % 253
+                const dataIndex = Math.floor(sumOffset / MAX_SAFE_BITS)
+                const offset = sumOffset % MAX_SAFE_BITS
                 sumOffset += bits
                 return { ...field, dataIndex, offset, bits }
             } else if (updateBy === 'replace') {
-                if (bits !== 253 - this.config.REPL_NONCE_BITS)
+                if (bits !== MAX_SAFE_BITS - this.config.REPL_NONCE_BITS)
                     throw new Error(
                         `Field must be ${
-                            253 - this.config.REPL_NONCE_BITS
+                            MAX_SAFE_BITS - this.config.REPL_NONCE_BITS
                         } bits`
                     )
                 if (replOffset + bits > maxReplOffset) {
@@ -81,8 +134,9 @@ export class DataSchema {
                 }
 
                 const dataIndex =
-                    this.config.SUM_FIELD_COUNT + Math.floor(replOffset / 253)
-                const offset = replOffset % 253
+                    this.config.SUM_FIELD_COUNT +
+                    Math.floor(replOffset / MAX_SAFE_BITS)
+                const offset = replOffset % MAX_SAFE_BITS
                 replOffset += bits
                 return { ...field, dataIndex, offset, bits }
             }
@@ -92,6 +146,25 @@ export class DataSchema {
         })
     }
 
+    /**
+     * Build an `Attestation` object to be used for a UniRep contract
+     * @param change The data change. If it is `sum` field, the data will be changed by addition. If it is `replacement` field, the data will be changed by replacement.
+     * @returns The attestation object will be submitted to the Unirep contract.
+     * @example
+     * **Sum field**
+     * ```ts
+     * // 10 will be added to the 'posRep' field in the user data
+     * const sumChange = { name: 'posRep', val: BigInt(10) }
+     * const sumAttestation: Attestation = d.buildAttestation(sumChange)
+     * ```
+     *
+     * **Replacement field**
+     * ```ts
+     * // 20 will replace the current value in the 'graffiti' field in user data
+     * const replacementChange = { name: 'graffiti', val: BigInt(20) }
+     * const replacementAttestation: Attestation = d.buildAttestation(replacementChange)
+     * ```
+     */
     buildAttestation(change: { name: string; val: bigint }): Attestation {
         const field: any = this.schema.find((f) => f.name === change.name)
 
@@ -115,6 +188,24 @@ export class DataSchema {
         return attestation
     }
 
+    /**
+     * Build multiple `Attestation` objects to be used for a UniRep contract
+     * @param changes The array of data change.
+     * @returns The array of attestations will be submitted to the Unirep contract.
+     * @example
+     * ```ts
+     * // Multiple attestations can be built using `buildAttestations()`
+     * const changes = [
+     *   { name: 'posRep', val: BigInt(10) },
+     *   { name: 'negRep', val: BigInt(10) },
+     *   { name: 'negRep', val: BigInt(20) },
+     *   { name: 'graffiti', val: BigInt(30) },
+     * ]
+     *
+     * //Returns two `Attestation` objects: 'posRep' and 'negRep' attestations are combined into one attestation
+     * const attestations: Attestation[] = d.buildAttestations(changes)
+     * ```
+     */
     buildAttestations(changes: { name: string; val: bigint }[]): Attestation[] {
         const attestations: Attestation[] = Array(this.schema.length).fill(null)
         for (const change of changes) {
@@ -154,15 +245,45 @@ export class DataSchema {
         return attestations.filter((attestation) => attestation !== null)
     }
 
+    /**
+     * Parse encoded schema, producing a dictionary of user-defined field names and attestation values
+     * @param data The raw data appended to the Unirep contract.
+     * @returns The names of the data and its values.
+     * @example
+     * ```ts
+     * // JS literal representing emitted data from a UniRep contract
+     * const data = [
+     *   553402322211286548490n,
+     *   0n,
+     *   0n,
+     *   0n,
+     *   205688069665150755269371147819668813122841983204197482918576158n,
+     *   0n
+     * ]
+     *
+     * const parsedData = d.parseData(data)
+     * // Result:
+     * // parsedData = {
+     * //   posRep: 10n,
+     * //   negRep: 30n,
+     * //   graffiti: 30n,
+     * //   postCount: 0n,
+     * //   commentCount: 0n,
+     * //   voteCount: 0n
+     * // }
+     * ```
+     */
     parseData(data: bigint[]): any {
         const parsed = {}
 
         for (const field of this.schema) {
             const { name, /* type, updateBy, */ dataIndex, bits, offset } =
                 field
-            parsed[name] =
-                (data[dataIndex] >> BigInt(offset)) &
-                ((BigInt(1) << BigInt(bits)) - BigInt(1))
+            parsed[name] = shiftBits(
+                data[dataIndex],
+                BigInt(offset),
+                BigInt(bits)
+            )
         }
 
         return parsed

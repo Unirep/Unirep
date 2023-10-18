@@ -186,17 +186,17 @@
                 {
                     "type": "link",
                     "label": "genEpochKey()",
-                    "href": "/docs/utils-api/hashes#genepochkey"
+                    "href": "hashes#genepochkey"
                 },
                 {
                     "type": "link",
                     "label": "genEpochNullifier()",
-                    "href": "/docs/utils-api/hashes#genepochnullifier"
+                    "href": "hashes#genepochnullifier"
                 },
                 {
                     "type": "link",
                     "label": "genStateTreeLeaf()",
-                    "href": "/docs/utils-api/hashes#genstatetreeleaf"
+                    "href": "hashes#genstatetreeleaf"
                 },
                 {
                     "type": "doc",

@@ -16,6 +16,8 @@ struct ReusableTreeData {
     mapping(uint256 => uint256) elements;
 }
 
+// TODO: update doc
+/// @title ReusableMerkleTree
 library ReusableMerkleTree {
     uint8 internal constant MAX_DEPTH = 32;
     uint256 internal constant SNARK_SCALAR_FIELD =

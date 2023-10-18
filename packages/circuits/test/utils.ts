@@ -2,16 +2,16 @@ import { Identity } from '@semaphore-protocol/identity'
 import * as utils from '@unirep/utils'
 import { poseidon1 } from 'poseidon-lite'
 
-import { Circuit, SNARK_SCALAR_FIELD, CircuitConfig } from '../src'
+import { Circuit, SNARK_SCALAR_FIELD } from '../src'
+import CircuitConfig from '../src/CircuitConfig'
 import { defaultProver } from '../provers/defaultProver'
 const {
-    EPOCH_TREE_DEPTH,
     STATE_TREE_DEPTH,
-    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     SUM_FIELD_COUNT,
     FIELD_COUNT,
     REPL_NONCE_BITS,
-} = CircuitConfig.default
+    MAX_SAFE_BITS,
+} = CircuitConfig
 
 export const randomData = () => [
     ...Array(SUM_FIELD_COUNT)
@@ -22,7 +22,7 @@ export const randomData = () => [
         .map(
             () =>
                 poseidon1([Math.floor(Math.random() * 199191919)]) %
-                BigInt(2) ** BigInt(253)
+                BigInt(2) ** MAX_SAFE_BITS
         ),
 ]
 
@@ -47,12 +47,13 @@ const genEpochKeyCircuitInput = (config: {
     id: Identity
     tree: utils.IncrementalMerkleTree
     leafIndex: number
-    epoch: number
-    nonce: number
+    epoch: number | bigint
+    nonce: number | bigint
     attesterId: number | bigint
     data?: bigint[]
     sigData?: bigint
-    revealNonce?: number
+    revealNonce?: number | bigint
+    chainId?: number | bigint
 }) => {
     const {
         id,
@@ -64,6 +65,7 @@ const genEpochKeyCircuitInput = (config: {
         data: _data,
         sigData,
         revealNonce,
+        chainId,
     } = Object.assign(
         {
             data: [],
@@ -74,7 +76,7 @@ const genEpochKeyCircuitInput = (config: {
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
         state_tree_elements: proof.siblings,
-        state_tree_indexes: proof.pathIndices,
+        state_tree_indices: proof.pathIndices,
         identity_secret: id.secret,
         data,
         sig_data: sigData ?? BigInt(0),
@@ -82,6 +84,7 @@ const genEpochKeyCircuitInput = (config: {
         epoch,
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
+        chain_id: chainId ?? 0,
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -100,6 +103,7 @@ const genReputationCircuitInput = (config: {
     proveGraffiti?: boolean | number
     graffiti?: any
     revealNonce?: number
+    chainId: number
 }) => {
     const {
         id,
@@ -115,6 +119,7 @@ const genReputationCircuitInput = (config: {
         proveMaxRep,
         proveZeroRep,
         revealNonce,
+        chainId,
     } = Object.assign(
         {
             minRep: 0,
@@ -135,14 +140,15 @@ const genReputationCircuitInput = (config: {
         id.secret,
         BigInt(attesterId),
         epoch,
-        startBalance as any
+        startBalance as any,
+        chainId ?? 0
     )
     stateTree.insert(hashedLeaf)
     const stateTreeProof = stateTree.createProof(0) // if there is only one GST leaf, the index is 0
 
     const circuitInputs = {
         identity_secret: id.secret,
-        state_tree_indexes: stateTreeProof.pathIndices,
+        state_tree_indices: stateTreeProof.pathIndices,
         state_tree_elements: stateTreeProof.siblings,
         data: startBalance,
         graffiti: graffiti,
@@ -157,6 +163,7 @@ const genReputationCircuitInput = (config: {
         prove_zero_rep: proveZeroRep ?? 0,
         reveal_nonce: revealNonce ?? 0,
         sig_data: 0,
+        chain_id: chainId,
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -183,13 +190,14 @@ const genSignupCircuitInput = (config: {
     id: Identity
     epoch: number | bigint
     attesterId: number | bigint
+    chainId: number | bigint
 }) => {
-    const { id, epoch, attesterId } = Object.assign(config)
+    const { id, epoch, attesterId, chainId } = Object.assign(config)
     const circuitInputs = {
-        identity_nullifier: id.nullifier,
-        identity_trapdoor: id.trapdoor,
+        identity_secret: id.secret,
         epoch,
         attester_id: attesterId,
+        chain_id: chainId,
     }
     return utils.stringifyBigInts(circuitInputs)
 }
@@ -198,13 +206,14 @@ const genPreventDoubleActionCircuitInput = (config: {
     id: Identity
     tree: utils.IncrementalMerkleTree
     leafIndex: number
-    epoch: number
-    nonce: number
+    epoch: number | bigint
+    nonce: number | bigint
     attesterId: number | bigint
     data?: bigint[]
     sigData?: bigint
-    revealNonce?: number
-    externalNullifier: bigint
+    revealNonce?: number | bigint
+    scope: bigint
+    chainId: number | bigint
 }) => {
     const {
         id,
@@ -216,7 +225,8 @@ const genPreventDoubleActionCircuitInput = (config: {
         data: _data,
         sigData,
         revealNonce,
-        externalNullifier,
+        scope,
+        chainId,
     } = Object.assign(
         {
             data: [],
@@ -227,16 +237,16 @@ const genPreventDoubleActionCircuitInput = (config: {
     const proof = tree.createProof(leafIndex)
     const circuitInputs = {
         state_tree_elements: proof.siblings,
-        state_tree_indexes: proof.pathIndices,
+        state_tree_indices: proof.pathIndices,
         data,
         sig_data: sigData ?? BigInt(0),
         nonce,
         epoch,
         attester_id: attesterId,
         reveal_nonce: revealNonce ?? 0,
-        identity_nullifier: id.nullifier,
-        external_nullifier: externalNullifier,
-        identity_trapdoor: id.trapdoor,
+        identity_secret: id.secret,
+        scope: scope,
+        chain_id: chainId ?? 0,
     }
 
     return utils.stringifyBigInts(circuitInputs)

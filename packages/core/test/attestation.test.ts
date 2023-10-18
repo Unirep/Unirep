@@ -4,9 +4,7 @@ import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUserState } from './utils'
-
-const EPOCH_LENGTH = 1000
+import { EPOCH_LENGTH, genUserState } from './utils'
 
 describe('Attester signs up and gives attestation', function () {
     this.timeout(30 * 60 * 1000)
@@ -108,7 +106,7 @@ describe('Attester signs up and gives attestation', function () {
                 expect(d).to.equal(0)
             })
         }
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should skip multiple epochs', async () => {
@@ -132,6 +130,6 @@ describe('Attester signs up and gives attestation', function () {
             .attest('0x02', epoch, 1, 1)
             .then((t) => t.wait())
         await userState.waitForSync()
-        userState.sync.stop()
+        userState.stop()
     })
 })

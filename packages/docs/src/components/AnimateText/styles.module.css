@@ -1,0 +1,23 @@
+#root {
+    font-weight: 600;
+    font-size: 2em;
+    font-family: Sans-Serif;
+}
+
+.texts {
+    opacity: 1;
+    color: darkgreen;
+    & > span {
+        opacity: 0.2;
+        color: palevioletred;
+    }
+}
+
+.fade-in {
+    transition: opacity 1.5s ease;
+}
+
+.fade-out {
+    opacity: 0;
+    transition: opacity 1.5s ease;
+}

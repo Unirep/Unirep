@@ -1,13 +1,13 @@
-# Unirep procotol package
+# Unirep protocol package
 
-Client library for protocol related functions which are used in unirep protocol.
+Client library for protocol related functions which are used in UniRep protocol.
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">
-        <img src="https://img.shields.io/badge/project-unirep-blue.svg?style=flat-square">
+        <img src="https://img.shields.io/badge/project-unirep-blue.svg?style=flat-square" />
     </a>
     <a href="https://github.com/unirep/unirep/blob/master/LICENSE">
-        <img alt="Github license" src="https://img.shields.io/github/license/unirep/unirep.svg?style=flat-square">
+        <img alt="Github license" src="https://img.shields.io/github/license/unirep/unirep.svg?style=flat-square" />
     </a>
     <a href="https://www.npmjs.com/package/@unirep/core">
         <img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/core?style=flat-square" />
@@ -64,7 +64,6 @@ yarn add @unirep/core
 **Construct a synchronizer**
 ```typescript
 import { Synchronizer } from '@unirep/core'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 const address = '0x....'
 const provider = 'YOUR/ETH/PROVIDER'
@@ -72,13 +71,14 @@ const provider = 'YOUR/ETH/PROVIDER'
 // 1. initialize a synchronizer
 const synchronizer = new Synchronizer({
     unirepAddress: address,
-    provider,
-    prover: defaultProver,
+    provider: provider,
 })
 // 2. start listening to unriep contract events
 await synchronizer.start()
 // 3. wait until the latest block is processed
 await synchronizer.waitForSync()
+// 4. stop the synchronizer deamon
+synchronizer.stop()
 ```
 
 **Example: use the synchronizer to generate unirep state**
@@ -103,19 +103,49 @@ import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
 // random generate a user identity
 const identity = new Identity()
+const provider = 'YOUR/ETH/PROVIDER'
+const attesterId = 'ATTESTER/ADDRESS' // the msg.sender signs up through `attesterSignUp()`
 
 // 1. initialize a user state object
 const userState = new UserState({
     unirepAddress: address,
-    provider,
+    provider: provider,
     prover: defaultProver,
-}, identity)
+    id: identity,
+    attesterId: attesterId,
+})
 // or through a synchronicr
-// const userState = new UserState(synchronizer, identity)
+// const userState = new UserState({synchronizer, id: identity})
 // 2. start listening to unriep contract events
 await userState.start()
 // 3. wait until the latest block is processed
 await userState.waitForSync()
+// 4. stop the synchronizer deamon
+userState.stop()
+```
+
+### Schema 📁
+
+**Generate a database with the schema**
+```typescript
+import { schema } from '@unirep/core'
+import { SQLiteConnector } from 'anondb/node'
+import { IndexedDBConnector } from 'anondb/web'
+
+// in nodejs
+const db_mem = await SQLiteConnector.create(schema, ':memory:')
+const db_storage = await SQLiteConnector.create(schema, 'db.sqlite')
+// in browser
+const db_browser = await IndexedDBConnector.create(schema)
+```
+
+**Use the database in a synchronizer**
+```typescript
+const synchronizer = new Synchronizer({
+    unirepAddress: address,
+    provider: provider,
+    db: db_storage
+})
 ```
 
 **Example: use the user state to generate proofs**
@@ -131,11 +161,11 @@ await tx.wait()
 ```
 
 ## 🙌🏻 Join our community
-- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord"></a>
-- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>
-- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram"></a>
+- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord" /></a>
+- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter" /></a>
+- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram" /></a>
 
-## <img height="24" src="https://ethereum.org/static/a183661dd70e0e5c70689a0ec95ef0ba/13c43/eth-diamond-purple.png"> Privacy & Scaling Explorations
+## <img height="24" src="https://pse.dev/_next/static/media/header-logo.16312102.svg" /> Privacy & Scaling Explorations
 
-This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) in Ethereum Foundation.
-See more projects on: https://appliedzkp.org/.
+This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) and the Ethereum Foundation.
+See more projects on: https://pse.dev/.

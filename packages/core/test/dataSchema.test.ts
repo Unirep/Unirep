@@ -1,7 +1,9 @@
 // @ts-ignore
 import { expect } from 'chai'
-import { Attestation, DataSchema, SchemaField } from '../src/DataSchema'
+import { DataSchema, SchemaField } from '../src/DataSchema'
 import { poseidon1 } from 'poseidon-lite'
+import { CircuitConfig } from '@unirep/circuits'
+const { REP_BITS, REPL_FIELD_BITS } = CircuitConfig.default
 
 const smallRandom = (x: number) => Math.floor(Math.random() * x)
 const random = () => poseidon1([smallRandom(10000000)])
@@ -63,7 +65,7 @@ describe('Check schema parsing', function () {
                 invalidKey: 'invalidValue',
             },
         ]
-        expect(() => new DataSchema(invalidSchema)).to.throw(
+        expect(() => new DataSchema(invalidSchema as SchemaField[])).to.throw(
             'Invalid fields included for field averageVote: [invalidKey]'
         )
     })
@@ -87,7 +89,7 @@ describe('Check schema parsing', function () {
                 invalidKey: 'invalidValue',
             },
         ]
-        expect(() => new DataSchema(invalidSchema)).to.throw(
+        expect(() => new DataSchema(invalidSchema as SchemaField[])).to.throw(
             'Schema includes a duplicate entry: "posRep"'
         )
     })
@@ -105,7 +107,7 @@ describe('Check schema parsing', function () {
                 updateBy: 'sum',
             },
         ]
-        expect(() => new DataSchema(invalidSchema)).to.throw(
+        expect(() => new DataSchema(invalidSchema as SchemaField[])).to.throw(
             'Invalid type for field negRep: "uint8x"'
         )
     })
@@ -149,7 +151,9 @@ describe('Check schema parsing', function () {
                     updateBy: 'sum',
                 },
             ]
-            expect(() => new DataSchema(invalidSchema)).to.throw(
+            expect(
+                () => new DataSchema(invalidSchema as SchemaField[])
+            ).to.throw(
                 'Invalid schema, field "posRep4" exceeds available storage'
             )
         }
@@ -171,7 +175,9 @@ describe('Check schema parsing', function () {
                     updateBy: 'replace',
                 },
             ]
-            expect(() => new DataSchema(invalidSchema)).to.throw(
+            expect(
+                () => new DataSchema(invalidSchema as SchemaField[])
+            ).to.throw(
                 'Invalid schema, field "graffiti2" exceeds available storage'
             )
         }
@@ -190,7 +196,7 @@ describe('Check schema parsing', function () {
                 updateBy: 'replace',
             },
         ]
-        expect(() => new DataSchema(invalidSchema)).to.throw(
+        expect(() => new DataSchema(invalidSchema as SchemaField[])).to.throw(
             'Invalid updateBy strategy for field posRep: "invalidUpdateStrategy"'
         )
     })
@@ -209,9 +215,9 @@ describe('Check schema parsing', function () {
                     updateBy: 'replace',
                 },
             ]
-            expect(() => new DataSchema(invalidSchema)).to.throw(
-                'Invalid uint size for field posRep: 254'
-            )
+            expect(
+                () => new DataSchema(invalidSchema as SchemaField[])
+            ).to.throw('Invalid uint size for field posRep: 254')
         }
         {
             const invalidSchema = [
@@ -226,9 +232,9 @@ describe('Check schema parsing', function () {
                     updateBy: 'replace',
                 },
             ]
-            expect(() => new DataSchema(invalidSchema)).to.throw(
-                'Field must be 205 bits'
-            )
+            expect(
+                () => new DataSchema(invalidSchema as SchemaField[])
+            ).to.throw('Field must be 205 bits')
         }
     })
 })
@@ -299,7 +305,7 @@ describe('Build an attestation', function () {
             expect(() =>
                 d.buildAttestation({
                     name: 'posRep',
-                    val: BigInt(1) << BigInt(64),
+                    val: BigInt(1) << REP_BITS,
                 })
             ).to.throw('posRep exceeds allocated space')
         }
@@ -308,7 +314,7 @@ describe('Build an attestation', function () {
             expect(() =>
                 d.buildAttestation({
                     name: 'graffiti',
-                    val: BigInt(1) << BigInt(206),
+                    val: BigInt(1) << BigInt(REPL_FIELD_BITS),
                 })
             ).to.throw('graffiti exceeds allocated space')
         }

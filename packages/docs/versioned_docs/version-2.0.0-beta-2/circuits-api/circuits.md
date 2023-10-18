@@ -63,7 +63,7 @@ Outputs:
 - `control`
 
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## Epoch Key Lite Proof
@@ -97,7 +97,7 @@ Outputs:
 - `control`
 
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## Prove Reputation Proof
@@ -144,7 +144,7 @@ Outputs:
 - `control[2]`
 
 :::info
-Control fields are use to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
+Control fields are used to encode many small values into a single field element. This reduces the number of public signals needed to operate a circuit.
 :::
 
 ## User State Transition Proof
@@ -153,7 +153,7 @@ The user state transition proof allows a user to prove how much reputation they 
 
 Once it has proved inclusion it sums the reputation values stored in the leaves. Then it takes the replacement values with the highest timestamps and outputs a new state tree leaf for the next epoch.
 
-TODO: add a graphic for this
+<!-- TODO: add a graphic for this -->
 
 Inputs:
 - `identity_secret`

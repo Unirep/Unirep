@@ -6,20 +6,19 @@ import {
     IncrementalMerkleTree,
     stringifyBigInts,
     genEpochKey,
-    genRandomSalt,
     genEpochTreeLeaf,
+    genStateTreeLeaf,
 } from '@unirep/utils'
 import { poseidon2 } from 'poseidon-lite'
 import {
     Circuit,
     UserStateTransitionProof,
-    SNARK_SCALAR_FIELD,
     SignupProof,
     CircuitConfig,
 } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH } from '../src'
+import { EPOCH_LENGTH } from './config'
 import { deployUnirep } from '../deploy'
 const {
     EPOCH_TREE_DEPTH,
@@ -27,18 +26,36 @@ const {
     HISTORY_TREE_DEPTH,
     NUM_EPOCH_KEY_NONCE_PER_EPOCH,
     FIELD_COUNT,
-    SUM_FIELD_COUNT,
 } = CircuitConfig.default
+
+const id = new Identity()
+let circuitInputs = {
+    from_epoch: 0,
+    to_epoch: 1,
+    identity_secret: id.secret,
+    state_tree_indices: [0],
+    state_tree_elements: [0],
+    history_tree_indices: [0],
+    history_tree_elements: [0],
+    attester_id: 0,
+    data: [0],
+    new_data: [[0]],
+    epoch_tree_elements: [[0]],
+    epoch_tree_indices: [[0]],
+    epoch_tree_root: 0,
+    chain_id: 0,
+}
 
 const signupUser = async (id, unirepContract, attesterId, account) => {
     const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
+    const chainId = await unirepContract.chainid()
     const r = await defaultProver.genProofAndPublicSignals(
         Circuit.signup,
         stringifyBigInts({
             epoch: epoch.toString(),
-            identity_nullifier: id.nullifier,
-            identity_trapdoor: id.trapdoor,
+            identity_secret: id.secret,
             attester_id: attesterId,
+            chain_id: chainId,
         })
     )
     const { publicSignals, proof } = new SignupProof(
@@ -60,43 +77,31 @@ describe('User State Transition', function () {
     this.timeout(500000)
 
     let unirepContract
+    let chainId
+    let attester
+    const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+    const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
+    const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
-    })
-
-    {
-        let snapshot
-        beforeEach(async () => {
-            snapshot = await ethers.provider.send('evm_snapshot', [])
-            const accounts = await ethers.getSigners()
-            const attester = accounts[1]
-            await unirepContract
-                .connect(attester)
-                .attesterSignUp(EPOCH_LENGTH)
-                .then((t) => t.wait())
-        })
-
-        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
-    }
-
-    it('should fail to transition with invalid proof', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new Identity()
+        chainId = await unirepContract.chainid()
+        // generate circuit inputs
+        attester = accounts[1]
+        await unirepContract
+            .connect(attester)
+            .attesterSignUp(EPOCH_LENGTH)
+            .then((t) => t.wait())
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
             attester.address,
             attester
         )
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
         epochTree.insert(0)
         stateTree.insert(leaf)
-        historyTree.insert(poseidon2([historyTree.root, epochTree.root]))
+        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
             .map((_, i) =>
@@ -104,32 +109,45 @@ describe('User State Transition', function () {
                     id.secret,
                     BigInt(attester.address),
                     0, // from epoch
-                    i
+                    i,
+                    chainId
                 )
             )
         const stateTreeProof = stateTree.createProof(index)
         const historyTreeProof = historyTree.createProof(0)
+        circuitInputs = {
+            ...circuitInputs,
+            state_tree_indices: stateTreeProof.pathIndices,
+            state_tree_elements: stateTreeProof.siblings,
+            history_tree_indices: historyTreeProof.pathIndices,
+            history_tree_elements: historyTreeProof.siblings,
+            attester_id: attester.address,
+            data: Array(FIELD_COUNT).fill(0),
+            new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
+            epoch_tree_elements: epochKeys.map(
+                () => epochTree.createProof(0).siblings
+            ),
+            epoch_tree_indices: epochKeys.map(
+                () => epochTree.createProof(0).pathIndices
+            ),
+            epoch_tree_root: epochTree.root,
+            chain_id: chainId,
+        }
+    })
+
+    {
+        let snapshot
+        beforeEach(async () => {
+            snapshot = await ethers.provider.send('evm_snapshot', [])
+        })
+
+        afterEach(() => ethers.provider.send('evm_revert', [snapshot]))
+    }
+
+    it('should fail to transition with invalid proof', async () => {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
-            stringifyBigInts({
-                from_epoch: 0,
-                to_epoch: 1,
-                identity_secret: id.secret,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
-                history_tree_indices: historyTreeProof.pathIndices,
-                history_tree_elements: historyTreeProof.siblings,
-                attester_id: attester.address,
-                data: Array(FIELD_COUNT).fill(0),
-                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-                epoch_tree_elements: epochKeys.map(
-                    () => epochTree.createProof(0).siblings
-                ),
-                epoch_tree_indices: epochKeys.map(
-                    () => epochTree.createProof(0).pathIndices
-                ),
-                epoch_tree_root: epochTree.root,
-            })
+            stringifyBigInts(circuitInputs)
         )
         const p = new UserStateTransitionProof(
             r.publicSignals,
@@ -140,14 +158,14 @@ describe('User State Transition', function () {
         const { publicSignals, proof } = p
 
         const _proof = [...proof]
-        _proof[0] = BigInt(proof[0].toString()) + BigInt(1)
+        _proof[0] = (BigInt(proof[0]) + BigInt(1)).toString()
         await expect(
             unirepContract
                 .connect(attester)
                 .userStateTransition(publicSignals, _proof)
         ).to.be.reverted
         const _publicSignals = [...publicSignals]
-        _publicSignals[0] = BigInt(publicSignals[0].toString()) + BigInt(1)
+        _publicSignals[0] = (BigInt(publicSignals[0]) + BigInt(1)).toString()
         await expect(
             unirepContract
                 .connect(attester)
@@ -157,46 +175,11 @@ describe('User State Transition', function () {
 
     it('should fail to transition with invalid attester', async () => {
         const address = BigInt(12345) // not signed up attester
-        const id = new Identity()
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(
-                    id.secret,
-                    address,
-                    0, // from epoch
-                    i
-                )
-            )
-        const index = 0
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        stateTree.insert(genRandomSalt())
-        epochTree.insert(0)
-        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const stateTreeProof = stateTree.createProof(index)
-        const historyTreeProof = historyTree.createProof(0)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts({
-                from_epoch: 0,
-                to_epoch: 1,
-                identity_secret: id.secret,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
-                history_tree_indices: historyTreeProof.pathIndices,
-                history_tree_elements: historyTreeProof.siblings,
+                ...circuitInputs,
                 attester_id: address,
-                data: Array(FIELD_COUNT).fill(0),
-                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-                epoch_tree_elements: epochKeys.map(
-                    () => epochTree.createProof(0).siblings
-                ),
-                epoch_tree_indices: epochKeys.map(
-                    () => epochTree.createProof(0).pathIndices
-                ),
-                epoch_tree_root: epochTree.root,
             })
         )
         const p = new UserStateTransitionProof(
@@ -212,56 +195,16 @@ describe('User State Transition', function () {
     })
 
     it('should fail to transition from wrong history tree', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new Identity()
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const { leaf } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
-        stateTree.insert(0) // wrong leaf
-        stateTree.insert(leaf)
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        epochTree.insert(0)
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(
-            poseidon2([stateTree.root, epochTree.root + BigInt(1)])
-        )
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(
-                    id.secret,
-                    BigInt(attester.address),
-                    0, // from epoch
-                    i
-                )
-            )
-        const stateTreeProof = stateTree.createProof(1)
-        const historyTreeProof = historyTree.createProof(0)
+        const wrongStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        wrongStateTree.insert(356)
+        wrongStateTree.insert(234)
+        const wrongStateTreeProof = wrongStateTree.createProof(1)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts({
-                from_epoch: 0,
-                to_epoch: 1,
-                identity_secret: id.secret,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
-                history_tree_indices: historyTreeProof.pathIndices,
-                history_tree_elements: historyTreeProof.siblings,
-                attester_id: attester.address,
-                data: Array(FIELD_COUNT).fill(0),
-                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-                epoch_tree_elements: epochKeys.map(
-                    () => epochTree.createProof(0).siblings
-                ),
-                epoch_tree_indices: epochKeys.map(
-                    () => epochTree.createProof(0).pathIndices
-                ),
-                epoch_tree_root: epochTree.root,
+                ...circuitInputs,
+                state_tree_indices: wrongStateTreeProof.pathIndices,
+                state_tree_elements: wrongStateTreeProof.siblings,
             })
         )
         const p = new UserStateTransitionProof(
@@ -283,54 +226,9 @@ describe('User State Transition', function () {
     })
 
     it('should fail to double user state transition', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new Identity()
-        const { leaf, index } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(
-                    id.secret,
-                    BigInt(attester.address),
-                    0, // from epoch
-                    i
-                )
-            )
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        epochTree.insert(0)
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const stateTreeProof = stateTree.createProof(index)
-        const historyTreeProof = historyTree.createProof(0)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
-            stringifyBigInts({
-                from_epoch: 0,
-                to_epoch: 1,
-                identity_secret: id.secret,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
-                history_tree_indices: historyTreeProof.pathIndices,
-                history_tree_elements: historyTreeProof.siblings,
-                attester_id: attester.address,
-                data: Array(FIELD_COUNT).fill(0),
-                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-                epoch_tree_elements: epochKeys.map(
-                    () => epochTree.createProof(0).siblings
-                ),
-                epoch_tree_indices: epochKeys.map(
-                    () => epochTree.createProof(0).pathIndices
-                ),
-                epoch_tree_root: epochTree.root,
-            })
+            stringifyBigInts(circuitInputs)
         )
         const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
@@ -349,63 +247,43 @@ describe('User State Transition', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'NullifierAlreadyUsed')
     })
 
-    it('should do user state transition', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new Identity()
-        const { leaf, index } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
-        const fromEpoch = 0
-        const toEpoch = fromEpoch + 1
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
-        const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
-            .fill(null)
-            .map((_, i) =>
-                genEpochKey(
-                    id.secret,
-                    BigInt(attester.address),
-                    fromEpoch, // from epoch
-                    i
-                )
-            )
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        epochTree.insert(0)
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(0)
-        const historyTreeProof = historyTree.createProof(0)
-        const stateTreeProof = stateTree.createProof(index)
+    it('should fail to do user state transition with wrong chain ID', async () => {
+        const wrongChainID = 9999
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts({
-                from_epoch: fromEpoch,
-                to_epoch: toEpoch,
-                identity_secret: id.secret,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
-                history_tree_indices: historyTreeProof.pathIndices,
-                history_tree_elements: historyTreeProof.siblings,
-                attester_id: attester.address,
-                data: Array(FIELD_COUNT).fill(0),
-                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-                epoch_tree_elements: epochKeys.map(
-                    () => epochTree.createProof(0).siblings
-                ),
-                epoch_tree_indices: epochKeys.map(
-                    () => epochTree.createProof(0).pathIndices
-                ),
-                epoch_tree_root: epochTree.root,
+                ...circuitInputs,
+                chain_id: wrongChainID,
             })
         )
+        expect(wrongChainID).not.equal(chainId)
         const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
         )
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await expect(
+            unirepContract
+                .connect(attester)
+                .userStateTransition(publicSignals, proof)
+        ).to.be.revertedWithCustomError(
+            unirepContract,
+            'InvalidHistoryTreeRoot'
+        )
+    })
+
+    it('should do user state transition', async () => {
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.userStateTransition,
+            stringifyBigInts(circuitInputs)
+        )
+        const { publicSignals, proof, stateTreeLeaf, epochKeys } =
+            new UserStateTransitionProof(
+                r.publicSignals,
+                r.proof,
+                defaultProver
+            )
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         const tx = await unirepContract
             .connect(attester)
@@ -415,28 +293,78 @@ describe('User State Transition', function () {
 
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(toEpoch, attester.address, leafIndex, publicSignals[1])
+            .withArgs(
+                circuitInputs.to_epoch,
+                attester.address,
+                leafIndex,
+                stateTreeLeaf
+            )
         await expect(tx)
             .to.emit(unirepContract, 'UserStateTransitioned')
             .withArgs(
-                toEpoch,
+                circuitInputs.to_epoch,
                 attester.address,
                 leafIndex,
-                publicSignals[1],
-                publicSignals[2]
+                stateTreeLeaf,
+                epochKeys[0]
             )
     })
 
-    it('should do multiple user state transitions', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
+    it('should decode user state transition signals', async () => {
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.userStateTransition,
+            stringifyBigInts(circuitInputs)
+        )
+        const {
+            publicSignals,
+            attesterId,
+            toEpoch,
+            control,
+            historyTreeRoot,
+            stateTreeLeaf,
+            epochKeys,
+        } = new UserStateTransitionProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        const controlOut =
+            await unirepContract.decodeUserStateTransitionControl(control)
 
+        expect(controlOut['attesterId'].toString()).equal(attesterId.toString())
+        expect(controlOut['toEpoch'].toString()).equal(toEpoch.toString())
+
+        const signals = await unirepContract.decodeUserStateTransitionSignals(
+            publicSignals
+        )
+        expect(signals['historyTreeRoot'].toString()).equal(historyTreeRoot)
+        expect(signals['stateTreeLeaf'].toString()).equal(stateTreeLeaf)
+
+        const numEpochKeyNoncePerEpoch =
+            await unirepContract.numEpochKeyNoncePerEpoch()
+        for (let i = 0; i < numEpochKeyNoncePerEpoch; i++) {
+            expect(signals['epochKeys'][i].toString()).equal(epochKeys[i])
+        }
+        expect(signals['attesterId'].toString()).equal(attesterId.toString())
+        expect(signals['toEpoch'].toString()).equal(toEpoch.toString())
+    })
+
+    it('should do multiple user state transitions', async () => {
         const users = 3
         const epochs = 3
         let fromEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
         let fromEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
+        fromEpochStateTree.insert(
+            genStateTreeLeaf(
+                id.secret,
+                BigInt(attester.address),
+                fromEpoch,
+                Array(FIELD_COUNT).fill(0),
+                chainId
+            )
+        )
         const userState = Array(users)
             .fill(null)
             .map(() => {
@@ -446,7 +374,7 @@ describe('User State Transition', function () {
                 }
             })
         for (let i = 0; i < users; i++) {
-            const { leaf, index } = await signupUser(
+            const { leaf } = await signupUser(
                 userState[i].id,
                 unirepContract,
                 attester.address,
@@ -477,22 +405,24 @@ describe('User State Transition', function () {
                             userState[i].id.secret,
                             BigInt(attester.address),
                             fromEpoch, // from epoch
-                            n
+                            n,
+                            chainId
                         )
                     )
-                const stateTreeProof = fromEpochStateTree.createProof(i)
+                // in the first epoch there is one user signs up in the previous tests
+                const index = epoch === 1 ? i + 1 : i
+                const stateTreeProof = fromEpochStateTree.createProof(index)
                 const r = await defaultProver.genProofAndPublicSignals(
                     Circuit.userStateTransition,
                     stringifyBigInts({
+                        ...circuitInputs,
                         from_epoch: fromEpoch,
                         to_epoch: epoch,
                         identity_secret: userState[i].id.secret,
-                        state_tree_indexes: stateTreeProof.pathIndices,
+                        state_tree_indices: stateTreeProof.pathIndices,
                         state_tree_elements: stateTreeProof.siblings,
                         history_tree_indices: historyTreeProof.pathIndices,
                         history_tree_elements: historyTreeProof.siblings,
-                        attester_id: attester.address,
-                        data: Array(FIELD_COUNT).fill(0),
                         new_data: epochKeys.map(() =>
                             Array(FIELD_COUNT).fill(0)
                         ),
@@ -502,10 +432,9 @@ describe('User State Transition', function () {
                         epoch_tree_indices: epochKeys.map(
                             () => epochTree.createProof(0).pathIndices
                         ),
-                        epoch_tree_root: epochTree.root,
                     })
                 )
-                const { publicSignals, proof, stateTreeLeaf, historyTreeRoot } =
+                const { publicSignals, proof, stateTreeLeaf } =
                     new UserStateTransitionProof(
                         r.publicSignals,
                         r.proof,
@@ -531,19 +460,7 @@ describe('User State Transition', function () {
     })
 
     it('should fail to UST with unprocessed data', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new Identity()
-        const { leaf, index } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
-        const fromEpoch = 0
-        const toEpoch = fromEpoch + 1
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
+        const fromEpoch = circuitInputs.from_epoch
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
             .map((_, i) =>
@@ -551,49 +468,17 @@ describe('User State Transition', function () {
                     id.secret,
                     BigInt(attester.address),
                     fromEpoch, // from epoch
-                    i
+                    i,
+                    chainId
                 )
             )
         await unirepContract
             .connect(attester)
             .attest(epochKeys[0], fromEpoch, 0, 2)
             .then((t) => t.wait())
-        const epochTreeLeaf = genEpochTreeLeaf(
-            epochKeys[0],
-            Array(FIELD_COUNT)
-                .fill(0)
-                .map((_, i) => {
-                    if (i === 0) return 2
-                    return 0
-                })
-        )
-        const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
-        epochTree.insert(epochTreeLeaf)
-        const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
-        historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const stateTreeProof = stateTree.createProof(index)
-        const historyTreeProof = historyTree.createProof(0)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
-            stringifyBigInts({
-                from_epoch: fromEpoch,
-                to_epoch: toEpoch,
-                identity_secret: id.secret,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
-                history_tree_indices: historyTreeProof.pathIndices,
-                history_tree_elements: historyTreeProof.siblings,
-                attester_id: attester.address,
-                data: Array(FIELD_COUNT).fill(0),
-                new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
-                epoch_tree_elements: epochKeys.map(
-                    () => epochTree.createProof(0).siblings
-                ),
-                epoch_tree_indices: epochKeys.map(
-                    () => epochTree.createProof(0).pathIndices
-                ),
-                epoch_tree_root: epochTree.root,
-            })
+            stringifyBigInts(circuitInputs)
         )
         const { publicSignals, proof } = new UserStateTransitionProof(
             r.publicSignals,
@@ -609,19 +494,8 @@ describe('User State Transition', function () {
     })
 
     it('should UST with new data', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new Identity()
-        const { leaf, index } = await signupUser(
-            id,
-            unirepContract,
-            attester.address,
-            attester
-        )
         const fromEpoch = 0
         const toEpoch = fromEpoch + 1
-        const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        stateTree.insert(leaf)
         const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
             .fill(null)
             .map((_, i) =>
@@ -629,7 +503,8 @@ describe('User State Transition', function () {
                     id.secret,
                     BigInt(attester.address),
                     fromEpoch, // from epoch
-                    i
+                    i,
+                    chainId
                 )
             )
         await unirepContract
@@ -652,19 +527,13 @@ describe('User State Transition', function () {
         epochTree.insert(epochTreeLeaf)
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
         historyTree.insert(poseidon2([stateTree.root, epochTree.root]))
-        const stateTreeProof = stateTree.createProof(index)
         const historyTreeProof = historyTree.createProof(0)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.userStateTransition,
             stringifyBigInts({
-                from_epoch: fromEpoch,
-                to_epoch: toEpoch,
-                identity_secret: id.secret,
-                state_tree_indexes: stateTreeProof.pathIndices,
-                state_tree_elements: stateTreeProof.siblings,
+                ...circuitInputs,
                 history_tree_indices: historyTreeProof.pathIndices,
                 history_tree_elements: historyTreeProof.siblings,
-                attester_id: attester.address,
                 data: Array(FIELD_COUNT).fill(0),
                 new_data: epochKeys.map((_, i) => {
                     if (i === 0) return newData
@@ -679,7 +548,12 @@ describe('User State Transition', function () {
                 epoch_tree_root: epochTree.root,
             })
         )
-        const { publicSignals, proof } = new UserStateTransitionProof(
+        const {
+            publicSignals,
+            proof,
+            stateTreeLeaf,
+            epochKeys: ustNullifiers,
+        } = new UserStateTransitionProof(
             r.publicSignals,
             r.proof,
             defaultProver
@@ -693,15 +567,15 @@ describe('User State Transition', function () {
 
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(toEpoch, attester.address, leafIndex, publicSignals[1])
+            .withArgs(toEpoch, attester.address, leafIndex, stateTreeLeaf)
         await expect(tx)
             .to.emit(unirepContract, 'UserStateTransitioned')
             .withArgs(
                 toEpoch,
                 attester.address,
                 leafIndex,
-                publicSignals[1],
-                publicSignals[2]
+                stateTreeLeaf,
+                ustNullifiers[0]
             )
     })
 })

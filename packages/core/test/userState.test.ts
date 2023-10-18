@@ -3,10 +3,9 @@ import { ethers } from 'hardhat'
 import { expect } from 'chai'
 import { Identity } from '@semaphore-protocol/identity'
 import { F } from '@unirep/utils'
-import { EPOCH_LENGTH } from '@unirep/contracts'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUnirepState, genUserState } from './utils'
+import { EPOCH_LENGTH, genUnirepState, genUserState } from './utils'
 import { bootstrapUsers, bootstrapAttestations } from './test'
 
 describe('User state', function () {
@@ -86,7 +85,7 @@ describe('User state', function () {
             const data = await userState.getDataByEpochKey(epk, epoch)
             expect(data[fieldIndex]).to.equal(final)
         }
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('should correctly get the latest data', async () => {
@@ -145,7 +144,7 @@ describe('User state', function () {
                 secondReplData.toString()
             )
         }
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('user sign up proof', async () => {
@@ -170,7 +169,7 @@ describe('User state', function () {
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
         expect(r.status).equal(1)
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('epoch key proof', async () => {
@@ -200,7 +199,7 @@ describe('User state', function () {
         const proof = await userState.genEpochKeyProof({ epoch })
         const valid = await proof.verify()
         expect(valid).to.be.true
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('ust proof', async () => {
@@ -244,7 +243,7 @@ describe('User state', function () {
         await userState.waitForSync()
         const newEpoch = await userState.latestTransitionedEpoch()
         expect(newEpoch).equal(oldEpoch + 1)
-        userState.sync.stop()
+        userState.stop()
     })
 
     it('reputation proof', async () => {
@@ -330,6 +329,6 @@ describe('User state', function () {
 
         const valid = await proof.verify()
         expect(valid).to.be.true
-        userState.sync.stop()
+        userState.stop()
     })
 })

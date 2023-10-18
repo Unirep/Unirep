@@ -100,7 +100,7 @@ function attesterEpochRemainingTime(
 
 ## decodeEpochKeyControl
 
-Decode a epoch key related control from [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof), [epoch key proof](../circuits-api/circuits.md#epoch-key-proof), and [reputation proof](../circuits-api/circuits.md#prove-reputation-proof) into named variables.
+Decode an epoch key related control from [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof), [epoch key proof](../circuits-api/circuits.md#epoch-key-proof), and [reputation proof](../circuits-api/circuits.md#prove-reputation-proof) into named variables.
 
 ```sol
 function decodeEpochKeyControl(uint256 control)
@@ -166,7 +166,7 @@ struct ReputationSignals {
 Verify a [reputation proof](../circuits-api/circuits#prove-reputation-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
-This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
 ```sol
@@ -204,7 +204,7 @@ struct EpochKeySignals {
 Verify an [epoch key proof](../circuits-api/circuits#epoch-key-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
-This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
 ```sol
@@ -246,7 +246,7 @@ struct EpochKeySignals {
 Verify an [epoch key lite proof](../circuits-api/circuits#epoch-key-lite-proof) and validate the public signals against the onchain state. This function will revert if any inputs are invalid.
 
 :::caution
-This function does not require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
+This function **does not** require the epoch for the proof to be the current epoch. The user may generate a valid proof for a past epoch. If you require the proof to be for the current epoch you should add an additional check using [`attesterCurrentEpoch`](#attestercurrentepoch).
 :::
 
 ```sol
@@ -276,7 +276,7 @@ bool valid = unirep.epochKeyVerifier.verifyProof(publicSignals, proof);
 
 ## epochKeyLiteVerifier
 
-A contract address for an epoch key lite proof verifier. See [IVerifier](/docs/contracts-api/iverifier-sol) for more info.
+A contract address for an epoch key lite proof verifier. See [IVerifier](iverifier-sol) for more info.
 
 :::warning
 Using the verifier directly does not validate the output state root, attester id, or epoch. Prefer the [`verifyEpochKeyProof`](#verifyepochkeyproof) function unless you know what you are doing.
@@ -396,7 +396,7 @@ function attesterStateTreeLeafCount(uint160 attesterId, uint256 epoch)
 
 ## attesterSemaphoreGroupRoot
 
-Get the semaphore group root for an attester.
+Get the Semaphore group root for an attester.
 
 ```sol
 function attesterSemaphoreGroupRoot(uint160 attesterId)
@@ -407,7 +407,7 @@ function attesterSemaphoreGroupRoot(uint160 attesterId)
 
 ## attesterMemberCount
 
-Get the number of members in the attester semaphore group.
+Get the number of members in the attester Semaphore group.
 
 ```sol
 function attesterMemberCount(uint160 attesterId)

@@ -13,20 +13,38 @@ import {
 import { Circuit, SignupProof, CircuitConfig } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 
-import { EPOCH_LENGTH, SUM_FIELD_COUNT } from '../src'
+import { EPOCH_LENGTH } from './config'
 import { deployUnirep } from '../deploy'
 
-const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_FIELD_BITS, REPL_NONCE_BITS } =
-    CircuitConfig.default
+const { STATE_TREE_DEPTH, FIELD_COUNT, REPL_FIELD_BITS } = CircuitConfig.default
+
+const epoch = 0
+const id = new Identity()
+let circuitInputs = {
+    epoch,
+    identity_secret: id.secret,
+    chain_id: 0,
+    attester_id: 0,
+}
 
 describe('User Signup', function () {
     this.timeout(300000)
 
     let unirepContract
+    let attester
+    let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        const network = await accounts[0].provider.getNetwork()
+        chainId = network.chainId
+        attester = accounts[1]
+        circuitInputs = {
+            ...circuitInputs,
+            chain_id: chainId,
+            attester_id: attester.address,
+        }
     })
 
     {
@@ -45,17 +63,9 @@ describe('User Signup', function () {
     }
 
     it('should fail to signup with invalid proof', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const id = new Identity()
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
-            stringifyBigInts({
-                epoch: 0,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
-                attester_id: attester.address,
-            })
+            stringifyBigInts(circuitInputs)
         )
         const { publicSignals, proof } = new SignupProof(
             r.publicSignals,
@@ -77,13 +87,10 @@ describe('User Signup', function () {
     it('should fail to signup with unregistered attester', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[2]
-        const id = new Identity()
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
-                epoch: 0,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                ...circuitInputs,
                 attester_id: attester.address,
             })
         )
@@ -98,8 +105,6 @@ describe('User Signup', function () {
     })
 
     it('sign up many users should succeed', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         const startEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
@@ -109,14 +114,13 @@ describe('User Signup', function () {
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             roots[epoch] = []
             for (let i = 0; i < 3; i++) {
-                const id = new Identity()
+                const { secret, commitment } = new Identity()
                 const r = await defaultProver.genProofAndPublicSignals(
                     Circuit.signup,
                     stringifyBigInts({
+                        ...circuitInputs,
                         epoch,
-                        identity_nullifier: id.nullifier,
-                        identity_trapdoor: id.trapdoor,
-                        attester_id: attester.address,
+                        identity_secret: secret,
                     })
                 )
                 const { publicSignals, proof } = new SignupProof(
@@ -130,10 +134,11 @@ describe('User Signup', function () {
                     .then((t) => t.wait())
 
                 const gstLeaf = genStateTreeLeaf(
-                    id.secret,
+                    secret,
                     BigInt(attester.address),
                     epoch,
-                    Array(FIELD_COUNT).fill(0)
+                    Array(FIELD_COUNT).fill(0),
+                    chainId
                 )
 
                 stateTree.insert(gstLeaf)
@@ -149,7 +154,7 @@ describe('User Signup', function () {
                 expect(currentRoot.toString(), 'state tree root').to.equal(
                     stateTree.root.toString()
                 )
-                semaphoreTree.insert(id.commitment)
+                semaphoreTree.insert(commitment)
                 const semaphoreRoot =
                     await unirepContract.attesterSemaphoreGroupRoot(
                         attester.address
@@ -173,10 +178,56 @@ describe('User Signup', function () {
         }
     })
 
+    it('should decode signup signals', async () => {
+        await unirepContract
+            .updateEpochIfNeeded(attester.address)
+            .then((t) => t.wait())
+        const epoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts({
+                ...circuitInputs,
+                epoch,
+            })
+        )
+        {
+            const {
+                publicSignals,
+                control,
+                identityCommitment,
+                attesterId,
+                epoch,
+                chainId,
+                stateTreeLeaf,
+            } = new SignupProof(r.publicSignals, r.proof, defaultProver)
+
+            const controlOut = await unirepContract.decodeSignupControl(control)
+            expect(controlOut['attesterId'].toString()).equal(
+                attesterId.toString()
+            )
+            expect(controlOut['epoch'].toString()).equal(epoch.toString())
+            expect(controlOut['chainId'].toString()).equal(chainId.toString())
+
+            const signals = await unirepContract.decodeSignupSignals(
+                publicSignals
+            )
+            expect(signals['attesterId'].toString()).equal(
+                attesterId.toString()
+            )
+            expect(signals['epoch'].toString()).equal(epoch.toString())
+            expect(signals['chainId'].toString()).equal(chainId.toString())
+            expect(signals['stateTreeLeaf'].toString()).equal(
+                stateTreeLeaf.toString()
+            )
+            expect(signals['identityCommitment'].toString()).equal(
+                identityCommitment.toString()
+            )
+        }
+    })
+
     it('double sign up should fail', async () => {
-        const id = new Identity()
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         await unirepContract
             .updateEpochIfNeeded(attester.address)
             .then((t) => t.wait())
@@ -188,10 +239,8 @@ describe('User Signup', function () {
             const r = await defaultProver.genProofAndPublicSignals(
                 Circuit.signup,
                 stringifyBigInts({
+                    ...circuitInputs,
                     epoch,
-                    identity_nullifier: id.nullifier,
-                    identity_trapdoor: id.trapdoor,
-                    attester_id: attester.address,
                 })
             )
             const { publicSignals, proof } = new SignupProof(
@@ -207,12 +256,7 @@ describe('User Signup', function () {
         // second signup
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
-            stringifyBigInts({
-                epoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
-                attester_id: attester.address,
-            })
+            stringifyBigInts(circuitInputs)
         )
         const { publicSignals, proof } = new SignupProof(
             r.publicSignals,
@@ -225,19 +269,12 @@ describe('User Signup', function () {
     })
 
     it('should fail to signup for unregistered attester', async () => {
-        const id = new Identity()
         const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         const unregisteredAttester = accounts[5]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
-                epoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
+                ...circuitInputs,
                 attester_id: BigInt(unregisteredAttester.address),
             })
         )
@@ -254,17 +291,12 @@ describe('User Signup', function () {
     })
 
     it('should fail to signup with wrong zk epoch', async () => {
-        const id = new Identity()
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         const wrongEpoch = 44444
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
+                ...circuitInputs,
                 epoch: wrongEpoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
-                attester_id: attester.address,
             })
         )
         const { publicSignals, proof } = new SignupProof(
@@ -278,21 +310,11 @@ describe('User Signup', function () {
     })
 
     it('should fail to signup with wrong msg.sender', async () => {
-        const id = new Identity()
         const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         const wrongAttester = accounts[2]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
-            stringifyBigInts({
-                epoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
-                attester_id: attester.address,
-            })
+            stringifyBigInts(circuitInputs)
         )
         const { publicSignals, proof } = new SignupProof(
             r.publicSignals,
@@ -306,21 +328,28 @@ describe('User Signup', function () {
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterIdNotMatch')
     })
 
-    it('should update current epoch if needed', async () => {
-        const id = new Identity()
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+    it('should fail to signup with wrong chain ID', async () => {
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
-                epoch,
-                identity_nullifier: id.nullifier,
-                identity_trapdoor: id.trapdoor,
-                attester_id: attester.address,
+                ...circuitInputs,
+                chain_id: 3,
             })
+        )
+        const { publicSignals, proof } = new SignupProof(
+            r.publicSignals,
+            r.proof,
+            defaultProver
+        )
+        await expect(
+            unirepContract.connect(attester).userSignUp(publicSignals, proof)
+        ).to.be.revertedWithCustomError(unirepContract, 'ChainIdNotMatch')
+    })
+
+    it('should update current epoch if needed', async () => {
+        const r = await defaultProver.genProofAndPublicSignals(
+            Circuit.signup,
+            stringifyBigInts(circuitInputs)
         )
         const { publicSignals, proof } = new SignupProof(
             r.publicSignals,
@@ -334,11 +363,7 @@ describe('User Signup', function () {
     })
 
     it('should sign up user with initial data', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         const config = await unirepContract.config()
-
-        const id = new Identity()
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
             attester.address
         )
@@ -360,12 +385,14 @@ describe('User Signup', function () {
             id.secret,
             attester.address,
             contractEpoch,
-            expectedData
+            expectedData,
+            chainId
         )
         const identityHash = genIdentityHash(
             id.secret,
             attester.address,
-            contractEpoch
+            contractEpoch,
+            chainId
         )
         const tx = await unirepContract
             .connect(attester)
@@ -385,53 +412,36 @@ describe('User Signup', function () {
     })
 
     it('should sign up users with zero init data', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const id = new Identity()
-        const contractEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
         const zeroData = []
 
         const config = await unirepContract.config()
         const leaf = genStateTreeLeaf(
             id.secret,
             attester.address,
-            contractEpoch,
-            Array(config.fieldCount).fill(0)
+            epoch,
+            Array(config.fieldCount).fill(0),
+            chainId
         )
         const identityHash = genIdentityHash(
             id.secret,
             attester.address,
-            contractEpoch
+            epoch,
+            chainId
         )
         const tx = await unirepContract
             .connect(attester)
-            .manualUserSignUp(
-                contractEpoch,
-                id.commitment,
-                identityHash,
-                zeroData
-            )
+            .manualUserSignUp(epoch, id.commitment, identityHash, zeroData)
         const leafIndex = 0
         await expect(tx)
             .to.emit(unirepContract, 'UserSignedUp')
-            .withArgs(contractEpoch, id.commitment, attester.address, leafIndex)
+            .withArgs(epoch, id.commitment, attester.address, leafIndex)
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(contractEpoch, attester.address, leafIndex, leaf)
+            .withArgs(epoch, attester.address, leafIndex, leaf)
     })
 
     it('should fail to sign up with out of range replacement data', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         const config = await unirepContract.config()
-
-        const id = new Identity()
-        const contractEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
 
         const data = Array(config.fieldCount)
             .fill(0)
@@ -445,11 +455,12 @@ describe('User Signup', function () {
         const identityHash = genIdentityHash(
             id.secret,
             attester.address,
-            contractEpoch
+            epoch,
+            chainId
         )
         const tx = unirepContract
             .connect(attester)
-            .manualUserSignUp(contractEpoch, id.commitment, identityHash, data)
+            .manualUserSignUp(epoch, id.commitment, identityHash, data)
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
             'OutOfRange'
@@ -457,20 +468,13 @@ describe('User Signup', function () {
     })
 
     it('should fail to sign up with too much user data', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         const config = await unirepContract.config()
-
-        const id = new Identity()
-        const contractEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
         const hash = 1
 
         const tx = unirepContract
             .connect(attester)
             .manualUserSignUp(
-                contractEpoch,
+                epoch,
                 id.commitment,
                 hash,
                 Array(config.fieldCount + 1).fill(1)
@@ -482,18 +486,10 @@ describe('User Signup', function () {
     })
 
     it('should fail to sign up with user data out of range', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const id = new Identity()
-        const contractEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
-
         const idHash = 1
         const tx = unirepContract
             .connect(attester)
-            .manualUserSignUp(contractEpoch, id.commitment, idHash, [F])
+            .manualUserSignUp(epoch, id.commitment, idHash, [F])
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,
             'InvalidField'

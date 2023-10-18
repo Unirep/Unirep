@@ -15,7 +15,7 @@ Using anonymous identifiers ([**epoch keys**](protocol/epoch-key.md)), the proto
 UniRep aims to be the ultimate foundation for constructing tailored, yet fully compatible, zero-knowledge (zk) applications. It functions as a powerful memory layer for zk, offering private, non-repudiable data storage and retrieval capabilities. With UniRep, users can effortlessly receive data, prove facts about their information, and store the results while enjoying robust privacy assurances. The protocol empowers developers to create bespoke zk applications without compromising on interoperability and efficiency.
 
 Key UniRep features include:
-- **Data Storage**: Unirep allows small amounts of data to be associated with anonymous users. Applications can conditionally associate data, like requiring a user to prove control of an Ethereum address before attesting to it.
+- **Data Storage**: UniRep allows small amounts of data to be associated with anonymous users. Applications can conditionally associate data, like requiring a user to prove control of an Ethereum address before attesting to it.
 - **Extensible Proofs**: The system is designed to be extended with custom application logic. For example, an application might require proof of [Ethereum address control to sign up](https://github.com/Unirep/zketh/blob/b7e0fdf3dcc1b3f97673da20837ed9c7d3e27c9f/packages/circuits/circuits/signupWithAddress.circom).
 - **Trustless Interoperability**: Applications can interconnect by having users create proofs using publicly available state.
 - **No Forced Data Sharing**: Unirep applications cannot see what data belongs to what user, unless the user reveals it. User data also cannot be changed unless the user provides the application with an [epoch key](protocol/epoch-key.md).
@@ -30,7 +30,7 @@ Attesters are at the application layer. They are the platforms, businesses, and 
 UniRep's key offering is providing developers with a pre-built, audited system to create apps that securely handle private user data and manage reputation using ZK technology. UniRep protocol allows applications to securely attest to user data changes through the use of dynamic, short-lived identifiers known as **epoch keys**.
 
 :::
-### Application built by our core contributors ###
+### Applications built by our core contributors ###
 
 - Built by [Vimwitch](https://github.com/vimwitch)
   - Do things with ethereum addresses in zk: ZKETH [Repo](https://github.com/Unirep/zketh) | [Try it now](https://zketh.io/)
@@ -42,6 +42,8 @@ UniRep's key offering is providing developers with a pre-built, audited system t
   - Craiglist reinvent: Trustlist [Repo](https://github.com/CJ-Rose/trustlist)
 - Built by UniRep team
   - Reputation-Infused Social Network: Unirep.social [Repo](https://github.com/unirep/unirep-social)
+- Built by PSE team members
+  - Anonymous voting for hackathons: Voteathon [Repo](https://github.com/NicoSerranoP/voteathon) | [Blog](../../blog/voteathon) | [Try it now](https://voteathon.org/)
 
 
 ### Other few ideas for you to get started

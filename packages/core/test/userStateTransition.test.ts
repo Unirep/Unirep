@@ -11,18 +11,19 @@ import {
 import { poseidon1 } from 'poseidon-lite'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
-import { genUserState, genUnirepState } from './utils'
-
-const EPOCH_LENGTH = 1000
+import { genUserState, genUnirepState, EPOCH_LENGTH } from './utils'
 
 describe('User state transition', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
+    let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        const network = await accounts[0].provider.getNetwork()
+        chainId = network.chainId
     })
 
     {
@@ -83,7 +84,8 @@ describe('User state transition', function () {
             const idHash = genIdentityHash(
                 users[i].secret,
                 attester.address,
-                fromEpoch
+                fromEpoch,
+                chainId
             )
             await unirepContract
                 .connect(attester)
@@ -110,7 +112,7 @@ describe('User state transition', function () {
                     .then((t) => t.wait())
             }
 
-            userState.sync.stop()
+            userState.stop()
         }
 
         // epoch transition
@@ -138,12 +140,13 @@ describe('User state transition', function () {
                 users[i].secret,
                 attester.address,
                 toEpoch,
-                await userState.getData()
+                await userState.getData(),
+                chainId
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
 
-            userState.sync.stop()
+            userState.stop()
         }
 
         // Check GST roots match Unirep state
@@ -200,7 +203,8 @@ describe('User state transition', function () {
             user.secret,
             BigInt(attester.address),
             newEpoch,
-            0
+            0,
+            chainId
         )
         const fieldIndex = 0
         const val = 10
@@ -230,6 +234,6 @@ describe('User state transition', function () {
         await userState.waitForSync()
         const data = await userState.getData()
         expect(data[fieldIndex].toString()).to.equal('0')
-        userState.sync.stop()
+        userState.stop()
     })
 })

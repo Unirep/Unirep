@@ -10,15 +10,23 @@ import {
     tryPath,
 } from './utils'
 
+/**
+ * The current supported verifier helpers.
+ */
 const VerifierHelpers = {
     epochKey: Circuit.epochKey,
     epochKeyLite: Circuit.epochKeyLite,
-    reputation: Circuit.proveReputation,
+    reputation: Circuit.reputation,
 }
 
-const createVerifierHelperName = (circuit: Circuit): string => {
+/**
+ * Create the verififier helper contract name.
+ * Capitalize the first character and add `VerifierHelper` at the end.
+ * @param circuitName The name of the circuit
+ */
+const createVerifierHelperName = (circuitName: Circuit): string => {
     const verifierName = Object.keys(VerifierHelpers).find(
-        (key) => VerifierHelpers[key] == circuit
+        (key) => VerifierHelpers[key] == circuitName
     )
 
     if (verifierName === undefined) {
@@ -29,6 +37,11 @@ const createVerifierHelperName = (circuit: Circuit): string => {
     }VerifierHelper`
 }
 
+/**
+ * Try a function several times.
+ * @param fn The function will be executed.
+ * @param maxRetry The maximum number of trying functions.
+ */
 export const retryAsNeeded = async (fn: any, maxRetry = 10) => {
     let retryCount = 0
     let backoff = 1000
@@ -44,17 +57,23 @@ export const retryAsNeeded = async (fn: any, maxRetry = 10) => {
     }
 }
 
+/**
+ * @param deployer A signer or an ethereum wallet
+ * @param circuitName Name of the circuit, which can be chosen from `Circuit`
+ * @param prover The prover which provides `vkey` of the circuit
+ * @returns The deployed verifier smart contract
+ */
 export const deployVerifier = async (
     deployer: ethers.Signer,
-    circuit: Circuit | string,
+    circuitName: Circuit | string,
     prover?: Prover
 ): Promise<ethers.Contract> => {
-    const contractName = createVerifierName(circuit)
+    const contractName = createVerifierName(circuitName)
 
     console.log(`Deploying ${contractName}`)
-    let artifacts
+    let artifacts: any
     if (prover) {
-        const vkey = await prover.getVKey(circuit)
+        const vkey = await prover.getVKey(circuitName)
         artifacts = await compileVerifier(contractName, vkey)
     } else {
         const verifierPath = `contracts/verifiers/${contractName}.sol/${contractName}.json`
@@ -68,10 +87,15 @@ export const deployVerifier = async (
     return verifierContract
 }
 
+/**
+ * @param deployer A signer or an ethereum wallet
+ * @param prover The prover which provides `vkey` of the circuit
+ * @returns All deployed verifier smart contracts
+ */
 export const deployVerifiers = async (
     deployer: ethers.Signer,
     prover?: Prover
-): Promise<{ [circuit: string]: Promise<Prover> }> => {
+): Promise<{ [circuit: string]: string }> => {
     let verifiers = {}
     for (const circuit in Circuit) {
         const verifierContract = await deployVerifier(deployer, circuit, prover)
@@ -80,14 +104,21 @@ export const deployVerifiers = async (
     return verifiers
 }
 
+/**
+ * @param deployer A signer or an ethereum wallet
+ * @param prover The prover which provides `vkey` of the circuit
+ * @returns All deployed verifier helper contracts
+ */
 export const deployVerifierHelpers = async (
+    unirepAddress: string,
     deployer: ethers.Signer,
     prover?: Prover
-) => {
+): Promise<{ [circuit: string]: ethers.Contract }> => {
     let verifierHelpers = {}
 
     for (const verifierHelper in VerifierHelpers) {
         const verifierContract = await deployVerifierHelper(
+            unirepAddress,
             deployer,
             VerifierHelpers[verifierHelper],
             prover
@@ -97,13 +128,20 @@ export const deployVerifierHelpers = async (
     return verifierHelpers
 }
 
+/**
+ * @param deployer A signer or an ethereum wallet
+ * @param circuitName Name of the circuit, which can be chosen from `Circuit`
+ * @param prover The prover which provides `vkey` of the circuit
+ * @returns The deployed verifier helper contracts
+ */
 export const deployVerifierHelper = async (
+    unirepAddress: string,
     deployer: ethers.Signer,
-    circuit: Circuit,
+    circuitName: Circuit,
     prover?: Prover
 ): Promise<ethers.Contract> => {
-    const verifier = await deployVerifier(deployer, circuit, prover)
-    const contractName = createVerifierHelperName(circuit)
+    const verifier = await deployVerifier(deployer, circuitName, prover)
+    const contractName = createVerifierHelperName(circuitName)
     console.log(`Deploying ${contractName}`)
     let artifacts
     if (prover) {
@@ -118,7 +156,7 @@ export const deployVerifierHelper = async (
     const _helperFactory = new ethers.ContractFactory(abi, bytecode, deployer)
     const helperFactory = await GlobalFactory(_helperFactory)
     const helperContract = await retryAsNeeded(() =>
-        helperFactory.deploy(verifier.address)
+        helperFactory.deploy(unirepAddress, verifier.address)
     )
     await helperContract.deployed()
     return helperContract
@@ -127,8 +165,26 @@ export const deployVerifierHelper = async (
 /**
  * Deploy the unirep contract and verifier contracts with given `deployer` and settings
  * @param deployer A signer who will deploy the contracts
- * @param settings The settings that the signer can define: `epochLength`, `attestingFee`, `maxUsers`, `maxAttesters`
+ * @param settings The settings that the deployer can define. See [`CircuitConfig`](https://developer.unirep.io/docs/circuits-api/circuit-config)
+ * @param prover The prover which provides `vkey` of the circuit
  * @returns The Unirep smart contract
+ * @example
+ * ```ts
+ * import { ethers } from 'ethers'
+ * import { Unirep } from '@unirep/contracts'
+ * import { deployUnirep } from '@unirep/contracts/deploy'
+ * const privateKey = 'YOUR/PRIVATE/KEY'
+ * const provider = 'YOUR/ETH/PROVIDER'
+ * const deployer = new ethers.Wallet(privateKey, provider);
+ * const unirepContract: Unirep = await deployUnirep(deployer)
+ * ```
+ *
+ * :::caution
+ * The default circuit configuration is set in [`CircuitConfig.ts`](https://github.com/Unirep/Unirep/blob/1a3c9c944925ec125a7d7d8bfa9990466389477b/packages/circuits/src/CircuitConfig.ts).<br/>
+ * Please make sure the `CircuitConfig` matches your [`prover`](circuits-api/interfaces/src.Prover.md).
+ * If you don't compile circuits on your own, please don't change the `_settings` and `prover`.<br/>
+ * See the current prover and settings of deployed contracts: [🤝 Testnet Deployment](https://developer.unirep.io/docs/testnet-deployment).
+ * :::
  */
 export const deployUnirep = async (
     deployer: ethers.Signer,
