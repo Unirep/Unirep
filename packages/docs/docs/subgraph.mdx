@@ -9,7 +9,7 @@ export const NetworkURL = {
     Sepolia: urlBase + '/sepolia/v' + contractVersion,
     ArbitrumGoerli: urlBase + '/arbitrum-goerli/v' + contractVersion,
     OptimismGoerli: urlBase + '/optimism-goerli/v' + contractVersion,
-    Mumbai: urlBase + '/mumbai/v' + contractVersion,
+    Fuji: urlBase + '/fuji/v' + contractVersion,
 }
 
 [The Graph](https://thegraph.com/) is a protocol for indexing networks like Ethereum and IPFS. Site owners publish subgraphs that expose site data for anyone to query. UniRep's subgraph allows you to retrieve data from the <a href={`https://github.com/Unirep/Unirep/blob/v${contractVersion}/packages/contracts/contracts/Unirep.sol`}>`Unirep.sol`</a> smart contract.
@@ -59,9 +59,9 @@ The Graph protocol uses the [GraphQL](https://graphql.org/) query language. For 
         </td>
     </tr>
     <tr>
-        <td>Polygon Mumbai</td>
+        <td>Avalanche Fuji</td>
         <td>
-            <a href={`${NetworkURL.Mumbai}`}>{NetworkURL.Mumbai}</a>
+            <a href={`${NetworkURL.Fuji}`}>{NetworkURL.Fuji}</a>
         </td>
     </tr>
 </table>
