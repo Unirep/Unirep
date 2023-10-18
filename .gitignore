@@ -20,10 +20,12 @@ lerna-debug.log*
 
 **/generated
 **/build
+**/data
 
 .env
 subgraph.yaml
 generated
+packages/subgraph/abis
 
 .docusaurus
 .cache-loader

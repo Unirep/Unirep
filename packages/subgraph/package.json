@@ -1,0 +1,31 @@
+{
+    "name": "@unirep/subgraph",
+    "version": "2.0.0-beta-5",
+    "repository": "https://github.com/unirep/unirep",
+    "author": "Unirep team <team@unirep.io>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Unirep/Unirep/issues/new/choose"
+    },
+    "homepage": "https://github.com/unirep/unirep#readme",
+    "scripts": {
+        "codegen": "node scripts/generateSubgraph.mjs && graph codegen",
+        "build": "yarn codegen && graph build",
+        "deploy": "graph deploy --node https://api.thegraph.com/deploy/",
+        "build:local": "node scripts/generateSubgraph.mjs localhost && graph codegen && graph build",
+        "create:local": "graph create --node http://localhost:8020/ unirep/unirep",
+        "remove:local": "graph remove --node http://localhost:8020/ unirep/unirep",
+        "deploy:local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 unirep/unirep -l v0.0.1",
+        "test": "graph test",
+        "node": "docker compose -f docker-compose-graph.yml up"
+    },
+    "dependencies": {
+        "@graphprotocol/graph-cli": "0.51.0",
+        "@graphprotocol/graph-ts": "0.30.0"
+    },
+    "devDependencies": {
+        "@types/mustache": "^4.2.2",
+        "matchstick-as": "0.5.0",
+        "mustache": "^4.2.0"
+    }
+}
