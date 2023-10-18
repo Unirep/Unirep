@@ -48,7 +48,7 @@ copy(
     path.join(__dirname, '../abis')
 )
 
-const network = process.argv.at(2) ?? 'localhost'
+const network = process.env.NETWORK ?? 'localhost'
 
 const template = fs.readFileSync('./subgraph.template.yaml', 'utf-8')
 const networks = JSON.parse(fs.readFileSync('./networks.json', 'utf-8'))
