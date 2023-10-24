@@ -118,7 +118,24 @@ const _schema = [
 ]
 
 /**
- * The schema of the database that is used in storing Unirep data
+ * UniRep needs to persist data in order to construct state and make proofs.
+ * To do this we use a generic database wrapper called [anondb](https://github.com/vimwitch/anondb).
+ * This wrapper has support for desktop environment databases like SQLite, as well as the IndexedDB browser database.
+ *
+ * `@unirep/core` ships a schema that should be used with the database.
+ * This schema can be extended by adding additional collections for application specific data storage.
+ * @see http://developer.unirep.io/docs/core-api/schema
+ * @example
+ * ```ts
+ * import { schema } from '@unirep/core'
+ * import { SQLiteConnector } from 'anondb/node'
+ * import { IndexedDBConnector } from 'anondb/web'
+ * // in nodejs
+ * const db_mem = await SQLiteConnector.create(schema, ':memory:')
+ * const db_storage = await SQLiteConnector.create(schema, 'db.sqlite')
+ * // in browser
+ * const db_browser = await IndexedDBConnector.create(schema)
+ * ```
  */
 export const schema = _schema.map((obj) => ({
     primaryKey: '_id',

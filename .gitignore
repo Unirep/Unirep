@@ -20,13 +20,23 @@ lerna-debug.log*
 
 **/generated
 **/build
+**/data
 
 .env
 subgraph.yaml
 generated
+packages/subgraph/abis
 
 .docusaurus
 .cache-loader
+packages/docs/docs/*/classes
+packages/docs/docs/*/interfaces
+packages/docs/docs/*/enums
+packages/docs/docs/*/modules
+packages/docs/docs/*/namespaces
+packages/docs/docs/*/_category_.yml
+packages/docs/docs/*/index.md
+packages/docs/docs/*/modules.md
 
 .DS_Store
 .node-version

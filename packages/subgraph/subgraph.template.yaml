@@ -1,0 +1,45 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Unirep
+    network: {{ network }}
+    source:
+      address: "{{ address }}"
+      abi: Unirep
+      startBlock: {{ startBlock }}
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Attestation
+        - AttesterSignedUp
+        - EpochEnded
+        - EpochTreeLeaf
+        - HistoryTreeLeaf
+        - StateTreeLeaf
+        - UserSignedUp
+        - UserStateTransitioned
+      abis:
+        - name: Unirep
+          file: ./abis/Unirep.json
+      eventHandlers:
+        - event: Attestation(indexed uint48,indexed uint256,indexed uint160,uint256,uint256)
+          handler: handleAttestation
+        - event: AttesterSignedUp(indexed uint160,uint48,uint48)
+          handler: handleAttesterSignedUp
+        - event: EpochEnded(indexed uint48,indexed uint160)
+          handler: handleEpochEnded
+        - event: EpochTreeLeaf(indexed uint48,indexed uint160,indexed uint256,uint256)
+          handler: handleEpochTreeLeaf
+        - event: HistoryTreeLeaf(indexed uint160,uint256)
+          handler: handleHistoryTreeLeaf
+        - event: StateTreeLeaf(indexed uint48,indexed uint160,indexed uint256,uint256)
+          handler: handleStateTreeLeaf
+        - event: UserSignedUp(indexed uint48,indexed uint256,indexed uint160,uint256)
+          handler: handleUserSignedUp
+        - event: UserStateTransitioned(indexed uint48,indexed uint160,indexed uint256,uint256,uint256)
+          handler: handleUserStateTransitioned
+      file: ./src/unirep.ts

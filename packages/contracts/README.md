@@ -4,10 +4,10 @@ Client library for contracts related functions which are used in UniRep protocol
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">
-        <img src="https://img.shields.io/badge/project-unirep-blue.svg?style=flat-square">
+        <img src="https://img.shields.io/badge/project-unirep-blue.svg?style=flat-square" />
     </a>
     <a href="https://github.com/unirep/unirep/blob/master/LICENSE">
-        <img alt="Github license" src="https://img.shields.io/github/license/unirep/unirep.svg?style=flat-square">
+        <img alt="Github license" src="https://img.shields.io/github/license/unirep/unirep.svg?style=flat-square" />
     </a>
     <a href="https://www.npmjs.com/package/@unirep/contracts">
         <img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/contracts?style=flat-square" />
@@ -60,35 +60,9 @@ or yarn:
 yarn add @unirep/contracts
 ```
 
-## 👩🏻‍⚕️ Haven't deployed a contract yet?
+## 👩🏻‍⚕️ Deploy UniRep contract
 
-### Get circuit keys from one of the following methods
-
-**🍀 Solution 1. Download circuit keys from server**
-
-Get circuits files from [key server](https://developer.unirep.io/docs/testnet-deployment#keys).
-
-**🍀 Solution 2. Access the keys from node_modules**
-
-By default, The `zksnarkBuild` directory will be found in `node_modules/@unirep/circuits/circuits/zksnarkBuild/`
-
-### Compile contracts from the keys
-
-**Step 1. Set the `zksnarkBuild` path in [buildVerifier.ts](./scripts/buildVerifiers.ts)**
-
-**Step 2. Run compile command**
-
-```bash
-yarn contracts compile
-```
-
-By default, The `artifacts` directory will be found in `./packages/contracts/build`
-
-## 🙆🏻‍♀️ UniRep contract has been compiled
-
-### Deploy UniRep contract
-
-Deploy Unirep smart contract with default [config](../circuits/config/index.ts):
+Deploy Unirep smart contract with default [config](https://github.com/Unirep/Unirep/blob/main/packages/circuits/src/CircuitConfig.ts):
 
 ```typescript
 import { ethers } from 'ethers'
@@ -102,10 +76,9 @@ const deployer = new ethers.Wallet(privateKey, provider);
 const unirepContract: Unirep = await deployUnirep(deployer)
 ```
 
-### Get UniRep contract with address
+## 🙆🏻‍♀️ Get UniRep contract with address
 
 ```typescript
-import { ethers } from 'ethers'
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
 const address = '0x....'
@@ -187,11 +160,11 @@ contract UnirepApp {
 ```
 
 ## 🙌🏻 Join our community
-- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord"></a>
-- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>
-- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram"></a>
+- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord" /></a>
+- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter" /></a>
+- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram" /></a>
 
-## <img height="24" src="https://pse.dev/_next/static/media/header-logo.16312102.svg"> Privacy & Scaling Explorations
+## <img height="24" src="https://pse.dev/_next/static/media/header-logo.16312102.svg" /> Privacy & Scaling Explorations
 
-This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) in Ethereum Foundation.
+This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) and the Ethereum Foundation.
 See more projects on: https://pse.dev/.

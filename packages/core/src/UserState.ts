@@ -21,8 +21,36 @@ import {
 import { Synchronizer, toDecString } from './Synchronizer'
 
 /**
- * User state is used for a user to generate proofs and obtain the current user status.
- * It takes user's `ZKIdentity` and checks the events that matches the user's identity.
+ * The user state object is used to manage user state for an attester.
+ * The state is backed by an [anondb](https://github.com/vimwitch/anondb) instance.
+ * @example
+ * ```ts
+ * import { UserState } from '@unirep/core'
+ * import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+ * import { Identity } from '@semaphore-protocol/identity'
+ *
+ * const id = new Identity()
+ * const state = new UserState({
+ *   prover: defaultProver, // a circuit prover
+ *   unirepAddress: '0xaabbccaabbccaabbccaabbccaabbccaabbccaaaa',
+ *   provider, // an ethers.js provider
+ *   id,
+ * })
+ *
+ * // or, initialize with an existing synchronizer object
+ * const state = new UserState({
+ *   synchronizer,
+ *   id,
+ *   prover: defaultProver, // a circuit prover
+ * })
+ *
+ * // start the synchoronizer deamon
+ * await state.start()
+ * await state.waitForSync()
+ *
+ * // stop the synchronizer deamon
+ * state.stop()
+ * ```
  */
 export default class UserState {
     private _prover: Prover
@@ -30,22 +58,37 @@ export default class UserState {
     private _sync: Synchronizer
     private _chainId: number
 
+    /**
+     * The [Semaphore](https://semaphore.pse.dev/) identity commitment of the user.
+     */
     get commitment() {
         return this.id.commitment
     }
 
+    /**
+     * The [Semaphore](https://semaphore.pse.dev/) identity of the user.
+     */
     get id() {
         return this._id
     }
 
+    /**
+     * The underlying synchronizer object.
+     */
     get sync() {
         return this._sync
     }
 
+    /**
+     * The prover object.
+     */
     get prover() {
         return this._prover
     }
 
+    /**
+     * The current chain ID of UniRep contract.
+     */
     get chainId() {
         return this._chainId
     }
@@ -98,21 +141,34 @@ export default class UserState {
         this._chainId = -1 // need to be setup in async function
     }
 
+    /**
+     * Start the synchronizer daemon.
+     * Start polling the blockchain for new events. If we're behind the HEAD block we'll poll many times quickly
+     */
     async start() {
         await this.sync.start()
         await this._checkChainId()
     }
 
-    async waitForSync(n?: number) {
-        await this.sync.waitForSync(n)
+    /**
+     * Wait for the synchronizer to sync up to a certain block.
+     * By default this will wait until the current latest known block (according to the provider).
+     * @param blockNumber The block number to be synced to.
+     */
+    async waitForSync(blockNumber?: number) {
+        await this.sync.waitForSync(blockNumber)
     }
 
+    /**
+     * Stop synchronizing with Unirep contract.
+     */
     stop() {
         this.sync.stop()
     }
 
     /**
-     * Query if the user is signed up in the unirep state.
+     * Query the current database if the [Semaphore](https://semaphore.pse.dev/) identity commitment is stored.
+     * @param attesterId The attester to be queried. Default: `this.attesterId`.
      * @returns True if user has signed up in unirep contract, false otherwise.
      */
     async hasSignedUp(
@@ -130,17 +186,17 @@ export default class UserState {
     }
 
     /**
-     * Query the latest user state transition epoch. If user hasn't performed user state transition,
-     * the function will return the epoch which user has signed up in Unirep contract.
-     * @returns The latest epoch where user performs user state transition.
+     * Query the current database for a user's signup event or latest user state transition [nullifier](https://developer.unirep.io/docs/protocol/nullifiers).
+     * @param attesterId The attester to be queried. Default: `this.attesterId`
+     * @returns The latest epoch where a user performed a user state transition.
      */
     async latestTransitionedEpoch(
-        _attesterId: bigint | string = this.sync.attesterId
+        attesterId: bigint | string = this.sync.attesterId
     ): Promise<number> {
         this._checkSync()
-        const attesterId = toDecString(_attesterId)
+        const _attesterId = toDecString(attesterId)
         this.sync.checkAttesterId(attesterId)
-        const currentEpoch = await this.sync.loadCurrentEpoch(attesterId)
+        const currentEpoch = await this.sync.loadCurrentEpoch(_attesterId)
         let latestTransitionedEpoch = -1
         for (let x = currentEpoch; x >= 0; x--) {
             const nullifiers = [
@@ -149,7 +205,7 @@ export default class UserState {
             ].map((v) =>
                 genEpochKey(
                     this.id.secret,
-                    attesterId,
+                    _attesterId,
                     x,
                     v,
                     this.chainId
@@ -169,7 +225,7 @@ export default class UserState {
             const signup = await this.sync.db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
-                    attesterId,
+                    attesterId: _attesterId,
                 },
             })
             if (!signup)
@@ -181,26 +237,30 @@ export default class UserState {
 
     /**
      * Get the latest global state tree leaf index for an epoch.
-     * @param _epoch Get the global state tree leaf index of the given epoch
-     * @returns The the latest global state tree leaf index for an epoch.
+     * @param epoch Get the global state tree leaf index of the given epoch. Default: current epoch.
+     * @param attesterId The attester to be queried. Default: `this.attesterId`
+     * @returns The the latest state tree leaf index for an epoch.
      */
     async latestStateTreeLeafIndex(
-        _epoch?: number,
-        _attesterId: bigint | string = this.sync.attesterId
+        epoch?: number,
+        attesterId: bigint | string = this.sync.attesterId
     ): Promise<number> {
-        const attesterId = toDecString(_attesterId)
-        const currentEpoch = _epoch ?? this.sync.calcCurrentEpoch(attesterId)
+        const _attesterId = toDecString(attesterId)
+        const currentEpoch = epoch ?? this.sync.calcCurrentEpoch(_attesterId)
         const latestTransitionedEpoch = await this.latestTransitionedEpoch(
-            attesterId
+            _attesterId
         )
         if (latestTransitionedEpoch !== currentEpoch)
             throw new Error(
                 '@unirep/core:UserState user has not transitioned to epoch'
             )
-        const data = await this.getData(latestTransitionedEpoch - 1, attesterId)
+        const data = await this.getData(
+            latestTransitionedEpoch - 1,
+            _attesterId
+        )
         const leaf = genStateTreeLeaf(
             this.id.secret,
-            attesterId,
+            _attesterId,
             latestTransitionedEpoch,
             data,
             this.chainId
@@ -218,20 +278,31 @@ export default class UserState {
         return foundLeaf.index
     }
 
+    /**
+     * Get epoch keys for the current user, for an epoch.
+     * If a `nonce` value is supplied the return value will be a single epoch key.
+     * Otherwise an array of all epoch keys will be returned.
+     *
+     * If no `epoch` is supplied the current epoch will be used (as determined by `synchronizer.calcCurrentEpoch`).
+     * @param epoch The epoch to be queried. Default: current epoch.
+     * @param nonce The specified epoch key nonce. Default: `0`.
+     * @param attesterId The attester to be queried. Default: `this.attesterId`
+     * @returns An epoch key or an array of epoch keys.
+     */
     getEpochKeys(
-        _epoch?: bigint | number,
+        epoch?: bigint | number,
         nonce?: number,
-        _attesterId: bigint | string = this.sync.attesterId
+        attesterId: bigint | string = this.sync.attesterId
     ) {
         this._checkSync()
-        const attesterId = toDecString(_attesterId)
-        const epoch = _epoch ?? this.sync.calcCurrentEpoch(attesterId)
+        const _attesterId = toDecString(attesterId)
+        const _epoch = epoch ?? this.sync.calcCurrentEpoch(attesterId)
         this._checkEpkNonce(nonce ?? 0)
         if (typeof nonce === 'number') {
             return genEpochKey(
                 this.id.secret,
-                attesterId,
-                epoch,
+                _attesterId,
+                _epoch,
                 nonce,
                 this.chainId
             )
@@ -239,10 +310,21 @@ export default class UserState {
         return Array(this.sync.settings.numEpochKeyNoncePerEpoch)
             .fill(null)
             .map((_, i) =>
-                genEpochKey(this.id.secret, attesterId, epoch, i, this.chainId)
+                genEpochKey(
+                    this.id.secret,
+                    _attesterId,
+                    _epoch,
+                    i,
+                    this.chainId
+                )
             )
     }
 
+    /**
+     * This function is used to parse replacement data field to be `index` and `data`. See [replacement data field](https://developer.unirep.io/docs/protocol/data#replacement-field).
+     * @param replData The raw data which is processed on-chain.
+     * @returns The parsed data and the data index (nonce).
+     */
     parseReplData(replData: bigint) {
         const data =
             replData / BigInt(2) ** BigInt(this.sync.settings.replNonceBits)
@@ -255,23 +337,31 @@ export default class UserState {
     }
 
     /**
-     * Get the reputation object from the attester
-     * @param toEpoch The latest epoch that the reputation is accumulated
-     * @returns The reputation object
+     * Get the data for a user up to and including the provided epoch.
+     * By default data up to and including the current epoch is returned.
+     *
+     * :::tip
+     * If you want to make a proof of data make sure to use `getProvableData`.
+     * Data can only be proven once it has been included in a state tree leaf.
+     * Learn more about reputation proofs [here](https://developer.unirep.io/docs/circuits-api/classes/src.ReputationProof.md).
+     * :::
+     * @param toEpoch The latest epoch that the reputation is accumulated. Default: current epoch.
+     * @param attesterId The attester to be queried. Default: `this.attesterId`
+     * @returns The data object
      */
     public getData = async (
-        _toEpoch?: number,
-        _attesterId: bigint | string = this.sync.attesterId
+        toEpoch?: number,
+        attesterId: bigint | string = this.sync.attesterId
     ): Promise<bigint[]> => {
         const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
-        const attesterId = toDecString(_attesterId)
+        const _attesterId = toDecString(attesterId)
         const orClauses = [] as any[]
-        const toEpoch =
-            _toEpoch ?? (await this.latestTransitionedEpoch(attesterId))
+        const _toEpoch =
+            toEpoch ?? (await this.latestTransitionedEpoch(_attesterId))
         const signup = await this.sync.db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
-                attesterId,
+                attesterId: _attesterId,
             },
         })
         if (signup) {
@@ -281,12 +371,12 @@ export default class UserState {
             })
         }
         const allNullifiers = [] as any
-        for (let x = signup?.epoch ?? 0; x <= toEpoch; x++) {
+        for (let x = signup?.epoch ?? 0; x <= _toEpoch; x++) {
             allNullifiers.push(
                 ...[0, this.sync.settings.numEpochKeyNoncePerEpoch].map((v) =>
                     genEpochKey(
                         this.id.secret,
-                        attesterId,
+                        _attesterId,
                         x,
                         v,
                         this.chainId
@@ -296,20 +386,20 @@ export default class UserState {
         }
         const sortedNullifiers = await this.sync.db.findMany('Nullifier', {
             where: {
-                attesterId,
+                attesterId: _attesterId,
                 nullifier: allNullifiers,
             },
             orderBy: {
                 epoch: 'asc',
             },
         })
-        for (let x = signup?.epoch ?? 0; x <= toEpoch; x++) {
+        for (let x = signup?.epoch ?? 0; x <= _toEpoch; x++) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
                     genEpochKey(
                         this.id.secret,
-                        attesterId,
+                        _attesterId,
                         x,
                         i,
                         this.chainId
@@ -321,7 +411,7 @@ export default class UserState {
             ].map((v) =>
                 genEpochKey(
                     this.id.secret,
-                    attesterId,
+                    _attesterId,
                     x,
                     v,
                     this.chainId
@@ -339,7 +429,7 @@ export default class UserState {
             }
             const signedup = await this.sync.db.findOne('UserSignUp', {
                 where: {
-                    attesterId: attesterId,
+                    attesterId: _attesterId,
                     commitment: this.commitment.toString(),
                     epoch: x,
                 },
@@ -354,50 +444,7 @@ export default class UserState {
         const attestations = await this.sync.db.findMany('Attestation', {
             where: {
                 OR: orClauses,
-                attesterId: attesterId,
-            },
-            orderBy: {
-                index: 'asc',
-            },
-        })
-        for (const a of attestations) {
-            const { fieldIndex } = a
-            let currentNonce = BigInt(-1)
-            if (fieldIndex < this.sync.settings.sumFieldCount) {
-                data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
-            } else {
-                const { nonce } = this.parseReplData(BigInt(a.change))
-                if (nonce > currentNonce) {
-                    data[fieldIndex] = BigInt(a.change)
-                    currentNonce = nonce
-                }
-            }
-        }
-        return data
-    }
-
-    public async getProvableData(
-        attesterId: bigint | string = this.sync.attesterId
-    ): Promise<bigint[]> {
-        const epoch = await this.latestTransitionedEpoch(attesterId)
-        return this.getData(epoch - 1, attesterId)
-    }
-
-    public getDataByEpochKey = async (
-        epochKey: bigint | string,
-        epoch: number,
-        _attesterId: bigint | string = this.sync.attesterId
-    ) => {
-        this._checkSync()
-        const attesterId = toDecString(_attesterId)
-        this.sync.checkAttesterId(attesterId)
-        const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
-        if (typeof epoch !== 'number') throw new Error('epoch must be number')
-        const attestations = await this.sync.db.findMany('Attestation', {
-            where: {
-                epoch,
-                epochKey: epochKey.toString(),
-                attesterId: attesterId,
+                attesterId: _attesterId,
             },
             orderBy: {
                 index: 'asc',
@@ -420,7 +467,65 @@ export default class UserState {
     }
 
     /**
-     * Check if epoch key nonce is valid
+     * Get the data that can be proven by the user using a state tree leaf.
+     * This is the data up to, but not including, the epoch the user has transitioned into.
+     * @param attesterId The attester to be queried. Default: `this.attesterId`
+     * @returns The data object
+     */
+    public async getProvableData(
+        attesterId: bigint | string = this.sync.attesterId
+    ): Promise<bigint[]> {
+        const epoch = await this.latestTransitionedEpoch(attesterId)
+        return this.getData(epoch - 1, attesterId)
+    }
+
+    /**
+     * Get the pending changes to the data owned by an epoch key.
+     * @param epochKey The epoch key to be queried.
+     * @param epoch The epoch of the epoch key to be queried.
+     * @param attesterId The attester to be queried. Default: `this.attesterId`
+     * @returns The data object.
+     */
+    public getDataByEpochKey = async (
+        epochKey: bigint | string,
+        epoch: number,
+        attesterId: bigint | string = this.sync.attesterId
+    ) => {
+        this._checkSync()
+        const _attesterId = toDecString(attesterId)
+        this.sync.checkAttesterId(_attesterId)
+        const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
+        if (typeof epoch !== 'number') throw new Error('epoch must be number')
+        const attestations = await this.sync.db.findMany('Attestation', {
+            where: {
+                epoch,
+                epochKey: epochKey.toString(),
+                attesterId: _attesterId,
+            },
+            orderBy: {
+                index: 'asc',
+            },
+        })
+        for (const a of attestations) {
+            const { fieldIndex } = a
+            let currentNonce = BigInt(-1)
+            if (fieldIndex < this.sync.settings.sumFieldCount) {
+                data[fieldIndex] = (data[fieldIndex] + BigInt(a.change)) % F
+            } else {
+                const { nonce } = this.parseReplData(BigInt(a.change))
+                if (nonce > currentNonce) {
+                    data[fieldIndex] = BigInt(a.change)
+                    currentNonce = nonce
+                }
+            }
+        }
+        return data
+    }
+
+    /**
+     * @private
+     * Check if epoch key nonce is valid. Throws an error if the epoch key nonce is invalid.
+     * @param epochKeyNonce The input epoch key nonce to be checked.
      */
     private _checkEpkNonce = (epochKeyNonce: number) => {
         if (epochKeyNonce >= this.sync.settings.numEpochKeyNoncePerEpoch)
@@ -429,11 +534,19 @@ export default class UserState {
             )
     }
 
+    /**
+     * @private
+     * Check if a synchronizer is set. Throws an error if a synchronizer is not set.
+     */
     private _checkSync = () => {
         if (!this.sync)
             throw new Error('@unirep/core:UserState: no synchronizer is set')
     }
 
+    /**
+     * @private
+     * Check if a chain ID is set. If a chain ID is not set, it queries the provider and sets chain ID.
+     */
     private _checkChainId = async () => {
         if (this.chainId === -1) {
             const { chainId } = await this.sync.provider.getNetwork()
@@ -441,16 +554,23 @@ export default class UserState {
         }
     }
 
+    /**
+     * Get the index of epoch key among all attestations.
+     * @param epoch The epoch of the epoch key to be queried.
+     * @param epochKey The epoch key to be queried.
+     * @param attesterId The attester to be queried.
+     * @returns The index of the epoch key.
+     */
     public getEpochKeyIndex = async (
         epoch: number,
-        _epochKey: bigint | string,
-        _attesterId: bigint | string
+        epochKey: bigint | string,
+        attesterId: bigint | string
     ) => {
         this._checkSync()
         const attestations = await this.sync.db.findMany('Attestation', {
             where: {
                 epoch,
-                attesterId: toDecString(_attesterId),
+                attesterId: toDecString(attesterId),
             },
             orderBy: {
                 index: 'asc',
@@ -458,9 +578,10 @@ export default class UserState {
         })
         let index = 0
         const seenEpochKeys = {} as any
+        const inputEpochKey = epochKey
         for (const { epochKey } of attestations) {
             if (seenEpochKeys[epochKey]) continue
-            if (BigInt(epochKey) === BigInt(_epochKey)) {
+            if (BigInt(epochKey) === BigInt(inputEpochKey)) {
                 return index
             }
             seenEpochKeys[epochKey] = true
@@ -469,6 +590,16 @@ export default class UserState {
         return -1
     }
 
+    /**
+     * Generate a user state transition proof. Returns a [`UserStateTransitionProof`](https://developer.unirep.io/docs/circuits-api/classes/src.UserStateTransitionProof.md).
+     * @param options.toEpoch `toEpoch` is used to indicate in which epoch the proof will be used. Default: current epoch.
+     * @param options.attesterId `attesterId` is used to generate proof for certain attester. Default: `this.attesterId`.
+     * @returns The `UserStateTransitionProof` object.
+     * @example
+     * ```ts
+     * const { publicSignals, proof } = await userState.genUserStateTransitionProof()
+     * ```
+     */
     public genUserStateTransitionProof = async (
         options: {
             toEpoch?: number
@@ -586,12 +717,28 @@ export default class UserState {
     }
 
     /**
-     * Generate a reputation proof of current user state and given conditions
-     * @param epkNonce The nonce determines the output of the epoch key
-     * @param minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`
-     * @param maxRep The amount of reputation that user wants to prove. It should satisfy: `negRep - posRep >= maxRep`
-     * @param graffiti The graffiti that user wants to prove. It should satisfy: `graffiti == data[SUM_FIELD_COUNT]`
+     * Generate a proof of reputation. Returns a [`ReputationProof`](https://developer.unirep.io/docs/circuits-api/classes/src.ReputationProof.md).
+     * :::danger
+     * **Please avoid assigning the `minRep = data[0] - data[1]` or `maxRep = data[1] - data[0]`.**<br/>
+     * The proof could allow a user to accidentally publish their overall reputation (i.e. `data[0]-data[1]`).
+     * Depending on the circumstances (such as the length of the attestation history) this could reveal a user’s epoch key(s) as well.
+     * :::
+     * @param options.epkNonce The nonce determines the output of the epoch key. Default: `0`.
+     * @param options.minRep The amount of reputation that user wants to prove. It should satisfy: `posRep - negRep >= minRep`. Default: `0`
+     * @param options.maxRep The amount of reputation that user wants to prove. It should satisfy: `negRep - posRep >= maxRep`. Default: `0`
+     * @param options.graffiti The graffiti that user wants to prove. It should satisfy: `graffiti == (data[SUM_FIELD_COUNT] / (2 ** REPL_NONCE_BITS))`. Default: `0`.
+     * @param options.proveZeroRep Indicates if user wants to prove `posRep - negRep == 0`. Default: `0`.
+     * @param options.revealNonce Indicates if user wants to reveal epoch key nonce. Default: `false`.
+     * @param options.data Indicates if user wants to endorse a 253-bits data. Default: `0`.
+     * @param options.attesterId `attesterId` is used to generate proof for certain attester. Default: `this.attesterId`
      * @returns The reputation proof of type `ReputationProof`.
+     * @example
+     * ```ts
+     * const {publicSignals, proof} = await userState.genProveReputationProof({
+     *   minRep: 3,
+     *   graffiti: '1234',
+     * })
+     * ```
      */
     public genProveReputationProof = async (options: {
         epkNonce?: number
@@ -649,8 +796,14 @@ export default class UserState {
     }
 
     /**
-     * Generate a user sign up proof of current user state and the given attester ID
+     * Generate a proof that can be used to signup. Returns a [`SignupProof`](https://developer.unirep.io/docs/circuits-api/classes/src.SignupProof.md)
+     * @param options.epoch Indicates in which epoch the proof will be used. Default: current epoch.
+     * @param options.attesterId Indicates for which attester the proof will be used. Default: `this.attesterId`
      * @returns The sign up proof of type `SignUpProof`.
+     * @example
+     * ```ts
+     * const { publicSignals, proof } = await userState.genUserSignUpProof()
+     * ```
      */
     public genUserSignUpProof = async (
         options: { epoch?: number; attesterId?: bigint | string } = {}
@@ -677,6 +830,23 @@ export default class UserState {
         )
     }
 
+    /**
+     * Generate a proof that a user controls an epoch key in a certain epoch.
+     * Optionally provide a data value to sign.
+     * Returns an [`EpochKeyProof`](https://developer.unirep.io/docs/circuits-api/classes/src.EpochKeyProof.md).
+     * @param options.nonce The specified epoch key nonce. Default: `0`.
+     * @param options.epoch The specified epoch. Default: current epoch.
+     * @param options.data Indicates if user wants to endorse a 253-bits data. Default: `0`
+     * @param options.revealNonce Indicates if user wants to reveal epoch key nonce. Default: `false`.
+     * @param options.attesterId Indicates for which attester the proof will be used. Default: `this.attesterId`
+     * @returns The epoch key proof of type `EpochKeyProof`.
+     * @example
+     * ```ts
+     * const { publicSignals, proof } = await userState.genEpochKeyProof({
+     *   nonce: 1
+     * })
+     * ```
+     */
     public genEpochKeyProof = async (
         options: {
             nonce?: number
@@ -720,6 +890,26 @@ export default class UserState {
         )
     }
 
+    /**
+     * Generate a proof that a user controls an epoch key in a certain epoch.
+     * Optionally provide a data value to sign.
+     * Returns an [`EpochKeyLiteProof`](https://developer.unirep.io/docs/circuits-api/classes/src.EpochKeyLiteProof.md).
+     *
+     * This proof **will not include a merkle tree proof** which makes the proof size smaller than an [`EpochKeyProof`](https://developer.unirep.io/docs/circuits-api/classes/src.EpochKeyProof.md).
+     * It can be used to prove a seen and valid epoch key.
+     * @param options.nonce The specified epoch key nonce. Default: `0`.
+     * @param options.epoch The specified epoch. Default: current epoch.
+     * @param options.data Indicates if user wants to endorse a 253-bits data. Default: `0`.
+     * @param options.revealNonce Indicates if user wants to reveal epoch key nonce. Default: `false`.
+     * @param options.attesterId Indicates for which attester the proof will be used. Default: `this.attesterId`
+     * @returns The epoch key lite proof of type `EpochKeyLiteProof`.
+     * @example
+     * ```ts
+     * const { publicSignals, proof } = await userState.genEpochKeyLiteProof({
+     *   nonce: 1
+     * })
+     * ```
+     */
     public genEpochKeyLiteProof = async (
         options: {
             nonce?: number

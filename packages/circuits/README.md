@@ -4,10 +4,10 @@ Client library for circuit related functions which are used in UniRep protocol.
 
 <p align="center">
     <a href="https://github.com/unirep/unirep">
-        <img src="https://img.shields.io/badge/project-unirep-blue.svg?style=flat-square">
+        <img src="https://img.shields.io/badge/project-unirep-blue.svg?style=flat-square" />
     </a>
     <a href="https://github.com/unirep/unirep/blob/master/LICENSE">
-        <img alt="Github license" src="https://img.shields.io/github/license/unirep/unirep.svg?style=flat-square">
+        <img alt="Github license" src="https://img.shields.io/github/license/unirep/unirep.svg?style=flat-square" />
     </a>
     <a href="https://www.npmjs.com/package/@unirep/circuits">
         <img alt="NPM version" src="https://img.shields.io/npm/v/@unirep/circuits?style=flat-square" />
@@ -61,42 +61,19 @@ yarn add @unirep/circuits
 
 ### Prover
 
-**Build a prover for UniRep protocol**
+**Use default nodejs prover**
 ```typescript
-import * as snarkjs from 'snarkjs'
-import { Circuit, Prover } from '@unirep/circuits'
-import { SnarkProof, SnarkPublicSignals } from '@unirep/utils'
+import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+```
 
-const buildPath = 'PATH/TO/CIRCUIT/FOLDER/'
+**Use web prover**
+```typescript
+// default web prover from url: https://keys.unirep.io/${version}/.
+import prover from '@unirep/circuits/provers/web'
 
-const prover: Prover = {
-    genProofAndPublicSignals: async (
-        proofType: string | Circuit,
-        inputs: any
-    ): Promise<{
-        proof: any,
-        publicSignals: any
-    }> => {
-        const circuitWasmPath = buildPath + `${proofType}.wasm`
-        const zkeyPath = buildPath + `${proofType}.zkey`
-        const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-            inputs,
-            circuitWasmPath,
-            zkeyPath
-        )
-
-        return { proof, publicSignals }
-    },
-
-    verifyProof: async (
-        name: string | Circuit,
-        publicSignals: SnarkPublicSignals,
-        proof: SnarkProof
-    ): Promise<boolean> => {
-        const vkey = require(buildPath +  `${name}.vkey.json`)
-        return snarkjs.groth16.verify(vkey, publicSignals, proof)
-    },
-}
+// construct web prover from other url
+import { WebProver } from '@unirep/circuits/provers/web'
+const prover = new WebProver('https://YOUR/KEYS/URL')
 ```
 
 **Generate proof and verify it with the above prover**
@@ -123,7 +100,7 @@ const isValid = await prover.verifyProof(
 
 ### Circom
 
-Use the unirep circom circuits like so:
+Use the unirep [circom](https://docs.circom.io/) circuits like so:
 
 ```circom
 pragma circom 2.1.0;
@@ -143,7 +120,8 @@ template DataProof(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT) {
     signal input chain_id;
 
     signal output epoch_key;
-    signal output state_tree_root;   
+    signal output state_tree_root;
+    signal output control;
 
     (epoch_key, state_tree_root, control) <== EpochKey(STATE_TREE_DEPTH, EPOCH_KEY_NONCE_PER_EPOCH, FIELD_COUNT)(
         state_tree_indices, 
@@ -194,11 +172,11 @@ const identityCommitment = data.identityCommitment
 ```
 
 ## 🙌🏻 Join our community
-- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord"></a>
-- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter"></a>
-- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram"></a>
+- Discord server: <a href="https://discord.gg/VzMMDJmYc5"><img src="https://img.shields.io/discord/931582072152281188?label=Discord&style=flat-square&logo=discord" /></a>
+- Twitter account: <a href="https://twitter.com/UniRep_Protocol"><img src="https://img.shields.io/twitter/follow/UniRep_Protocol?style=flat-square&logo=twitter" /></a>
+- Telegram group: <a href="https://t.me/unirep"><img src="https://img.shields.io/badge/telegram-@unirep-blue.svg?style=flat-square&logo=telegram" /></a>
 
-## <img height="24" src="https://pse.dev/_next/static/media/header-logo.16312102.svg"> Privacy & Scaling Explorations
+## <img height="24" src="https://pse.dev/_next/static/media/header-logo.16312102.svg" /> Privacy & Scaling Explorations
 
-This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) in Ethereum Foundation.
+This project is supported by [Privacy & Scaling Explorations](https://github.com/privacy-scaling-explorations) and the Ethereum Foundation.
 See more projects on: https://pse.dev/.

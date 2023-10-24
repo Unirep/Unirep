@@ -1,0 +1,82 @@
+type Attestation @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt! # uint256
+    epochKey: BigInt! # uint256
+    attesterId: BigInt! # uint160
+    fieldIndex: BigInt! # uint256
+    change: BigInt! # uint256
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type StateTreeLeaf @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt!
+    leaf: BigInt!
+    index: Int!
+    attesterId: BigInt!
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type EpochTreeLeaf @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt!
+    leaf: BigInt!
+    index: Int!
+    attesterId: BigInt!
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type HistoryTreeLeaf @entity(immutable: true) {
+    id: Bytes! # AttesterId
+    leaf: BigInt!
+    attesterId: BigInt!
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type Epoch @entity(immutable: true) {
+    id: Bytes!
+    number: BigInt!
+    attesterId: BigInt!
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type Nullifier @entity(immutable: true) {
+    id: Bytes!
+    epoch: BigInt!
+    attesterId: BigInt!
+    nullifier: BigInt!
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type User @entity(immutable: true) {
+    id: Bytes!
+    commitment: BigInt!
+    epoch: BigInt!
+    attesterId: BigInt!
+    leafIndex: Int!
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}
+
+type Attester @entity(immutable: true) {
+    id: Bytes!
+    attesterId: BigInt!
+    startTimestamp: BigInt!
+    epochLength: BigInt!
+    blockNumber: BigInt!
+    blockTimestamp: BigInt!
+    transactionHash: Bytes!
+}

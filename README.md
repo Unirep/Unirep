@@ -76,5 +76,5 @@ Go to [CONTRIBUTING.md](./CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](./CODE_OF_CO
 
 ## <img height="24" src="https://pse.dev/_next/static/media/header-logo.16312102.svg"> Privacy & Scaling Explorations
 
-This project is supported by [Privacy & Scaling Explorations](https://pse.dev/) in Ethereum Foundation.
+This project is supported by [Privacy & Scaling Explorations](https://pse.dev/) and the Ethereum Foundation.
 See more projects on: https://pse.dev/projects.
