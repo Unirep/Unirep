@@ -2,7 +2,7 @@ import {
     formatProofForVerifierContract,
     formatProofForSnarkjsVerification,
 } from './utils'
-import { SnarkProof } from '@unirep/utils'
+import { Groth16Proof } from 'snarkjs'
 import { Circuit, Prover } from './type'
 
 /**
@@ -19,9 +19,9 @@ import { Circuit, Prover } from './type'
  */
 export class BaseProof {
     /**
-     * The proof data in [`SnarkProof`](https://developer.unirep.io/docs/utils-api/interfaces/SnarkProof.md) format. Use this when manually verifying with `snarkjs`.
+     * The proof data in [`Groth16Proof`](https://www.npmjs.com/package/@types/snarkjs?activeTab=code) format. Use this when manually verifying with `snarkjs`.
      */
-    readonly _snarkProof: SnarkProof
+    readonly _snarkProof: Groth16Proof
     /**
      * The string name of the type of circuit this proof came from. For the `BaseProof` class this is undefined.
      */
@@ -62,7 +62,7 @@ export class BaseProof {
      */
     constructor(
         publicSignals: (bigint | string)[],
-        proof: SnarkProof | (bigint | string)[],
+        proof: Groth16Proof | (bigint | string)[],
         prover?: Prover
     ) {
         if (Array.isArray(proof)) {
@@ -74,7 +74,7 @@ export class BaseProof {
         } else if (typeof proof === 'object') {
             // assume it's a SnarkProof
             const formattedProof: any[] = formatProofForVerifierContract(proof)
-            this._snarkProof = proof as SnarkProof
+            this._snarkProof = proof as Groth16Proof
             this.proof = formattedProof
         } else {
             throw new Error('Invalid proof supplied')

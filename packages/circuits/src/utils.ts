@@ -1,5 +1,5 @@
 import { CircuitConfig } from './CircuitConfig'
-import { SnarkProof } from '@unirep/utils'
+import { Groth16Proof } from 'snarkjs'
 import {
     EpochKeyControl,
     Field,
@@ -13,7 +13,9 @@ import {
  * @param proof The proof of `SnarkProof` type
  * @returns An one dimensional array of stringified proof data
  */
-export const formatProofForVerifierContract = (proof: SnarkProof): string[] => {
+export const formatProofForVerifierContract = (
+    proof: Groth16Proof
+): string[] => {
     return [
         proof.pi_a[0],
         proof.pi_a[1],
@@ -23,7 +25,7 @@ export const formatProofForVerifierContract = (proof: SnarkProof): string[] => {
         proof.pi_b[1][0],
         proof.pi_c[0],
         proof.pi_c[1],
-    ].map((x) => x.toString())
+    ]
 }
 
 /**
@@ -33,15 +35,21 @@ export const formatProofForVerifierContract = (proof: SnarkProof): string[] => {
  */
 export const formatProofForSnarkjsVerification = (
     proof: Field[]
-): SnarkProof => {
+): Groth16Proof => {
     return {
-        pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')],
+        pi_a: [BigInt(proof[0]), BigInt(proof[1]), BigInt('1')].map((x) =>
+            x.toString()
+        ),
         pi_b: [
-            [BigInt(proof[3]), BigInt(proof[2])],
-            [BigInt(proof[5]), BigInt(proof[4])],
-            [BigInt('1'), BigInt('0')],
+            [BigInt(proof[3]), BigInt(proof[2])].map((x) => x.toString()),
+            [BigInt(proof[5]), BigInt(proof[4])].map((x) => x.toString()),
+            [BigInt('1'), BigInt('0')].map((x) => x.toString()),
         ],
-        pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')],
+        pi_c: [BigInt(proof[6]), BigInt(proof[7]), BigInt('1')].map((x) =>
+            x.toString()
+        ),
+        protocol: 'groth16',
+        curve: 'bn128',
     }
 }
 
