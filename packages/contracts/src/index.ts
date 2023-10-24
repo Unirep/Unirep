@@ -9,7 +9,7 @@ import { ethers } from 'ethers'
  */
 export const getUnirepContract = (
     address: string,
-    signerOrProvider: ethers.Signer | ethers.providers.Provider
+    signerOrProvider: ethers.Signer | ethers.Provider
 ): Unirep => {
     return UnirepFactory.connect(address, signerOrProvider)
 }
@@ -30,9 +30,9 @@ export const genSignature = async (
     chainId: bigint | number
 ): Promise<string> => {
     const attesterAddress = await attester.getAddress()
-    const message = ethers.utils.solidityKeccak256(
+    const message = ethers.solidityPackedKeccak256(
         ['address', 'address', 'uint256', 'uint256'],
         [unirepAddress, attesterAddress, epochLength, chainId]
     )
-    return attester.signMessage(ethers.utils.arrayify(message))
+    return attester.signMessage(ethers.getBytes(message))
 }
