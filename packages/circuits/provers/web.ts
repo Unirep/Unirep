@@ -1,4 +1,4 @@
-import { SnarkProof, SnarkPublicSignals } from '@unirep/utils'
+import { Groth16Proof, PublicSignals } from 'snarkjs'
 import { version } from '../package.json'
 
 const KEY_URL = `https://keys.unirep.io/${version}/`
@@ -87,8 +87,8 @@ export class WebProver {
      */
     async verifyProof(
         circuitName: string,
-        publicSignals: SnarkPublicSignals,
-        proof: SnarkProof
+        publicSignals: PublicSignals,
+        proof: Groth16Proof
     ) {
         const _snarkjs = import('snarkjs')
         const url = new URL(`${circuitName}.vkey.json`, this.url).toString()
