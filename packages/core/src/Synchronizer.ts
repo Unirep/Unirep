@@ -131,7 +131,7 @@ export class Synchronizer extends EventEmitter {
      * The genesis block of the provider environment
      * @dev Allow passing the genesis block as the starting block for querying events
      */
-    public genesisBlock: number = 0
+    private _genesisBlock: number = 0
 
     /**
      * @private
@@ -193,7 +193,7 @@ export class Synchronizer extends EventEmitter {
             provider
         )
         this._provider = provider
-        this.genesisBlock = genesisBlock ?? 0
+        this._genesisBlock = genesisBlock ?? 0
         this._settings = {
             stateTreeDepth: 0,
             epochTreeDepth: 0,
@@ -310,6 +310,13 @@ export class Synchronizer extends EventEmitter {
      */
     get settings() {
         return this._settings
+    }
+
+    /**
+     * Read the genesis block of the provider environment.
+     */
+    get genesisBlock() {
+        return this._genesisBlock
     }
 
     /**
@@ -434,7 +441,7 @@ export class Synchronizer extends EventEmitter {
         }
         const events = await this.unirepContract.queryFilter(
             filter,
-            this.genesisBlock
+            this._genesisBlock
         )
         if (events.length === 0) {
             throw new Error(
