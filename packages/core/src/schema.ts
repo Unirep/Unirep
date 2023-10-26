@@ -35,7 +35,7 @@ const _schema = [
         rows: [
             ['epoch', 'Int'],
             ['epochKey', 'String'],
-            ['index', 'String', { unique: true }], // event index, tx index, block index
+            ['index', 'String', { unique: true }],
             ['attesterId', 'String'],
             ['fieldIndex', 'Int'],
             ['change', 'String'],
@@ -55,6 +55,7 @@ const _schema = [
     },
     {
         name: 'EpochTreeLeaf',
+        primaryKey: 'id',
         indexes: [{ keys: ['index'] }],
         rows: [
             ['id', 'String'],
@@ -67,6 +68,7 @@ const _schema = [
     },
     {
         name: 'HistoryTreeLeaf',
+        primaryKey: 'id',
         indexes: [{ keys: ['index'] }],
         rows: [
             ['id', 'String'],
@@ -102,7 +104,7 @@ const _schema = [
             { keys: ['commitment', 'attesterId', 'epoch'] },
         ],
         rows: [
-            ['commitment', 'String'],
+            ['commitment', 'String', { index: true }],
             ['epoch', 'Int'],
             ['attesterId', 'String'],
             ['blockNumber', 'Int'],
