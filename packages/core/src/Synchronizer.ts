@@ -128,8 +128,7 @@ export class Synchronizer extends EventEmitter {
      */
     public blockRate: number = 10000
     /**
-     * The genesis block of the provider environment
-     * @dev Allow passing the genesis block as the starting block for querying events
+     * Allow passing the genesis block as the starting block for querying events
      */
     private _genesisBlock: number = 0
 
