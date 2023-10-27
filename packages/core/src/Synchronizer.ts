@@ -127,6 +127,10 @@ export class Synchronizer extends EventEmitter {
      * How many blocks the synchronizer will query on each poll. Default: `100000`
      */
     public blockRate: number = 10000
+    /**
+     * Allow passing the genesis block as the starting block for querying events
+     */
+    private _genesisBlock: number = 0
 
     /**
      * @private
@@ -166,9 +170,10 @@ export class Synchronizer extends EventEmitter {
         attesterId?: bigint | bigint[]
         provider: ethers.providers.Provider
         unirepAddress: string
+        genesisBlock?: number
     }) {
         super()
-        const { db, unirepAddress, provider, attesterId } = config
+        const { db, unirepAddress, provider, attesterId, genesisBlock } = config
 
         if (Array.isArray(attesterId)) {
             // multiple attesters
@@ -187,6 +192,7 @@ export class Synchronizer extends EventEmitter {
             provider
         )
         this._provider = provider
+        this._genesisBlock = genesisBlock ?? 0
         this._settings = {
             stateTreeDepth: 0,
             epochTreeDepth: 0,
@@ -303,6 +309,13 @@ export class Synchronizer extends EventEmitter {
      */
     get settings() {
         return this._settings
+    }
+
+    /**
+     * Read the genesis block of the provider environment.
+     */
+    get genesisBlock() {
+        return this._genesisBlock
     }
 
     /**
@@ -425,7 +438,10 @@ export class Synchronizer extends EventEmitter {
                 ),
             ])
         }
-        const events = await this.unirepContract.queryFilter(filter)
+        const events = await this.unirepContract.queryFilter(
+            filter,
+            this._genesisBlock
+        )
         if (events.length === 0) {
             throw new Error(
                 `@unirep/core:Synchronizer: failed to fetch genesis event`
