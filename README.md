@@ -55,7 +55,7 @@ For more information, refer to the [documentation](https://developer.unirep.io/)
 Install and build
 
 ```bash
-yarn & yarn build
+yarn && yarn build
 ```
 
 Run test

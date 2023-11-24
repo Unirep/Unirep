@@ -21,7 +21,7 @@
         "build": "ts-node ./scripts/buildVerifiers.ts && yarn compile && yarn abi && hardhat typechain && tsc",
         "abi": "node ./scripts/abi",
         "compile": "hardhat compile",
-        "test": "hardhat test ./test/*.test.ts",
+        "test": "hardhat test",
         "test-ci": "hardhat test",
         "lint": "prettier --write .",
         "coverage": "hardhat coverage && yarn badge",
