@@ -20,7 +20,7 @@
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "tsc",
-        "test": "hardhat test test/*.test.ts",
+        "test": "hardhat test",
         "test-ci": "hardhat test --parallel",
         "lint": "prettier --write ."
     },
