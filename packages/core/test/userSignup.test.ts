@@ -15,11 +15,13 @@ describe('User Signup', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
+    let unirepAddress
     let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        unirepAddress = await unirepContract.getAddress()
         const network = await accounts[0].provider.getNetwork()
         chainId = network.chainId
     })
@@ -42,16 +44,18 @@ describe('User Signup', function () {
     it('sign up users with no initial data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const attesterId = await attester.getAddress()
         const rootHistories = [] as any
         const config = await unirepContract.config()
-        const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
+        const stateTreeDepth = Number(config.stateTreeDepth)
+        const stateTree = new IncrementalMerkleTree(stateTreeDepth)
         for (let i = 0; i < 5; i++) {
             const id = new Identity()
             const userState = await genUserState(
                 ethers.provider,
-                unirepContract.address,
+                unirepAddress,
                 id,
-                BigInt(attester.address)
+                BigInt(attesterId)
             )
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
@@ -62,14 +66,14 @@ describe('User Signup', function () {
                 .then((t) => t.wait())
 
             const contractEpoch = await unirepContract.attesterCurrentEpoch(
-                attester.address
+                attesterId
             )
             const unirepEpoch = await userState.sync.loadCurrentEpoch()
             expect(unirepEpoch).equal(Number(contractEpoch))
 
             const leaf = genStateTreeLeaf(
                 id.secret,
-                attester.address,
+                attesterId,
                 contractEpoch,
                 Array(userState.sync.settings.fieldCount).fill(0),
                 chainId
@@ -79,7 +83,7 @@ describe('User Signup', function () {
 
             const stateRootExists =
                 await unirepContract.attesterStateTreeRootExists(
-                    attester.address,
+                    attesterId,
                     contractEpoch,
                     stateTree.root
                 )
@@ -91,8 +95,8 @@ describe('User Signup', function () {
         // Check GST roots match Unirep state
         const unirepState = await genUnirepState(
             ethers.provider,
-            unirepContract.address,
-            BigInt(attester.address)
+            unirepAddress,
+            BigInt(attesterId)
         )
         for (let root of rootHistories) {
             const exist = await unirepState.stateTreeRootExists(
@@ -107,20 +111,23 @@ describe('User Signup', function () {
     it('should sign up user with initial data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const attesterId = await attester.getAddress()
         const config = await unirepContract.config()
 
         const id = new Identity()
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
+            attesterId
         )
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
-            BigInt(attester.address)
+            BigInt(attesterId)
         )
 
-        const data = Array(config.fieldCount)
+        const fieldCount = Number(config.fieldCount)
+        const sumFieldCount = Number(config.sumFieldCount)
+        const data = Array(fieldCount)
             .fill(0)
             .map((_, i) => {
                 return i + 100
@@ -128,7 +135,7 @@ describe('User Signup', function () {
 
         const idHash = genIdentityHash(
             id.secret,
-            attester.address,
+            attesterId,
             contractEpoch,
             chainId
         )
@@ -137,10 +144,11 @@ describe('User Signup', function () {
             .connect(attester)
             .manualUserSignUp(contractEpoch, id.commitment, idHash, data)
             .then((t) => t.wait())
+        console.log('wait for sync')
         await userState.waitForSync()
         const _data = await userState.getData()
-        for (let x = 0; x < config.fieldCount; x++) {
-            if (x < config.sumFieldCount) {
+        for (let x = 0; x < fieldCount; x++) {
+            if (x < sumFieldCount) {
                 expect(_data[x].toString()).to.equal(data[x].toString())
             } else {
                 expect(_data[x].toString()).to.equal(

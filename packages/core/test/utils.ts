@@ -13,14 +13,6 @@ import { Synchronizer } from '../src/Synchronizer'
 
 export const EPOCH_LENGTH = 1000
 
-export const computeEpochKeyProofHash = (epochKeyProof: any) => {
-    const abiEncoder = ethers.utils.defaultAbiCoder.encode(
-        ['uint256', 'uint256', 'uint256', 'uint256[8]'],
-        epochKeyProof
-    )
-    return ethers.utils.keccak256(abiEncoder)
-}
-
 const tables = [
     'Nullifier',
     'StateTreeLeaf',
@@ -115,7 +107,7 @@ export const compareAttestations = (attestDB: any, attestObj: any) => {
  * @param db An optional DB object
  */
 export const genUnirepState = async (
-    provider: ethers.providers.Provider,
+    provider: ethers.Provider,
     unirepAddress: string,
     attesterId?: bigint | bigint[],
     db?: DB
@@ -142,7 +134,7 @@ export const genUnirepState = async (
  * @param db An optional DB object
  */
 export const genUserState = async (
-    provider: ethers.providers.Provider,
+    provider: ethers.Provider,
     unirepAddress: string,
     id: Identity,
     attesterId?: bigint | bigint[],

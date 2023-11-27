@@ -14,13 +14,17 @@ let synchronizer: Synchronizer
 describe('Synchronizer process events', function () {
     this.timeout(0)
     let unirepContract
+    let unirepAddress
     let attester
+    let attesterId
     let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         attester = accounts[1]
+        attesterId = await attester.getAddress()
         unirepContract = await deployUnirep(accounts[0])
+        unirepAddress = await unirepContract.getAddress()
         const network = await accounts[0].provider.getNetwork()
         chainId = network.chainId
     })
@@ -34,10 +38,7 @@ describe('Synchronizer process events', function () {
                 .connect(attester)
                 .attesterSignUp(EPOCH_LENGTH)
                 .then((t) => t.wait())
-            synchronizer = await genUnirepState(
-                ethers.provider,
-                unirepContract.address
-            )
+            synchronizer = await genUnirepState(ethers.provider, unirepAddress)
             const epoch = await synchronizer.loadCurrentEpoch()
             await bootstrapUsers(synchronizer, attester)
             await bootstrapAttestations(synchronizer, attester)
@@ -49,10 +50,10 @@ describe('Synchronizer process events', function () {
         afterEach(async () => {
             await synchronizer.waitForSync()
             const state = await genUserState(
-                synchronizer.unirepContract.provider,
-                synchronizer.unirepContract.address,
+                synchronizer.provider,
+                synchronizer.unirepAddress,
                 new Identity(),
-                BigInt(attester.address)
+                BigInt(attesterId)
             )
             await compareDB(state.sync.db, synchronizer.db)
             state.sync.stop()
@@ -63,9 +64,9 @@ describe('Synchronizer process events', function () {
     }
 
     it('should process attester sign up event', async () => {
-        const [AttesterSignedUp] =
-            synchronizer.unirepContract.filters.AttesterSignedUp()
-                .topics as string[]
+        const [AttesterSignedUp] = (await synchronizer.unirepContract.filters
+            .AttesterSignedUp()
+            .getTopicFilter()) as string[]
         const signUpEvent = new Promise((rs, rj) =>
             synchronizer.once(AttesterSignedUp, (event) => rs(event))
         )
@@ -78,16 +79,17 @@ describe('Synchronizer process events', function () {
             .connect(attester)
             .attesterSignUp(epochLength)
 
-        const { timestamp } = await tx
-            .wait()
-            .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
+        const transaction = await tx.getTransaction()
+        const { timestamp } = await ethers.provider.getBlock(
+            transaction?.blockNumber
+        )
 
         await signUpEvent
-        const attesterId = BigInt(attester.address).toString()
+        const attesterId = await attester.getAddress()
         await synchronizer.waitForSync()
         const docs = await synchronizer.db.findMany('Attester', {
             where: {
-                _id: attesterId,
+                _id: BigInt(attesterId).toString(),
             },
         })
         expect(docs.length).to.equal(1)
@@ -98,12 +100,12 @@ describe('Synchronizer process events', function () {
     })
 
     it('should process sign up event', async () => {
-        const [UserSignedUp] =
-            synchronizer.unirepContract.filters.UserSignedUp()
-                .topics as string[]
-        const [StateTreeLeaf] =
-            synchronizer.unirepContract.filters.StateTreeLeaf()
-                .topics as string[]
+        const [UserSignedUp] = (await synchronizer.unirepContract.filters
+            .UserSignedUp()
+            .getTopicFilter()) as string[]
+        const [StateTreeLeaf] = (await synchronizer.unirepContract.filters
+            .StateTreeLeaf()
+            .getTopicFilter()) as string[]
         const signUpEvent = new Promise((rs, rj) =>
             synchronizer.once(UserSignedUp, (event) => rs(event))
         )
@@ -114,9 +116,9 @@ describe('Synchronizer process events', function () {
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            synchronizer.unirepContract.address,
+            synchronizer.unirepAddress,
             id,
-            BigInt(attester.address)
+            BigInt(attesterId)
         )
         const epoch = await synchronizer.loadCurrentEpoch()
         const { publicSignals, proof } = await userState.genUserSignUpProof({
@@ -128,7 +130,6 @@ describe('Synchronizer process events', function () {
             .userSignUp(publicSignals, proof)
             .then((t) => t.wait())
 
-        const attesterId = BigInt(attester.address).toString()
         await synchronizer.waitForSync()
         const tree = await synchronizer.genStateTree(epoch)
         await signUpEvent
@@ -140,17 +141,15 @@ describe('Synchronizer process events', function () {
         })
         expect(docs.length).to.equal(1)
         expect(docs[0].epoch).to.equal(epoch)
-        expect(docs[0].attesterId).to.equal(attesterId)
+        expect(docs[0].attesterId).to.equal(BigInt(attesterId).toString())
         const finalUserCount = await synchronizer.db.count('UserSignUp', {})
         expect(finalUserCount).to.equal(userCount + 1)
         // now look for a new GSTLeaf
         const contractEpoch =
-            await synchronizer.unirepContract.attesterCurrentEpoch(
-                attester.address
-            )
+            await synchronizer.unirepContract.attesterCurrentEpoch(attesterId)
         const leaf = genStateTreeLeaf(
             id.secret,
-            BigInt(attester.address),
+            BigInt(attesterId),
             contractEpoch,
             Array(synchronizer.settings.fieldCount).fill(0),
             chainId
@@ -177,11 +176,12 @@ describe('Synchronizer process events', function () {
     })
 
     it('should process attestations', async () => {
-        const [Attestation] = synchronizer.unirepContract.filters.Attestation()
-            .topics as string[]
-        const [EpochTreeLeaf] =
-            synchronizer.unirepContract.filters.EpochTreeLeaf()
-                .topics as string[]
+        const [Attestation] = (await synchronizer.unirepContract.filters
+            .Attestation()
+            .getTopicFilter()) as string[]
+        const [EpochTreeLeaf] = (await synchronizer.unirepContract.filters
+            .EpochTreeLeaf()
+            .getTopicFilter()) as string[]
         const attestationEvent = new Promise((rs, rj) =>
             synchronizer.once(Attestation, (event) => rs(event))
         )
@@ -191,12 +191,12 @@ describe('Synchronizer process events', function () {
         const attestCount = await synchronizer.db.count('Attestation', {})
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
 
         const userState = await genUserState(
             ethers.provider,
-            synchronizer.unirepContract.address,
+            synchronizer.unirepAddress,
             id,
             attesterId
         )
@@ -250,7 +250,7 @@ describe('Synchronizer process events', function () {
         })
         expect(docs.length).to.equal(1)
         expect(docs[0].epoch).to.equal(epoch)
-        expect(docs[0].attesterId).to.equal(attesterId.toString())
+        expect(docs[0].attesterId).to.equal(BigInt(attesterId).toString())
         const finalAttestCount = await synchronizer.db.count('Attestation', {})
         expect(finalAttestCount).to.equal(attestCount + 1)
         userState.stop()
@@ -259,12 +259,12 @@ describe('Synchronizer process events', function () {
     it('should process ust events', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
 
         const userState = await genUserState(
             ethers.provider,
-            synchronizer.unirepContract.address,
+            synchronizer.unirepAddress,
             id,
             attesterId
         )
@@ -285,8 +285,9 @@ describe('Synchronizer process events', function () {
         const fieldIndex = 1
         const val = 18891
         // now submit the attestation from the attester
-        const [EpochEnded] = synchronizer.unirepContract.filters.EpochEnded()
-            .topics as string[]
+        const [EpochEnded] = (await synchronizer.unirepContract.filters
+            .EpochEnded()
+            .getTopicFilter()) as string[]
 
         const epochEndedEvent = new Promise((rs, rj) =>
             synchronizer.once(EpochEnded, (event) => rs(event))
@@ -318,8 +319,9 @@ describe('Synchronizer process events', function () {
         await Promise.all(checkPromises)
 
         const [UserStateTransitioned] =
-            synchronizer.unirepContract.filters.UserStateTransitioned()
-                .topics as string[]
+            (await synchronizer.unirepContract.filters
+                .UserStateTransitioned()
+                .getTopicFilter()) as string[]
         const ust = new Promise((rs, rj) =>
             synchronizer.once(UserStateTransitioned, (event) => rs(event))
         )

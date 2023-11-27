@@ -21,13 +21,15 @@ describe('Epoch key Lite proof', function () {
     this.timeout(0)
 
     let unirepContract
+    let unirepAddress
     let epochKeyLiteVerifierHelper
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        unirepAddress = await unirepContract.getAddress()
         epochKeyLiteVerifierHelper = await deployVerifierHelper(
-            unirepContract.address,
+            unirepAddress,
             accounts[0],
             Circuit.epochKeyLite
         )
@@ -51,11 +53,11 @@ describe('Epoch key Lite proof', function () {
     it('should generate an epoch key lite proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -85,11 +87,11 @@ describe('Epoch key Lite proof', function () {
     it('should reveal the epoch key nonce', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -125,11 +127,11 @@ describe('Epoch key Lite proof', function () {
     it('should not reveal the epoch key nonce', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -165,11 +167,11 @@ describe('Epoch key Lite proof', function () {
     it('should prove data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -203,11 +205,11 @@ describe('Epoch key Lite proof', function () {
     it('should specify an epoch', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )

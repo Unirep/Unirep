@@ -56,7 +56,7 @@ export default class UserState {
     private _prover: Prover
     private _id: Identity
     private _sync: Synchronizer
-    private _chainId: number
+    private _chainId: bigint
 
     /**
      * The [Semaphore](https://semaphore.pse.dev/) identity commitment of the user.
@@ -98,7 +98,7 @@ export default class UserState {
         db?: DB
         attesterId?: bigint | bigint[]
         unirepAddress?: string
-        provider?: ethers.providers.Provider
+        provider?: ethers.Provider
         id: Identity
         prover: Prover
     }) {
@@ -138,7 +138,7 @@ export default class UserState {
         }
         this._id = id
         this._prover = prover
-        this._chainId = -1 // need to be setup in async function
+        this._chainId = BigInt(-1) // need to be setup in async function
     }
 
     /**
@@ -548,7 +548,7 @@ export default class UserState {
      * Check if a chain ID is set. If a chain ID is not set, it queries the provider and sets chain ID.
      */
     private _checkChainId = async () => {
-        if (this.chainId === -1) {
+        if (this.chainId === BigInt(-1)) {
             const { chainId } = await this.sync.provider.getNetwork()
             this._chainId = chainId
         }

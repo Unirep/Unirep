@@ -3,6 +3,7 @@ import { Prover, CircuitConfig } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Identity } from '@semaphore-protocol/identity'
 import { genRandomSalt } from '@unirep/utils'
+import { genSignature } from '@unirep/contracts'
 import { Synchronizer, UserState } from '@unirep/core'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
@@ -12,8 +13,9 @@ export async function bootstrapUnirep(
     prover: Prover = defaultProver
 ) {
     const unirepContract = await deployUnirep(provider, config, prover)
+    const unirepAddress = await unirepContract.getAddress()
     const synchronizer = new Synchronizer({
-        unirepAddress: unirepContract.address,
+        unirepAddress,
         provider,
     })
     return synchronizer
@@ -25,9 +27,13 @@ export async function bootstrapAttester(
 ) {
     const { unirepContract } = synchronizer.unirepContract
     const attester = ethers.Wallet.createRandom()
-    const sigdata = ethers.utils.solidityKeccak256(
-        ['address', 'address'],
-        [attester.address, unirepContract.address]
+    const unirepAddress = await unirepContract.getAddress()
+    const { chainId } = await synchronizer.provider.getNetwork()
+    const sigdata = await genSignature(
+        unirepAddress,
+        attester as any,
+        epochLength,
+        chainId
     )
     const sig = attester.signMessage(sigdata)
     await unirepContract

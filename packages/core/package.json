@@ -25,9 +25,9 @@
         "lint": "prettier --write ."
     },
     "devDependencies": {
-        "@nomicfoundation/hardhat-chai-matchers": "^1.0.5",
-        "@nomiclabs/hardhat-ethers": "^2.0.6",
-        "hardhat": "^2.12.7",
+        "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
+        "@nomicfoundation/hardhat-ethers": "^3.0.5",
+        "hardhat": "^2.19.1",
         "typescript": "^4.7.3"
     },
     "dependencies": {
@@ -37,7 +37,7 @@
         "@unirep/utils": "2.0.0-beta-5",
         "anondb": "^0.0.21",
         "async-lock": "^1.4.0",
-        "ethers": "^5.7.2",
+        "ethers": "^6.8.0",
         "nanoid": "^3.3.6"
     }
 }

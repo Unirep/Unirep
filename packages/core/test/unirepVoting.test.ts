@@ -14,7 +14,9 @@ import { genUserState } from './utils'
 describe('Voting', function () {
     this.timeout(0)
     let unirep
+    let unirepAddress
     let voting
+    let votingAddress
     let nft
 
     const numTeams = 4
@@ -38,42 +40,49 @@ describe('Voting', function () {
     it('deployment', async function () {
         const [deployer] = await ethers.getSigners()
         unirep = await deployUnirep(deployer)
+        unirepAddress = await unirep.getAddress()
         const reputationVerifierHelper = await deployVerifierHelper(
-            unirep.address,
+            unirepAddress,
             deployer,
             Circuit.reputation
         )
+        const reputationVerifierHelperAddress =
+            await reputationVerifierHelper.getAddress()
         const epochKeyVerifierHelper = await deployVerifierHelper(
-            unirep.address,
+            unirepAddress,
             deployer,
             Circuit.epochKey
         )
+        const epochKeyVerifierHelperAddress =
+            await epochKeyVerifierHelper.getAddress()
         const nftF = new VotingPrizeNFT__factory(deployer)
         nft = await nftF.deploy(
             'ipfs://QmNtYnjqeqWbRGC4R7fd9DCXWnQF87ufv7S2zGULtbSpLA'
         )
-        await nft.deployed()
+        await nft.waitForDeployment()
+        const nftAddress = await nft.getAddress()
 
         const votingF = new UnirepVoting__factory(deployer)
         voting = await votingF.deploy(
-            unirep.address,
-            reputationVerifierHelper.address,
-            epochKeyVerifierHelper.address,
-            nft.address,
+            unirepAddress,
+            reputationVerifierHelperAddress,
+            epochKeyVerifierHelperAddress,
+            nftAddress,
             numTeams,
             epochLength
         )
-        await nft.setVotingAddress(voting.address).then((t) => t.wait())
-        await voting.deployed()
+        await voting.waitForDeployment()
+        votingAddress = await voting.getAddress()
+        await nft.setVotingAddress(votingAddress).then((t) => t.wait())
     })
 
     it('voter sign up', async () => {
         for (let i = 0; i < numVoters; i++) {
             const userState = await genUserState(
                 ethers.provider,
-                unirep.address,
+                unirepAddress,
                 voters[i],
-                voting.address
+                votingAddress
             )
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
@@ -86,9 +95,9 @@ describe('Voting', function () {
         for (let i = 0; i < numHackers; i++) {
             const userState = await genUserState(
                 ethers.provider,
-                unirep.address,
+                unirepAddress,
                 hackers[i],
-                voting.address
+                votingAddress
             )
             const { publicSignals, proof } =
                 await userState.genUserSignUpProof()
@@ -101,9 +110,9 @@ describe('Voting', function () {
         for (let i = 0; i < numHackers; i++) {
             const userState = await genUserState(
                 ethers.provider,
-                unirep.address,
+                unirepAddress,
                 hackers[i],
-                voting.address
+                votingAddress
             )
             const projectID = i % numTeams
             // generate epoch key proof
@@ -122,9 +131,9 @@ describe('Voting', function () {
         for (let i = 0; i < numVoters; i++) {
             const userState = await genUserState(
                 ethers.provider,
-                unirep.address,
+                unirepAddress,
                 voters[i],
-                voting.address
+                votingAddress
             )
             const option = i % 2
             const projectID = i % numTeams
@@ -150,12 +159,12 @@ describe('Voting', function () {
         await ethers.provider.send('evm_mine', [])
 
         for (let i = 0; i < numHackers; i++) {
-            const newEpoch = await unirep.attesterCurrentEpoch(voting.address)
+            const newEpoch = await unirep.attesterCurrentEpoch(votingAddress)
             const userState = await genUserState(
                 ethers.provider,
-                unirep.address,
+                unirepAddress,
                 hackers[i],
-                voting.address
+                votingAddress
             )
             const { publicSignals, proof } =
                 await userState.genUserStateTransitionProof({
@@ -171,16 +180,16 @@ describe('Voting', function () {
     it('claim prize with reputation proof', async () => {
         const scores: any = []
         for (let i = 0; i < numTeams; i++) {
-            scores.push((await voting.scores(i)).toNumber())
+            scores.push(Number(await voting.scores(i)))
         }
         scores.sort()
 
         for (let i = 0; i < numHackers; i++) {
             const userState = await genUserState(
                 ethers.provider,
-                unirep.address,
+                unirepAddress,
                 hackers[i],
-                voting.address
+                votingAddress
             )
             const data = await userState.getData()
             if (data[0] - data[1] !== BigInt(scores[numTeams - 1])) continue

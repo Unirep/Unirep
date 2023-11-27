@@ -11,10 +11,12 @@ import { bootstrapUsers, bootstrapAttestations } from './test'
 describe('User state', function () {
     this.timeout(0)
     let unirepContract
+    let unirepAddress
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        unirepAddress = await unirepContract.getAddress()
     })
 
     {
@@ -23,14 +25,15 @@ describe('User state', function () {
             snapshot = await ethers.provider.send('evm_snapshot', [])
             const accounts = await ethers.getSigners()
             const attester = accounts[1]
+            const attesterId = await attester.getAddress()
             await unirepContract
                 .connect(attester)
                 .attesterSignUp(EPOCH_LENGTH)
                 .then((t) => t.wait())
             const synchronizer = await genUnirepState(
                 ethers.provider,
-                unirepContract.address,
-                BigInt(attester.address)
+                unirepAddress,
+                BigInt(attesterId)
             )
             await bootstrapUsers(synchronizer, attester)
             await bootstrapAttestations(synchronizer, attester)
@@ -45,11 +48,11 @@ describe('User state', function () {
     it('should correctly get overflowed data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -91,11 +94,11 @@ describe('User state', function () {
     it('should correctly get the latest data', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -150,11 +153,11 @@ describe('User state', function () {
     it('user sign up proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -175,11 +178,11 @@ describe('User state', function () {
     it('epoch key proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -205,11 +208,11 @@ describe('User state', function () {
     it('ust proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -249,11 +252,11 @@ describe('User state', function () {
     it('reputation proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )

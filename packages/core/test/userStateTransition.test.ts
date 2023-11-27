@@ -17,11 +17,13 @@ describe('User state transition', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
+    let unirepAddress
     let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        unirepAddress = await unirepContract.getAddress()
         const network = await accounts[0].provider.getNetwork()
         chainId = network.chainId
     })
@@ -44,46 +46,50 @@ describe('User state transition', function () {
     it('users should perform user state transition', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const attesterId = await attester.getAddress()
         const rootHistories = [] as any
         const config = await unirepContract.config()
-        const stateTree = new IncrementalMerkleTree(config.stateTreeDepth)
+        const stateTreeDepth = Number(config.stateTreeDepth)
+        const fieldCount = Number(config.fieldCount)
+        const sumFieldCount = Number(config.sumFieldCount)
+        const replFieldBits = Number(config.replFieldBits)
+        const replNonceBits = Number(config.replNonceBits)
+        const stateTree = new IncrementalMerkleTree(stateTreeDepth)
         const randomData = () =>
-            Array(config.fieldCount)
+            Array(fieldCount)
                 .fill(0)
                 .map((_, i) => {
                     const v = poseidon1([Math.floor(Math.random() * 199191919)])
-                    if (i < config.sumFieldCount) {
+                    if (i < sumFieldCount) {
                         return v
                     }
-                    return v % BigInt(2) ** BigInt(config.replFieldBits)
+                    return v % BigInt(2) ** BigInt(replFieldBits)
                 })
         const randomDataShifted = (da) =>
             da.map((d, i) => {
-                if (i < config.sumFieldCount) {
+                if (i < sumFieldCount) {
                     return d
                 } else {
-                    return BigInt(d) << BigInt(config.replNonceBits)
+                    return BigInt(d) << BigInt(replNonceBits)
                 }
             })
 
         const users = Array(3)
             .fill(null)
             .map(() => new Identity())
-        const fromEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const fromEpoch = await unirepContract.attesterCurrentEpoch(attesterId)
         for (let i = 0; i < users.length; i++) {
             const userState = await genUserState(
                 ethers.provider,
-                unirepContract.address,
+                unirepAddress,
                 users[i],
-                BigInt(attester.address)
+                BigInt(attesterId)
             )
 
             const startData = randomData()
             const idHash = genIdentityHash(
                 users[i].secret,
-                attester.address,
+                attesterId,
                 fromEpoch,
                 chainId
             )
@@ -103,7 +109,7 @@ describe('User state transition', function () {
                     .connect(attester)
                     .attest(
                         userState.getEpochKeys()[
-                            i % config.numEpochKeyNoncePerEpoch
+                            Number(i) % Number(config.numEpochKeyNoncePerEpoch)
                         ],
                         fromEpoch,
                         i,
@@ -122,9 +128,9 @@ describe('User state transition', function () {
         for (let i = 0; i < users.length; i++) {
             const userState = await genUserState(
                 ethers.provider,
-                unirepContract.address,
+                unirepAddress,
                 users[i],
-                BigInt(attester.address)
+                BigInt(attesterId)
             )
             await userState.waitForSync()
             const toEpoch = await userState.sync.loadCurrentEpoch()
@@ -138,7 +144,7 @@ describe('User state transition', function () {
 
             const leaf = genStateTreeLeaf(
                 users[i].secret,
-                attester.address,
+                attesterId,
                 toEpoch,
                 await userState.getData(),
                 chainId
@@ -152,8 +158,8 @@ describe('User state transition', function () {
         // Check GST roots match Unirep state
         const unirepState = await genUnirepState(
             ethers.provider,
-            unirepContract.address,
-            BigInt(attester.address)
+            unirepAddress,
+            BigInt(attesterId)
         )
         for (let root of rootHistories) {
             const exist = await unirepState.stateTreeRootExists(
@@ -168,19 +174,20 @@ describe('User state transition', function () {
     it('user should not receive rep if he does not transition to', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
+        const attesterId = await attester.getAddress()
         const user = new Identity()
         for (let i = 0; i < 10; i++) {
             await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
             await ethers.provider.send('evm_mine', [])
         }
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
+        const epoch = Number(
+            await unirepContract.attesterCurrentEpoch(attesterId)
         )
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             user,
-            BigInt(attester.address)
+            BigInt(attesterId)
         )
         {
             const { publicSignals, proof } = await userState.genUserSignUpProof(
@@ -201,7 +208,7 @@ describe('User state transition', function () {
         const newEpoch = epoch + 1
         const epochKey = genEpochKey(
             user.secret,
-            BigInt(attester.address),
+            BigInt(attesterId),
             newEpoch,
             0,
             chainId
