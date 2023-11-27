@@ -1,6 +1,6 @@
 {
     "name": "@unirep/core",
-    "version": "2.0.0-beta-5",
+    "version": "2.0.0-beta-6",
     "description": "",
     "main": "build/src/index.js",
     "types": "build/src/index.d.ts",
@@ -20,7 +20,7 @@
     "scripts": {
         "pre": "node scripts/prepare",
         "build": "tsc",
-        "test": "hardhat test test/*.test.ts",
+        "test": "hardhat test",
         "test-ci": "hardhat test --parallel",
         "lint": "prettier --write ."
     },

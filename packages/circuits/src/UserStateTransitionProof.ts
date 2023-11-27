@@ -1,5 +1,5 @@
 import { Circuit, Prover } from './type'
-import { SnarkProof } from '@unirep/utils'
+import { Groth16Proof } from 'snarkjs'
 import { BaseProof } from './BaseProof'
 import { CircuitConfig } from './CircuitConfig'
 import {
@@ -56,7 +56,7 @@ export class UserStateTransitionProof extends BaseProof {
      */
     constructor(
         publicSignals: (bigint | string)[],
-        proof: SnarkProof,
+        proof: Groth16Proof,
         prover?: Prover,
         config: CircuitConfig = CircuitConfig.default
     ) {
