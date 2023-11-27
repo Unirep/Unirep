@@ -27,7 +27,8 @@ export function linkLibrary(
 ): string {
     let linkedBytecode = bytecode
     for (const [name, address] of Object.entries(libraries)) {
-        const placeholder = `__\$${ethers.solidityPackedKeccak256(['string'], [name])
+        const placeholder = `__\$${ethers
+            .solidityPackedKeccak256(['string'], [name])
             .slice(2, 36)}\$__`
         const formattedAddress = ethers
             .getAddress(address)

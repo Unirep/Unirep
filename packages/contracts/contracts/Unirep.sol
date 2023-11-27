@@ -12,6 +12,8 @@ import {LazyMerkleTree, LazyTreeData} from './libraries/LazyMerkleTree.sol';
 
 import 'poseidon-solidity/PoseidonT3.sol';
 
+// import 'hardhat/console.sol';
+
 /**
  * @title Unirep
  * @dev Unirep is a reputation which uses ZKP to preserve users' privacy.

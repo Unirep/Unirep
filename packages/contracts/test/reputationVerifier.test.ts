@@ -73,24 +73,26 @@ describe('Reputation verifier helper', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        const unirepAddress = await unirepContract.getAddress()
         repVerifierHelper = await deployVerifierHelper(
-            unirepContract.address,
+            unirepAddress,
             accounts[0],
             Circuit.reputation
         )
         attester = accounts[1]
+        const attesterId = await attester.getAddress()
         const network = await attester.provider.getNetwork()
         chainId = network.chainId
 
         const leaf = genStateTreeLeaf(
             id.secret,
-            attester.address,
+            attesterId,
             epoch,
             data,
             chainId
         )
 
-        idHash = genIdentityHash(id.secret, attester.address, epoch, chainId)
+        idHash = genIdentityHash(id.secret, attesterId, epoch, chainId)
 
         const index = 0
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
@@ -101,7 +103,7 @@ describe('Reputation verifier helper', function () {
             ...circuitInputs,
             state_tree_elements: merkleProof.siblings,
             state_tree_indices: merkleProof.pathIndices,
-            attester_id: attester.address,
+            attester_id: attesterId,
             chain_id: chainId,
         }
     })

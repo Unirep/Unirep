@@ -14,11 +14,15 @@ describe('Attester Signup', function () {
     this.timeout(120000)
 
     let unirepContract
+    let unirepAddress
+    let attester
     let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
+        attester = accounts[1]
         unirepContract = await deployUnirep(accounts[0])
+        unirepAddress = await unirepContract.getAddress()
         const network = await accounts[0].provider.getNetwork()
         chainId = network.chainId
     })
@@ -27,8 +31,6 @@ describe('Attester Signup', function () {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
-            const accounts = await ethers.getSigners()
-            const attester = accounts[1]
             await unirepContract
                 .connect(attester)
                 .attesterSignUp(EPOCH_LENGTH)
@@ -39,8 +41,6 @@ describe('Attester Signup', function () {
     }
 
     it('should fail to double signup', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
         await expect(
             unirepContract.connect(attester).attesterSignUp(EPOCH_LENGTH)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterAlreadySignUp')
@@ -50,6 +50,7 @@ describe('Attester Signup', function () {
         const accounts = await ethers.getSigners()
         for (let i = 2; i < 10; i++) {
             const attester = accounts[i]
+            const attesterId = await attester.getAddress()
             const attesterEpochLength = EPOCH_LENGTH * i
             const tx = await unirepContract
                 .connect(attester)
@@ -61,31 +62,27 @@ describe('Attester Signup', function () {
                 )
             await expect(tx)
                 .to.emit(unirepContract, 'AttesterSignedUp')
-                .withArgs(attester.address, attesterEpochLength, timestamp)
+                .withArgs(attesterId, attesterEpochLength, timestamp)
 
             const currentEpoch = await unirepContract.attesterCurrentEpoch(
-                attester.address
+                attesterId
             )
             expect(currentEpoch.toString()).to.equal('0')
             const epochTimeRemaining =
-                await unirepContract.attesterEpochRemainingTime(
-                    attester.address
-                )
+                await unirepContract.attesterEpochRemainingTime(attesterId)
             expect(epochTimeRemaining).to.be.lte(+attesterEpochLength)
             const epochLength = await unirepContract.attesterEpochLength(
-                attester.address
+                attesterId
             )
             expect(epochLength).to.equal(attesterEpochLength)
 
             const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
             const stateRoot = await unirepContract.attesterStateTreeRoot(
-                attester.address
+                attesterId
             )
             expect(stateRoot).to.equal(stateTree.root)
             const semaphoreRoot =
-                await unirepContract.attesterSemaphoreGroupRoot(
-                    attester.address
-                )
+                await unirepContract.attesterSemaphoreGroupRoot(attesterId)
             expect(semaphoreRoot).to.equal(stateTree.root)
         }
     })
@@ -94,17 +91,14 @@ describe('Attester Signup', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[10]
         const relayer = accounts[0]
+        const attesterId = await attester.getAddress()
 
         const wrongMessage = genRandomSalt()
-        const signature = await attester.signMessage(wrongMessage)
+        const signature = await attester.signMessage(wrongMessage.toString())
         await expect(
             unirepContract
                 .connect(relayer)
-                .attesterSignUpViaRelayer(
-                    attester.address,
-                    EPOCH_LENGTH,
-                    signature
-                )
+                .attesterSignUpViaRelayer(attesterId, EPOCH_LENGTH, signature)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignature')
     })
 
@@ -113,9 +107,10 @@ describe('Attester Signup', function () {
         const attester = accounts[10]
         const relayer = accounts[0]
         const chainId = 0
+        const attesterId = await attester.getAddress()
 
         const signature = await genSignature(
-            unirepContract.address,
+            unirepAddress,
             attester,
             EPOCH_LENGTH,
             chainId
@@ -123,11 +118,7 @@ describe('Attester Signup', function () {
         await expect(
             unirepContract
                 .connect(relayer)
-                .attesterSignUpViaRelayer(
-                    attester.address,
-                    EPOCH_LENGTH,
-                    signature
-                )
+                .attesterSignUpViaRelayer(attesterId, EPOCH_LENGTH, signature)
         ).to.be.revertedWithCustomError(unirepContract, 'InvalidSignature')
     })
 
@@ -135,44 +126,42 @@ describe('Attester Signup', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[10]
         const relayer = accounts[0]
+        const attesterId = await attester.getAddress()
+        const unirepAddress = await unirepContract.getAddress()
 
         const signature = await genSignature(
-            unirepContract.address,
+            unirepAddress,
             attester,
             EPOCH_LENGTH,
             chainId
         )
         const tx = await unirepContract
             .connect(relayer)
-            .attesterSignUpViaRelayer(attester.address, EPOCH_LENGTH, signature)
+            .attesterSignUpViaRelayer(attesterId, EPOCH_LENGTH, signature)
 
         const { timestamp } = await tx
             .wait()
             .then(({ blockNumber }) => ethers.provider.getBlock(blockNumber))
         await expect(tx)
             .to.emit(unirepContract, 'AttesterSignedUp')
-            .withArgs(attester.address, EPOCH_LENGTH, timestamp)
+            .withArgs(attesterId, EPOCH_LENGTH, timestamp)
         await tx.wait()
 
         const currentEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
+            attesterId
         )
         expect(currentEpoch.toString()).to.equal('0')
         const epochTimeRemaining =
-            await unirepContract.attesterEpochRemainingTime(attester.address)
+            await unirepContract.attesterEpochRemainingTime(attesterId)
         expect(epochTimeRemaining).to.be.lte(+EPOCH_LENGTH)
-        const epochLength = await unirepContract.attesterEpochLength(
-            attester.address
-        )
+        const epochLength = await unirepContract.attesterEpochLength(attesterId)
         expect(epochLength).to.equal(EPOCH_LENGTH)
 
         const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
-        const stateRoot = await unirepContract.attesterStateTreeRoot(
-            attester.address
-        )
+        const stateRoot = await unirepContract.attesterStateTreeRoot(attesterId)
         expect(stateRoot).to.equal(stateTree.root)
         const semaphoreRoot = await unirepContract.attesterSemaphoreGroupRoot(
-            attester.address
+            attesterId
         )
         expect(semaphoreRoot).to.equal(stateTree.root)
     })
@@ -181,24 +170,22 @@ describe('Attester Signup', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[10]
         const relayer = accounts[0]
+        const attesterId = await attester.getAddress()
+        const unirepAddress = await unirepContract.getAddress()
 
         const signature = await genSignature(
-            unirepContract.address,
+            unirepAddress,
             attester,
             EPOCH_LENGTH,
             chainId
         )
         await unirepContract
             .connect(relayer)
-            .attesterSignUpViaRelayer(attester.address, EPOCH_LENGTH, signature)
+            .attesterSignUpViaRelayer(attesterId, EPOCH_LENGTH, signature)
         await expect(
             unirepContract
                 .connect(relayer)
-                .attesterSignUpViaRelayer(
-                    attester.address,
-                    EPOCH_LENGTH,
-                    signature
-                )
+                .attesterSignUpViaRelayer(attesterId, EPOCH_LENGTH, signature)
         ).to.be.revertedWithCustomError(unirepContract, 'AttesterAlreadySignUp')
     })
 

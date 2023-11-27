@@ -45,13 +45,14 @@ describe('Epoch key verifier helper', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        const unirepAddress = await unirepContract.getAddress()
         epochKeyVerifierHelper = await deployVerifierHelper(
-            unirepContract.address,
+            unirepAddress,
             accounts[0],
             Circuit.epochKey
         )
         attester = accounts[1]
-        const attesterId = attester.address
+        const attesterId = await attester.getAddress()
         const network = await attester.provider.getNetwork()
         chainId = network.chainId
 
@@ -75,7 +76,7 @@ describe('Epoch key verifier helper', function () {
             ...circuitInputs,
             state_tree_elements: merkleProof.siblings,
             state_tree_indices: merkleProof.pathIndices,
-            attester_id: attester.address,
+            attester_id: attesterId,
             chain_id: chainId,
         }
     })

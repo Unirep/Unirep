@@ -70,7 +70,7 @@ const signupUser = async (id, unirepContract, attesterId, account) => {
         .connect(account)
         .userSignUp(publicSignals, proof)
         .then((t) => t.wait())
-    return { leaf: publicSignals[1], index: leafIndex.toNumber(), epoch }
+    return { leaf: publicSignals[1], index: Number(leafIndex), epoch }
 }
 
 describe('User State Transition', function () {
@@ -79,6 +79,7 @@ describe('User State Transition', function () {
     let unirepContract
     let chainId
     let attester
+    let attesterId
     const stateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
     const epochTree = new IncrementalMerkleTree(EPOCH_TREE_DEPTH)
     const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
@@ -89,6 +90,7 @@ describe('User State Transition', function () {
         chainId = await unirepContract.chainid()
         // generate circuit inputs
         attester = accounts[1]
+        attesterId = await attester.getAddress()
         await unirepContract
             .connect(attester)
             .attesterSignUp(EPOCH_LENGTH)
@@ -96,7 +98,7 @@ describe('User State Transition', function () {
         const { leaf, index } = await signupUser(
             id,
             unirepContract,
-            attester.address,
+            attesterId,
             attester
         )
         epochTree.insert(0)
@@ -107,7 +109,7 @@ describe('User State Transition', function () {
             .map((_, i) =>
                 genEpochKey(
                     id.secret,
-                    BigInt(attester.address),
+                    BigInt(attesterId),
                     0, // from epoch
                     i,
                     chainId
@@ -121,7 +123,7 @@ describe('User State Transition', function () {
             state_tree_elements: stateTreeProof.siblings,
             history_tree_indices: historyTreeProof.pathIndices,
             history_tree_elements: historyTreeProof.siblings,
-            attester_id: attester.address,
+            attester_id: attesterId,
             data: Array(FIELD_COUNT).fill(0),
             new_data: epochKeys.map(() => Array(FIELD_COUNT).fill(0)),
             epoch_tree_elements: epochKeys.map(
@@ -295,7 +297,7 @@ describe('User State Transition', function () {
             .to.emit(unirepContract, 'StateTreeLeaf')
             .withArgs(
                 circuitInputs.to_epoch,
-                attester.address,
+                attesterId,
                 leafIndex,
                 stateTreeLeaf
             )
@@ -303,7 +305,7 @@ describe('User State Transition', function () {
             .to.emit(unirepContract, 'UserStateTransitioned')
             .withArgs(
                 circuitInputs.to_epoch,
-                attester.address,
+                attesterId,
                 leafIndex,
                 stateTreeLeaf,
                 epochKeys[0]
@@ -352,14 +354,12 @@ describe('User State Transition', function () {
     it('should do multiple user state transitions', async () => {
         const users = 3
         const epochs = 3
-        let fromEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        let fromEpoch = await unirepContract.attesterCurrentEpoch(attesterId)
         let fromEpochStateTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         fromEpochStateTree.insert(
             genStateTreeLeaf(
                 id.secret,
-                BigInt(attester.address),
+                BigInt(attesterId),
                 fromEpoch,
                 Array(FIELD_COUNT).fill(0),
                 chainId
@@ -377,7 +377,7 @@ describe('User State Transition', function () {
             const { leaf } = await signupUser(
                 userState[i].id,
                 unirepContract,
-                attester.address,
+                attesterId,
                 attester
             )
             fromEpochStateTree.insert(leaf)
@@ -385,8 +385,8 @@ describe('User State Transition', function () {
 
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const startEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
+        const startEpoch = Number(
+            await unirepContract.attesterCurrentEpoch(attesterId)
         )
         const historyTree = new IncrementalMerkleTree(HISTORY_TREE_DEPTH)
         for (let epoch = startEpoch; epoch < startEpoch + epochs; epoch++) {
@@ -396,14 +396,16 @@ describe('User State Transition', function () {
             historyTree.insert(
                 poseidon2([fromEpochStateTree.root, epochTree.root])
             )
-            const historyTreeProof = historyTree.createProof(epoch - startEpoch)
+            const historyTreeProof = historyTree.createProof(
+                Number(epoch - startEpoch)
+            )
             for (let i = 0; i < users; i++) {
                 const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
                     .fill(null)
                     .map((_, n) =>
                         genEpochKey(
                             userState[i].id.secret,
-                            BigInt(attester.address),
+                            BigInt(attesterId),
                             fromEpoch, // from epoch
                             n,
                             chainId
@@ -447,7 +449,7 @@ describe('User State Transition', function () {
                 toEpochStateTree.insert(stateTreeLeaf)
 
                 const exist = await unirepContract.attesterStateTreeRootExists(
-                    attester.address,
+                    attesterId,
                     epoch,
                     toEpochStateTree.root
                 )
@@ -466,7 +468,7 @@ describe('User State Transition', function () {
             .map((_, i) =>
                 genEpochKey(
                     id.secret,
-                    BigInt(attester.address),
+                    BigInt(attesterId),
                     fromEpoch, // from epoch
                     i,
                     chainId
@@ -501,7 +503,7 @@ describe('User State Transition', function () {
             .map((_, i) =>
                 genEpochKey(
                     id.secret,
-                    BigInt(attester.address),
+                    BigInt(attesterId),
                     fromEpoch, // from epoch
                     i,
                     chainId
@@ -567,12 +569,12 @@ describe('User State Transition', function () {
 
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(toEpoch, attester.address, leafIndex, stateTreeLeaf)
+            .withArgs(toEpoch, attesterId, leafIndex, stateTreeLeaf)
         await expect(tx)
             .to.emit(unirepContract, 'UserStateTransitioned')
             .withArgs(
                 toEpoch,
-                attester.address,
+                attesterId,
                 leafIndex,
                 stateTreeLeaf,
                 ustNullifiers[0]
