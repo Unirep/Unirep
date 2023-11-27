@@ -26,12 +26,7 @@
         "prepare": "husky install"
     },
     "devDependencies": {
-        "@types/chai": "^4.3.1",
-        "@types/mocha": "^9.1.1",
-        "@types/snarkjs": "^0.7.5",
         "@typescript-eslint/eslint-plugin": "^5.15.0",
-        "argparse": "^2.0.1",
-        "chai": "^4.3.6",
         "eslint": "^8.11.0",
         "eslint-config-standard-with-typescript": "^21.0.1",
         "eslint-plugin-import": "^2.25.4",
@@ -43,9 +38,7 @@
         "husky": "^8.0.1",
         "lint-staged": "^13.0.1",
         "prettier": "^2.6.2",
-        "prettier-plugin-solidity": "^1.0.0-beta.19",
-        "ts-node": "^10.8.1",
-        "typescript": "^4.7.3"
+        "prettier-plugin-solidity": "^1.0.0-beta.19"
     },
     "lint-staged": {
         "**/{src,test,config,scripts,circuits}/**/*.{ts,json,sol}": [

@@ -27,17 +27,18 @@
     "devDependencies": {
         "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
         "@nomicfoundation/hardhat-ethers": "^3.0.5",
+        "chai": "^4.3.10",
         "hardhat": "^2.19.1",
-        "typescript": "^4.7.3"
+        "typescript": "^5.3.2"
     },
     "dependencies": {
-        "@semaphore-protocol/identity": "^3.10.1",
+        "@semaphore-protocol/identity": "^3.15.1",
         "@unirep/circuits": "2.0.0-beta-5",
         "@unirep/contracts": "2.0.0-beta-5",
         "@unirep/utils": "2.0.0-beta-5",
         "anondb": "^0.0.21",
         "async-lock": "^1.4.0",
-        "ethers": "^6.8.0",
+        "ethers": "^6.9.0",
         "nanoid": "^3.3.6"
     }
 }

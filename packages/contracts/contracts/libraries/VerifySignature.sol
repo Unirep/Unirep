@@ -2,10 +2,14 @@
 pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/utils/cryptography/ECDSA.sol';
+import {MessageHashUtils} from '@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol';
 
 // TODO: update doc
 /// @title VerifySignature
 contract VerifySignature {
+    using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
+
     /// @dev Verify if the signer has a valid signature as claimed
     /// @param signer The address of attester who wants to perform an action
     /// @param epochLength The epoch length of attester
@@ -21,11 +25,9 @@ contract VerifySignature {
         assembly {
             chainId := chainid()
         }
-        bytes32 messageHash = ECDSA.toEthSignedMessageHash(
-            keccak256(
-                abi.encodePacked(address(this), signer, epochLength, chainId)
-            )
+        bytes32 data = keccak256(
+            abi.encodePacked(address(this), signer, epochLength, chainId)
         );
-        return ECDSA.recover(messageHash, signature) == signer;
+        return data.toEthSignedMessageHash().recover(signature) == signer;
     }
 }
