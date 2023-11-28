@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 /// @title IVerifier
 /// @dev https://developer.unirep.io/docs/contracts-api/verifiers/iverifier-sols

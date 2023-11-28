@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import {Unirep} from '../Unirep.sol';
 import {IVerifier} from '../interfaces/IVerifier.sol';
