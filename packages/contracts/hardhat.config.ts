@@ -1,6 +1,6 @@
 import { HardhatUserConfig } from 'hardhat/config'
 import '@typechain/hardhat'
-import '@nomiclabs/hardhat-ethers'
+import '@nomicfoundation/hardhat-ethers'
 import 'hardhat-gas-reporter'
 import 'solidity-coverage'
 import '@nomicfoundation/hardhat-chai-matchers'
@@ -15,13 +15,13 @@ const config: HardhatUserConfig = {
             blockGasLimit: 12000000,
         },
         local: {
-            url: 'http://localhost:8545',
+            url: 'http://127.0.0.1:8545',
         },
     },
     solidity: {
         compilers: [
             {
-                version: '0.8.19',
+                version: '0.8.21',
                 settings: {
                     optimizer: { enabled: true, runs: 2 ** 32 - 1 },
                 },

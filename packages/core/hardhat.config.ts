@@ -1,5 +1,5 @@
 import { HardhatUserConfig } from 'hardhat/config'
-import '@nomiclabs/hardhat-ethers'
+import '@nomicfoundation/hardhat-ethers'
 import 'hardhat-gas-reporter'
 import '@nomicfoundation/hardhat-chai-matchers'
 
@@ -10,7 +10,7 @@ const config: HardhatUserConfig = {
             blockGasLimit: 12000000,
         },
         local: {
-            url: 'http://localhost:8545',
+            url: 'http://127.0.0.1:8545',
         },
     },
     solidity: {
@@ -22,9 +22,6 @@ const config: HardhatUserConfig = {
                 },
             },
         ],
-    },
-    gasReporter: {
-        enabled: process.env.REPORT_GAS ? true : false,
     },
 }
 

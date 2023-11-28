@@ -215,15 +215,17 @@ The user will generate the signup proof on the client side:
 
 ```ts
 import { UserState } from '@unirep/core'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { defaultProver as prover } from '@unirep/circuits/provers/defaultProver'
 import { Identity } from "@semaphore-protocol/identity"
 
 // Semaphore Identity
 const id = new Identity()
+// contract address
+const unirepAddress = '0x...'
 // generate user state
 const userState = new UserState({
-  prover: defaultProver, // a circuit prover
-  unirepAddress: unirepContract.address,
+  prover, // a circuit prover
+  unirepAddress,
   provider, // an ethers.js provider
   id,
 })
@@ -243,15 +245,17 @@ const { proof, publicSignals } = await userState.genUserSignUpProof()
 
 ```js
 const { UserState } = require('@unirep/core')
-const { defaultProver } = require('@unirep/circuits/provers/defaultProver')
+const { defaultProver: prover } = require('@unirep/circuits/provers/defaultProver')
 const { Identity } = require("@semaphore-protocol/identity")
 
 // Semaphore Identity
 const id = new Identity()
+// contract address
+const unirepAddress = '0x...'
 // generate user state
 const userState = new UserState({
-  prover: defaultProver, // a circuit prover
-  unirepAddress: unirepContract.address,
+  prover, // a circuit prover
+  unirepAddress,
   provider, // an ethers.js provider
   id,
 })
@@ -302,8 +306,8 @@ await tx.wait()
 
 ```sol title="App.sol"
 function userSignUp(
-    uint256[] memory publicSignals,
-    uint256[8] memory proof
+    uint256[] calldata publicSignals,
+    uint256[8] calldata proof
 ) public {
     unirep.userSignUp(publicSignals, proof);
 }
@@ -343,15 +347,19 @@ Users must provide [epoch keys](protocol/epoch-key.md) to receive [data](protoco
 ```ts title="epochKey.ts"
 import { genEpochKey } from '@unirep/utils'
 // get epoch from contract
-const epoch = await unirepContract.attesterCurrentEpoch(attester.address)
+const attesterId = await attester.getAddress()
+const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
 // define nonce
 const nonce = 0 // it could be 0 to (NUM_EPOCH_KEY_NONCE - 1) per user
+// get chain ID
+const { chainId } = await provider.getNetwork()
 // generate an epoch key
 const epochKey = genEpochKey(
-    identity.secret,
-    BigInt(attester.address),
+    id.secret,
+    attesterId,
     epoch,
-    nonce
+    nonce,
+    chainId
 )
 ```
 
@@ -363,15 +371,19 @@ const epochKey = genEpochKey(
 ```js title="epochKey.js"
 const { genEpochKey } = require('@unirep/utils')
 // get epoch from contract
-const epoch = await unirepContract.attesterCurrentEpoch(attester.address)
+const attesterId = await attester.getAddress()
+const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
 // define nonce
 const nonce = 0 // it could be 0 to (NUM_EPOCH_KEY_NONCE - 1) per user
+// get chain ID
+const { chainId } = await provider.getNetwork()
 // generate an epoch key
 const epochKey = genEpochKey(
-    identity.secret,
-    BigInt(attester.address),
+    id.secret,
+    attesterId,
     epoch,
-    nonce
+    nonce,
+    chainId
 )
 ```
 
@@ -474,6 +486,20 @@ After an epoch ends, the user will perform [user state transition](protocol/user
 
 The user state transition proof must be built by the user because only the user holds the Semaphore identity secret key.
 
+### (Optional) Wait until epoch changes
+
+Users should wait until epoch changes to perform [user state transition](../protocol/user-state-transition.md) and receive data.
+
+```ts
+const latestTransitionedEpoch = await userState.latestTransitionedEpoch()
+const currentEpoch = await userState.sync.calcCurrentEpoch()
+if (latestTransitionedEpoch === currentEpoch) {
+  const remainingTime = userState.sync.calcEpochRemainingTime()
+  console.log(`Waiting remaining time: ${remainingTime}s`)
+  await new Promise((r) => setTimeout(r, remainingTime * 1000))
+}
+```
+
 ### User generates user state transition proof
 
 ```ts
@@ -504,6 +530,7 @@ The user state transition proof should be submitted to `Unirep.sol` to update th
 ```ts title="transition.ts/transition.js"
 // sends the tx
 // it doesn't need to be the attester
+const relayer = 'RELAYER/WALLET'
 const tx = await unirepContract
     .connect(relayer)
     .userStateTransition(
@@ -522,8 +549,8 @@ await tx.wait()
 // sends the tx
 // it doesn't need to be the attester
 function transition(
-    uint[] memory publicSignals,
-    uint[8] memory proof
+    uint[] calldata publicSignals,
+    uint[8] calldata proof
 ) public {
     unirep.userStateTransition(
         publicSignals,
@@ -589,22 +616,44 @@ See [`ReputationVerifierHelper`](contracts-api/verifiers/reputation-verifier-hel
 <Tabs
     defaultValue="typescript"
     values={[
-        {label: 'Typescript/Javascript', value: 'typescript'},
+        {label: 'Typescript', value: 'typescript'},
+        {label: 'Javascript', value: 'javascript'},
         {label: 'Solidity', value: 'solidity'},
     ]}>
 <TabItem value="typescript">
 ```
 
-```ts title="transition.ts/transition.js"
-// sends the tx
-// it doesn't need to be the attester
-const tx = await unirepContract
-    .connect(relayer)
-    .verifyReputationProof(
-        publicSignals,
-        proof
-    )
-await tx.wait()
+```ts title="reputation.ts"
+import { Circuit } from '@unirep/circuits'
+import { deployVerifierHelper } from '@unirep/contracts/deploy'
+
+const repVerifier = await deployVerifierHelper(unirepAddress, deployer, Circuit.reputation)
+// get decoded public signals
+const signals = await repVerifier.verifyAndCheck(
+  publicSignals,
+  proof
+)
+console.log(signals.minRep) // 3n
+console.log(signals.proveMinRep) // true
+```
+
+```mdx-code-block
+  </TabItem>
+  <TabItem value="javascript">
+```
+
+```js title="reputation.js"
+const { Circuit } = require('@unirep/circuits')
+const { deployVerifierHelper } = require('@unirep/contracts/deploy')
+
+const repVerifier = await deployVerifierHelper(unirepAddress, deployer, Circuit.reputation)
+// get decoded public signals
+const signals = await repVerifier.verifyAndCheck(
+  publicSignals,
+  proof
+)
+console.log(signals.minRep) // 3n
+console.log(signals.proveMinRep) // true
 ```
 
 ```mdx-code-block
@@ -612,14 +661,12 @@ await tx.wait()
   <TabItem value="solidity">
 ```
 
-```sol title="Relayer.sol"
-// sends the tx
-// it doesn't need to be the attester
+```sol title="Reputation.sol"
 function verifyProof(
-    uint[] memory publicSignals,
-    uint[8] memory proof
+    uint[] calldata publicSignals,
+    uint[8] calldata proof
 ) public {
-    repVerifier.verifyAndCheckCaller(
+    repVerifier.verifyAndCheck(
         publicSignals,
         proof
     );

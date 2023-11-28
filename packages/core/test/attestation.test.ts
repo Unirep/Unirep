@@ -10,10 +10,12 @@ describe('Attester signs up and gives attestation', function () {
     this.timeout(30 * 60 * 1000)
 
     let unirepContract
+    let unirepAddress
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        unirepAddress = await unirepContract.getAddress()
     })
 
     {
@@ -34,11 +36,11 @@ describe('Attester signs up and gives attestation', function () {
     it('user sign up and receive attestation', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -112,12 +114,12 @@ describe('Attester signs up and gives attestation', function () {
     it('should skip multiple epochs', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
 
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )

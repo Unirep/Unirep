@@ -7,33 +7,33 @@ import randomf from 'randomf'
 const deployTrees = async (depth) => {
     const Poseidon = await ethers.getContractFactory('PoseidonT3')
     const poseidon = await Poseidon.deploy()
-    await poseidon.deployed()
+    await poseidon.waitForDeployment()
     const LazyMerkleTree = await ethers.getContractFactory('LazyMerkleTree', {
         libraries: {
-            PoseidonT3: poseidon.address,
+            PoseidonT3: await poseidon.getAddress(),
         },
     })
     const lazyMerkleTree = await LazyMerkleTree.deploy()
-    await lazyMerkleTree.deployed()
+    await lazyMerkleTree.waitForDeployment()
     const ReusableMerkleTree = await ethers.getContractFactory(
         'ReusableMerkleTree',
         {
             libraries: {
-                PoseidonT3: poseidon.address,
+                PoseidonT3: await poseidon.getAddress(),
             },
         }
     )
     const reusableMerkleTree = await ReusableMerkleTree.deploy()
-    await reusableMerkleTree.deployed()
+    await reusableMerkleTree.waitForDeployment()
 
     const MerkleTreeTest = await ethers.getContractFactory('MerkleTreeTest', {
         libraries: {
-            LazyMerkleTree: lazyMerkleTree.address,
-            ReusableMerkleTree: reusableMerkleTree.address,
+            LazyMerkleTree: await lazyMerkleTree.getAddress(),
+            ReusableMerkleTree: await reusableMerkleTree.getAddress(),
         },
     })
     const merkleTreeTest = await MerkleTreeTest.deploy(depth)
-    await merkleTreeTest.deployed()
+    await merkleTreeTest.waitForDeployment()
     return merkleTreeTest
 }
 

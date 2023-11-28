@@ -2,19 +2,19 @@ import { EventEmitter } from 'events'
 import { DB, TransactionDB } from 'anondb'
 import { ethers } from 'ethers'
 import { IncrementalMerkleTree, MAX_EPOCH } from '@unirep/utils'
-import UNIREP_ABI from '@unirep/contracts/abi/Unirep.json'
 import { schema } from './schema'
 import { nanoid } from 'nanoid'
 // TODO: consolidate these into 'anondb' index
 import { constructSchema } from 'anondb/types'
 import { MemoryConnector } from 'anondb/web'
 import AsyncLock from 'async-lock'
+import { Unirep, getUnirepContract } from '@unirep/contracts'
 
 /**
  * The type of data to be processed in an event handler.
  */
 type EventHandlerArgs = {
-    event: ethers.Event
+    event: ethers.EventLog
     decodedData: { [key: string]: any }
     db: TransactionDB
 }
@@ -66,12 +66,17 @@ export class Synchronizer extends EventEmitter {
      * @private
      * The provider which is connected in the synchronizer.
      */
-    private _provider: ethers.providers.Provider
+    private _provider: ethers.Provider
+    /**
+     * @private
+     * The address of UniRep contract.
+     */
+    private _unirepAddress: string
     /**
      * @private
      * The UniRep smart contract object which is connected in the synchronizer.
      */
-    private _unirepContract: ethers.Contract
+    private _unirepContract: Unirep
     /**
      * @private
      * The array of attester IDs which are synchronized in the synchronizer.
@@ -168,7 +173,7 @@ export class Synchronizer extends EventEmitter {
     constructor(config: {
         db?: DB
         attesterId?: bigint | bigint[]
-        provider: ethers.providers.Provider
+        provider: ethers.Provider
         unirepAddress: string
         genesisBlock?: number
     }) {
@@ -186,12 +191,12 @@ export class Synchronizer extends EventEmitter {
         }
 
         this._db = db ?? new MemoryConnector(constructSchema(schema))
-        this._unirepContract = new ethers.Contract(
-            unirepAddress,
-            UNIREP_ABI,
-            provider
-        )
+        this._unirepAddress = unirepAddress
         this._provider = provider
+        this._unirepContract = getUnirepContract(
+            this._unirepAddress,
+            provider as any
+        )
         this._genesisBlock = genesisBlock ?? 0
         this._settings = {
             stateTreeDepth: 0,
@@ -208,79 +213,65 @@ export class Synchronizer extends EventEmitter {
         this.setup().then(() => (this.setupComplete = true))
     }
 
-    private buildEventHandlers() {
+    private async buildEventHandlers() {
         const allEventNames = {} as any
 
-        this._eventHandlers = Object.keys(this.contracts).reduce(
-            (acc, address) => {
-                // build _eventHandlers and decodeData functions
-                const { contract, eventNames } = this.contracts[address]
-                const handlers = {}
-                for (const name of eventNames) {
-                    if (allEventNames[name]) {
-                        throw new Error(
-                            `duplicate event name registered "${name}"`
-                        )
-                    }
-                    allEventNames[name] = true
-                    const topic = (contract.filters[name] as any)().topics[0]
-                    const handlerName = `handle${name}`
-                    if (typeof this[handlerName] !== 'function') {
-                        throw new Error(
-                            `No handler for event ${name} expected property "${handlerName}" to exist and be a function`
-                        )
-                    }
-                    // set this up here to avoid re-binding on every call
-                    const handler = this[`handle${name}`].bind(this)
-                    handlers[topic] = ({ event, ...args }: any) => {
-                        const decodedData = contract.interface.decodeEventLog(
-                            name,
-                            event.data,
-                            event.topics
-                        )
-                        // call the handler with the event and decodedData
-                        return handler({ decodedData, event, ...args })
-                            .then((r) => {
-                                if (r) {
-                                    this.emit(name, { decodedData, event })
-                                }
-                                return r
-                            })
-                            .catch((err) => {
-                                console.log(`${name} handler error`)
-                                throw err
-                            })
-                        // uncomment this to debug
-                        // console.log(name, decodedData)
-                    }
+        this._eventHandlers = {}
+        this._eventFilters = {}
+        for (const address of Object.keys(this.contracts)) {
+            // build _eventHandlers and decodeData functions
+            const { contract, eventNames } = this.contracts[address]
+            const allTopics = [] as string[]
+            for (const name of eventNames) {
+                if (allEventNames[name]) {
+                    throw new Error(`duplicate event name registered "${name}"`)
                 }
-                return {
-                    ...acc,
-                    ...handlers,
+                allEventNames[name] = true
+                const topics = await (
+                    contract.filters[name] as any
+                )().getTopicFilter()
+                const topic = topics[0]
+                allTopics.push(topic)
+                const handlerName = `handle${name}`
+                if (typeof this[handlerName] !== 'function') {
+                    throw new Error(
+                        `No handler for event ${name} expected property "${handlerName}" to exist and be a function`
+                    )
                 }
-            },
-            {}
-        )
-        this._eventFilters = Object.keys(this.contracts).reduce(
-            (acc, address) => {
-                const { contract, eventNames } = this.contracts[address]
-                const filter = {
-                    address,
-                    topics: [
-                        // don't spread here, it should be a nested array
-                        eventNames.map(
-                            (name) =>
-                                (contract.filters[name] as any)().topics[0]
-                        ),
-                    ],
+                // set this up here to avoid re-binding on every call
+                const handler = this[`handle${name}`].bind(this)
+                const topicHandler = ({ event, ...args }: any) => {
+                    const decodedData = contract.interface.decodeEventLog(
+                        name,
+                        event.data,
+                        event.topics
+                    )
+                    // call the handler with the event and decodedData
+                    // uncomment this to debug
+                    // console.log(name, decodedData)
+                    return handler({ decodedData, event, ...args })
+                        .then((r) => {
+                            if (r) {
+                                this.emit(name, { decodedData, event })
+                            }
+                            return r
+                        })
+                        .catch((err) => {
+                            console.log(`${name} handler error`)
+                            throw err
+                        })
                 }
-                return {
-                    ...acc,
-                    [address]: filter,
+
+                this._eventHandlers = {
+                    ...this._eventHandlers,
+                    [topic]: topicHandler,
                 }
-            },
-            {}
-        )
+            }
+            this._eventFilters = {
+                ...this._eventFilters,
+                [address]: [allTopics],
+            }
+        }
     }
 
     /**
@@ -293,14 +284,21 @@ export class Synchronizer extends EventEmitter {
     /**
      * Read the provider which is connected in the synchronizer.
      */
-    get provider(): ethers.providers.Provider {
+    get provider(): ethers.Provider {
         return this._provider
+    }
+
+    /**
+     * Return the address of UniRep contract.
+     */
+    get unirepAddress(): string {
+        return this._unirepAddress
     }
 
     /**
      * Read the UniRep smart contract object which is connected in the synchronizer.
      */
-    get unirepContract(): ethers.Contract {
+    get unirepContract(): Unirep {
         return this._unirepContract
     }
 
@@ -408,16 +406,18 @@ export class Synchronizer extends EventEmitter {
     async _setup() {
         if (this.setupComplete) return
         const config = await this.unirepContract.config()
-        this.settings.stateTreeDepth = config.stateTreeDepth
-        this.settings.epochTreeDepth = config.epochTreeDepth
-        this.settings.historyTreeDepth = config.historyTreeDepth
-        this.settings.numEpochKeyNoncePerEpoch = config.numEpochKeyNoncePerEpoch
-        this.settings.fieldCount = config.fieldCount
-        this.settings.sumFieldCount = config.sumFieldCount
-        this.settings.replNonceBits = config.replNonceBits
-        this.settings.replFieldBits = config.replFieldBits
+        this._settings.stateTreeDepth = Number(config.stateTreeDepth)
+        this._settings.epochTreeDepth = Number(config.epochTreeDepth)
+        this._settings.historyTreeDepth = Number(config.historyTreeDepth)
+        this._settings.numEpochKeyNoncePerEpoch = Number(
+            config.numEpochKeyNoncePerEpoch
+        )
+        this._settings.fieldCount = Number(config.fieldCount)
+        this._settings.sumFieldCount = Number(config.sumFieldCount)
+        this._settings.replNonceBits = Number(config.replNonceBits)
+        this._settings.replFieldBits = Number(config.replFieldBits)
 
-        this.buildEventHandlers()
+        await this.buildEventHandlers()
         await this._findStartBlock()
         this.setupComplete = true
     }
@@ -430,9 +430,10 @@ export class Synchronizer extends EventEmitter {
         // look for the first attesterSignUp event
         // no events could be emitted before this
         const filter = this.unirepContract.filters.AttesterSignedUp()
+        const topics = await filter.getTopicFilter()
 
         if (!this._syncAll && this._attesterId.length) {
-            filter.topics?.push([
+            topics?.push([
                 ...this._attesterId.map(
                     (n) => '0x' + n.toString(16).padStart(64, '0')
                 ),
@@ -572,12 +573,12 @@ export class Synchronizer extends EventEmitter {
         this._blocks = []
 
         // filter out the events that have already been seen
-        const unprocessedEvents = newEvents.filter((e) => {
+        const unprocessedEvents = newEvents.filter((e: ethers.EventLog) => {
             if (e.blockNumber === state.latestProcessedBlock) {
                 if (
                     e.transactionIndex === state.latestProcessedTransactionIndex
                 ) {
-                    return e.logIndex > state.latestProcessedEventIndex
+                    return e.index > state.latestProcessedEventIndex
                 }
                 return (
                     e.transactionIndex > state.latestProcessedTransactionIndex
@@ -691,7 +692,7 @@ export class Synchronizer extends EventEmitter {
      *   get contracts(){
      *     return {
      *       ...super.contracts,
-     *       [this.appContract.address]: {
+     *       [this.appContractAddress]: {
      *           contract: this.appContract,
      *           eventNames: [
      *             'Event1',
@@ -706,7 +707,7 @@ export class Synchronizer extends EventEmitter {
      */
     get contracts() {
         return {
-            [this.unirepContract.address]: {
+            [this.unirepAddress]: {
                 contract: this.unirepContract,
                 eventNames: [
                     'UserSignedUp',
@@ -726,16 +727,16 @@ export class Synchronizer extends EventEmitter {
      * Process events with each event handler.
      * @param events The array of events will be proccessed.
      */
-    private async processEvents(events: ethers.Event[]) {
+    private async processEvents(events: ethers.EventLog[]) {
         if (events.length === 0) return
-        events.sort((a: any, b: any) => {
+        events.sort((a: ethers.EventLog, b: ethers.EventLog) => {
             if (a.blockNumber !== b.blockNumber) {
                 return a.blockNumber - b.blockNumber
             }
             if (a.transactionIndex !== b.transactionIndex) {
                 return a.transactionIndex - b.transactionIndex
             }
-            return a.logIndex - b.logIndex
+            return a.index - b.index
         })
 
         for (const event of events) {
@@ -760,7 +761,7 @@ export class Synchronizer extends EventEmitter {
                             latestProcessedBlock: +event.blockNumber,
                             latestProcessedTransactionIndex:
                                 +event.transactionIndex,
-                            latestProcessedEventIndex: +event.logIndex,
+                            latestProcessedEventIndex: +event.index,
                         },
                     })
                 })
@@ -784,7 +785,7 @@ export class Synchronizer extends EventEmitter {
      */
     async waitForSync(blockNumber?: number) {
         const latestBlock =
-            blockNumber ?? (await this.unirepContract.provider.getBlockNumber())
+            blockNumber ?? (await this.provider.getBlockNumber())
         for (;;) {
             const state = await this._db.findOne('SynchronizerState', {
                 where: {
@@ -909,7 +910,7 @@ export class Synchronizer extends EventEmitter {
      */
     async nullifierExist(nullifier: any) {
         const epochEmitted = await this.unirepContract.usedNullifiers(nullifier)
-        return epochEmitted.gt(0)
+        return epochEmitted
     }
 
     /**
@@ -1165,7 +1166,7 @@ export class Synchronizer extends EventEmitter {
             .toString()
             .padStart(15, '0')}${event.transactionIndex
             .toString()
-            .padStart(8, '0')}${event.logIndex.toString().padStart(8, '0')}`
+            .padStart(8, '0')}${event.index.toString().padStart(8, '0')}`
 
         const currentEpoch = await this.readCurrentEpoch(attesterId)
         if (epoch !== currentEpoch.number && epoch !== MAX_EPOCH) {

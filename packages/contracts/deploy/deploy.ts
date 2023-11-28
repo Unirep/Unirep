@@ -1,7 +1,7 @@
 import { ethers } from 'ethers'
 import { Circuit, Prover, CircuitConfig } from '@unirep/circuits'
 import { PoseidonT3 } from 'poseidon-solidity'
-import GlobalFactory from 'global-factory'
+import GlobalFactory from './globalFactory'
 import { Unirep, Unirep__factory as UnirepFactory } from '../typechain'
 import {
     compileVerifier,
@@ -82,7 +82,7 @@ export const deployVerifier = async (
 
     const { bytecode, abi } = artifacts
     const _verifierFactory = new ethers.ContractFactory(abi, bytecode, deployer)
-    const verifierFactory = await GlobalFactory(_verifierFactory)
+    const verifierFactory = await GlobalFactory(_verifierFactory, deployer)
     const verifierContract = await retryAsNeeded(() => verifierFactory.deploy())
     return verifierContract
 }
@@ -99,7 +99,7 @@ export const deployVerifiers = async (
     let verifiers = {}
     for (const circuit in Circuit) {
         const verifierContract = await deployVerifier(deployer, circuit, prover)
-        verifiers[circuit] = verifierContract.address
+        verifiers[circuit] = await verifierContract.getAddress()
     }
     return verifiers
 }
@@ -154,11 +154,12 @@ export const deployVerifierHelper = async (
 
     const { bytecode, abi } = artifacts
     const _helperFactory = new ethers.ContractFactory(abi, bytecode, deployer)
-    const helperFactory = await GlobalFactory(_helperFactory)
+    const helperFactory = await GlobalFactory(_helperFactory, deployer)
+    const verifierAddress = await verifier.getAddress()
     const helperContract = await retryAsNeeded(() =>
-        helperFactory.deploy(unirepAddress, verifier.address)
+        helperFactory.deploy(unirepAddress, verifierAddress)
     )
-    await helperContract.deployed()
+    await helperContract.waitForDeployment()
     return helperContract
 }
 
@@ -227,26 +228,16 @@ export const deployUnirep = async (
         '-----------------------------------------------------------------'
     )
 
-    if ((await deployer.provider.getCode(PoseidonT3.proxyAddress)) === '0x') {
-        await retryAsNeeded(() =>
-            deployer.sendTransaction({
-                to: PoseidonT3.from,
-                value: PoseidonT3.gas,
-            })
-        )
-        await retryAsNeeded(() =>
-            deployer.provider?.sendTransaction(PoseidonT3.tx)
-        )
-    }
-    if ((await deployer.provider.getCode(PoseidonT3.address)) === '0x') {
-        // nothing to do, contract is already deployed
-        await retryAsNeeded(() =>
-            deployer.sendTransaction({
-                to: PoseidonT3.proxyAddress,
-                data: PoseidonT3.data,
-            })
-        )
-    }
+    const poseidonT3Path = 'poseidon-solidity/PoseidonT3.sol/PoseidonT3.json'
+    const poseidonT3Artifacts: any = tryPath(poseidonT3Path)
+    const _poseidonT3Factory = new ethers.ContractFactory(
+        poseidonT3Artifacts.abi,
+        poseidonT3Artifacts.bytecode,
+        deployer
+    )
+    const poseidonT3Factory = await GlobalFactory(_poseidonT3Factory, deployer)
+    const poseidonT3 = await retryAsNeeded(() => poseidonT3Factory.deploy())
+    await poseidonT3.waitForDeployment()
 
     const incPath =
         '@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol/IncrementalBinaryTree.json'
@@ -254,17 +245,19 @@ export const deployUnirep = async (
     const _incrementalMerkleTreeFactory = new ethers.ContractFactory(
         incArtifacts.abi,
         linkLibrary(incArtifacts.bytecode, {
-            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
+            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
+                await poseidonT3.getAddress(),
         }),
         deployer
     )
     const incrementalMerkleTreeFactory = await GlobalFactory(
-        _incrementalMerkleTreeFactory
+        _incrementalMerkleTreeFactory,
+        deployer
     )
     const incrementalMerkleTreeLib = await retryAsNeeded(() =>
         incrementalMerkleTreeFactory.deploy()
     )
-    await incrementalMerkleTreeLib.deployed()
+    await incrementalMerkleTreeLib.waitForDeployment()
 
     const reusableMerklePath =
         'contracts/libraries/ReusableMerkleTree.sol/ReusableMerkleTree.json'
@@ -272,15 +265,19 @@ export const deployUnirep = async (
     const _reusableMerkleFactory = new ethers.ContractFactory(
         reusableMerkleArtifacts.abi,
         linkLibrary(reusableMerkleArtifacts.bytecode, {
-            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
+            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
+                await poseidonT3.getAddress(),
         }),
         deployer
     )
-    const reusableMerkleFactory = await GlobalFactory(_reusableMerkleFactory)
+    const reusableMerkleFactory = await GlobalFactory(
+        _reusableMerkleFactory,
+        deployer
+    )
     const reusableMerkleContract = await retryAsNeeded(() =>
         reusableMerkleFactory.deploy()
     )
-    await reusableMerkleContract.deployed()
+    await reusableMerkleContract.waitForDeployment()
 
     const lazyMerklePath =
         'contracts/libraries/LazyMerkleTree.sol/LazyMerkleTree.json'
@@ -288,44 +285,48 @@ export const deployUnirep = async (
     const _lazyMerkleFactory = new ethers.ContractFactory(
         lazyMerkleArtifacts.abi,
         linkLibrary(lazyMerkleArtifacts.bytecode, {
-            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
+            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
+                await poseidonT3.getAddress(),
         }),
         deployer
     )
-    const lazyMerkleFactory = await GlobalFactory(_lazyMerkleFactory)
+    const lazyMerkleFactory = await GlobalFactory(_lazyMerkleFactory, deployer)
     const lazyMerkleContract = await retryAsNeeded(() =>
         lazyMerkleFactory.deploy()
     )
-    await lazyMerkleContract.deployed()
+    await lazyMerkleContract.waitForDeployment()
 
     const verifiers = await deployVerifiers(deployer, prover)
 
     console.log('Deploying Unirep')
-    const c: Unirep = await retryAsNeeded(async () =>
-        (
-            await GlobalFactory(
-                new UnirepFactory(
-                    {
-                        ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
-                            incrementalMerkleTreeLib.address,
-                        ['contracts/libraries/ReusableMerkleTree.sol:ReusableMerkleTree']:
-                            reusableMerkleContract.address,
-                        ['contracts/libraries/LazyMerkleTree.sol:LazyMerkleTree']:
-                            lazyMerkleContract.address,
-                        ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
-                            PoseidonT3.address,
-                    },
-                    deployer
-                )
-            )
-        ).deploy(
+    const unirepPath = 'contracts/Unirep.sol/Unirep.json'
+    const unirepArtifacts = tryPath(unirepPath)
+    const _unirepFactory = new ethers.ContractFactory(
+        unirepArtifacts.abi,
+        linkLibrary(unirepArtifacts.bytecode, {
+            ['@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.sol:IncrementalBinaryTree']:
+                await incrementalMerkleTreeLib.getAddress(),
+            ['contracts/libraries/ReusableMerkleTree.sol:ReusableMerkleTree']:
+                await reusableMerkleContract.getAddress(),
+            ['contracts/libraries/LazyMerkleTree.sol:LazyMerkleTree']:
+                await lazyMerkleContract.getAddress(),
+            ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']:
+                await poseidonT3.getAddress(),
+        }),
+        deployer
+    )
+    const unirepFactory = await GlobalFactory(_unirepFactory, deployer)
+    const c: Unirep = await retryAsNeeded(() =>
+        unirepFactory.deploy(
             config.contractConfig,
             verifiers[Circuit.signup],
             verifiers[Circuit.userStateTransition]
         )
     )
 
-    await retryAsNeeded(() => c.deployTransaction?.wait())
+    const deployment = await retryAsNeeded(() =>
+        c.deploymentTransaction()?.wait()
+    )
 
     // Print out deployment info
     console.log(
@@ -336,9 +337,9 @@ export const deployUnirep = async (
         Math.floor(UnirepFactory.bytecode.length / 2),
         'bytes'
     )
-    if (c.deployTransaction) {
+    if (deployment) {
         const receipt = await deployer.provider?.getTransactionReceipt(
-            c.deployTransaction.hash
+            deployment.hash
         )
         console.log(
             'Gas cost of deploying Unirep:',
@@ -347,7 +348,7 @@ export const deployUnirep = async (
     } else {
         console.log('Re-using existing Unirep deployment')
     }
-    console.log(`Deployed to: ${c.address}`)
+    console.log(`Deployed to: ${await c.getAddress()}`)
     console.log(
         '-----------------------------------------------------------------'
     )

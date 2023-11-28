@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import {LazyMerkleTree, LazyTreeData} from '../libraries/LazyMerkleTree.sol';
 import {ReusableMerkleTree, ReusableTreeData} from '../libraries/ReusableMerkleTree.sol';

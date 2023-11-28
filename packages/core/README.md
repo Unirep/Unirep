@@ -65,13 +65,13 @@ yarn add @unirep/core
 ```typescript
 import { Synchronizer } from '@unirep/core'
 
-const address = '0x....'
+const unirepAddress = '0x....'
 const provider = 'YOUR/ETH/PROVIDER'
 
 // 1. initialize a synchronizer
 const synchronizer = new Synchronizer({
-    unirepAddress: address,
-    provider: provider,
+    unirepAddress,
+    provider,
 })
 // 2. start listening to unriep contract events
 await synchronizer.start()
@@ -99,20 +99,21 @@ const stateTree = await synchronizer.genStateTree(epoch, attesterId)
 ```typescript
 import { Identity } from '@semaphore-protocol/identity'
 import { UserState } from '@unirep/core'
-import { defaultProver } from '@unirep/circuits/provers/defaultProver'
+import { defaultProver as prover } from '@unirep/circuits/provers/defaultProver'
 
 // random generate a user identity
-const identity = new Identity()
+const id = new Identity()
+const unirepAddress = '0x....'
 const provider = 'YOUR/ETH/PROVIDER'
 const attesterId = 'ATTESTER/ADDRESS' // the msg.sender signs up through `attesterSignUp()`
 
 // 1. initialize a user state object
 const userState = new UserState({
-    unirepAddress: address,
-    provider: provider,
-    prover: defaultProver,
-    id: identity,
-    attesterId: attesterId,
+    unirepAddress,
+    provider,
+    prover,
+    id,
+    attesterId,
 })
 // or through a synchronicr
 // const userState = new UserState({synchronizer, id: identity})
@@ -142,8 +143,8 @@ const db_browser = await IndexedDBConnector.create(schema)
 **Use the database in a synchronizer**
 ```typescript
 const synchronizer = new Synchronizer({
-    unirepAddress: address,
-    provider: provider,
+    unirepAddress,
+    provider,
     db: db_storage
 })
 ```
@@ -151,7 +152,8 @@ const synchronizer = new Synchronizer({
 **Example: use the user state to generate proofs**
 ```typescript
 // 1. generate a signup proof of the user
-const { publicSignals, proof } = await userState.genUserSignUpProof({ attesterId: attester.address })
+const attesterId = 'ATTESTER/ADDRESS' // the msg.sender signs up through `attesterSignUp()`
+const { publicSignals, proof } = await userState.genUserSignUpProof({ attesterId })
 
 // 2. submit the signup proof through the attester
 const tx = await unirepContract

@@ -34,6 +34,7 @@ const signupCircuitInputs = {
 }
 let chainId
 let attester
+let attesterId
 
 describe('Epoch key lite verifier helper', function () {
     this.timeout(300000)
@@ -57,9 +58,11 @@ describe('Epoch key lite verifier helper', function () {
     before(async () => {
         const accounts = await ethers.getSigners()
         attester = accounts[1]
+        attesterId = await attester.getAddress()
         unirepContract = await deployUnirep(accounts[0])
+        const unirepAddress = await unirepContract.getAddress()
         epochKeyLiteVerifierHelper = await deployVerifierHelper(
-            unirepContract.address,
+            unirepAddress,
             accounts[0],
             Circuit.epochKeyLite
         )
@@ -67,7 +70,7 @@ describe('Epoch key lite verifier helper', function () {
         chainId = network.chainId
         circuitInputs = {
             ...circuitInputs,
-            attester_id: attester.address,
+            attester_id: attesterId,
             chain_id: chainId,
         }
 
@@ -75,7 +78,7 @@ describe('Epoch key lite verifier helper', function () {
             Circuit.signup,
             stringifyBigInts({
                 ...signupCircuitInputs,
-                attester_id: attester.address,
+                attester_id: attesterId,
                 chain_id: chainId,
             })
         )

@@ -15,9 +15,13 @@ describe('Attestations max', function () {
     this.timeout(120000)
 
     let unirepContract
+    let attester
+    let attesterId
 
     before(async () => {
         const accounts = await ethers.getSigners()
+        attester = accounts[1]
+        attesterId = await attester.getAddress()
         unirepContract = await deployUnirep(accounts[0], {
             EPOCH_TREE_DEPTH,
         })
@@ -27,8 +31,6 @@ describe('Attestations max', function () {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
-            const accounts = await ethers.getSigners()
-            const attester = accounts[1]
             await unirepContract
                 .connect(attester)
                 .attesterSignUp(EPOCH_LENGTH)
@@ -39,12 +41,7 @@ describe('Attestations max', function () {
     }
 
     it('should fail to submit too many attestations', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH - 1; x++) {
             const epochKey = BigInt(x + 100000)
             const fieldIndex = Math.floor(Math.random() * SUM_FIELD_COUNT + 1)
@@ -62,12 +59,7 @@ describe('Attestations max', function () {
     })
 
     it('should submit attestations after max attestations', async () => {
-        const accounts = await ethers.getSigners()
-        const attester = accounts[1]
-
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
 
         for (let x = 0; x < 2 ** EPOCH_TREE_DEPTH - 1; x++) {
             const epochKey = BigInt(x + 100000)

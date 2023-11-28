@@ -33,6 +33,7 @@ describe('User Signup', function () {
     let unirepContract
     let attester
     let chainId
+    let attesterId
 
     before(async () => {
         const accounts = await ethers.getSigners()
@@ -40,10 +41,11 @@ describe('User Signup', function () {
         const network = await accounts[0].provider.getNetwork()
         chainId = network.chainId
         attester = accounts[1]
+        attesterId = await attester.getAddress()
         circuitInputs = {
             ...circuitInputs,
             chain_id: chainId,
-            attester_id: attester.address,
+            attester_id: attesterId,
         }
     })
 
@@ -87,11 +89,12 @@ describe('User Signup', function () {
     it('should fail to signup with unregistered attester', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[2]
+        const unregisteredattesterId = await attester.getAddress()
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
                 ...circuitInputs,
-                attester_id: attester.address,
+                attester_id: unregisteredattesterId,
             })
         )
         const { publicSignals, proof } = new SignupProof(
@@ -105,9 +108,7 @@ describe('User Signup', function () {
     })
 
     it('sign up many users should succeed', async () => {
-        const startEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const startEpoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const semaphoreTree = new IncrementalMerkleTree(STATE_TREE_DEPTH)
         const roots = {}
         for (let epoch = startEpoch; epoch < 3; epoch++) {
@@ -135,7 +136,7 @@ describe('User Signup', function () {
 
                 const gstLeaf = genStateTreeLeaf(
                     secret,
-                    BigInt(attester.address),
+                    BigInt(attesterId),
                     epoch,
                     Array(FIELD_COUNT).fill(0),
                     chainId
@@ -143,22 +144,18 @@ describe('User Signup', function () {
 
                 stateTree.insert(gstLeaf)
                 const currentRoot = await unirepContract.attesterStateTreeRoot(
-                    attester.address
+                    attesterId
                 )
                 roots[epoch].push(currentRoot.toString())
                 const leafCount =
-                    await unirepContract.attesterStateTreeLeafCount(
-                        attester.address
-                    )
+                    await unirepContract.attesterStateTreeLeafCount(attesterId)
                 expect(leafCount).to.equal(i + 1)
                 expect(currentRoot.toString(), 'state tree root').to.equal(
                     stateTree.root.toString()
                 )
                 semaphoreTree.insert(commitment)
                 const semaphoreRoot =
-                    await unirepContract.attesterSemaphoreGroupRoot(
-                        attester.address
-                    )
+                    await unirepContract.attesterSemaphoreGroupRoot(attesterId)
                 expect(semaphoreRoot.toString(), 'semaphore root').to.equal(
                     semaphoreTree.root.toString()
                 )
@@ -169,7 +166,7 @@ describe('User Signup', function () {
             for (const root of roots[epoch]) {
                 const rootExists =
                     await unirepContract.attesterStateTreeRootExists(
-                        attester.address,
+                        attesterId,
                         epoch,
                         root
                     )
@@ -180,11 +177,9 @@ describe('User Signup', function () {
 
     it('should decode signup signals', async () => {
         await unirepContract
-            .updateEpochIfNeeded(attester.address)
+            .updateEpochIfNeeded(attesterId)
             .then((t) => t.wait())
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
@@ -229,11 +224,9 @@ describe('User Signup', function () {
 
     it('double sign up should fail', async () => {
         await unirepContract
-            .updateEpochIfNeeded(attester.address)
+            .updateEpochIfNeeded(attesterId)
             .then((t) => t.wait())
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         {
             // first signup
             const r = await defaultProver.genProofAndPublicSignals(
@@ -271,11 +264,12 @@ describe('User Signup', function () {
     it('should fail to signup for unregistered attester', async () => {
         const accounts = await ethers.getSigners()
         const unregisteredAttester = accounts[5]
+        const unregisteredattesterId = await unregisteredAttester.getAddress()
         const r = await defaultProver.genProofAndPublicSignals(
             Circuit.signup,
             stringifyBigInts({
                 ...circuitInputs,
-                attester_id: BigInt(unregisteredAttester.address),
+                attester_id: BigInt(unregisteredattesterId),
             })
         )
         const { publicSignals, proof } = new SignupProof(
@@ -365,7 +359,7 @@ describe('User Signup', function () {
     it('should sign up user with initial data', async () => {
         const config = await unirepContract.config()
         const contractEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
+            attesterId
         )
 
         const data = Array(config.fieldCount)
@@ -383,14 +377,14 @@ describe('User Signup', function () {
         })
         const leaf = genStateTreeLeaf(
             id.secret,
-            attester.address,
+            BigInt(attesterId),
             contractEpoch,
             expectedData,
             chainId
         )
         const identityHash = genIdentityHash(
             id.secret,
-            attester.address,
+            BigInt(attesterId),
             contractEpoch,
             chainId
         )
@@ -400,14 +394,14 @@ describe('User Signup', function () {
         const leafIndex = 0
         await expect(tx)
             .to.emit(unirepContract, 'UserSignedUp')
-            .withArgs(contractEpoch, id.commitment, attester.address, leafIndex)
+            .withArgs(contractEpoch, id.commitment, attesterId, leafIndex)
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(contractEpoch, attester.address, leafIndex, leaf)
+            .withArgs(contractEpoch, attesterId, leafIndex, leaf)
         for (const [i, d] of Object.entries(expectedData)) {
             await expect(tx)
                 .to.emit(unirepContract, 'Attestation')
-                .withArgs(MAX_EPOCH, id.commitment, attester.address, i, d)
+                .withArgs(MAX_EPOCH, id.commitment, attesterId, i, d)
         }
     })
 
@@ -415,16 +409,17 @@ describe('User Signup', function () {
         const zeroData = []
 
         const config = await unirepContract.config()
+        const fieldCount = Number(config.fieldCount)
         const leaf = genStateTreeLeaf(
             id.secret,
-            attester.address,
+            BigInt(attesterId),
             epoch,
-            Array(config.fieldCount).fill(0),
+            Array(fieldCount).fill(0),
             chainId
         )
         const identityHash = genIdentityHash(
             id.secret,
-            attester.address,
+            BigInt(attesterId),
             epoch,
             chainId
         )
@@ -434,16 +429,17 @@ describe('User Signup', function () {
         const leafIndex = 0
         await expect(tx)
             .to.emit(unirepContract, 'UserSignedUp')
-            .withArgs(epoch, id.commitment, attester.address, leafIndex)
+            .withArgs(epoch, id.commitment, attesterId, leafIndex)
         await expect(tx)
             .to.emit(unirepContract, 'StateTreeLeaf')
-            .withArgs(epoch, attester.address, leafIndex, leaf)
+            .withArgs(epoch, attesterId, leafIndex, leaf)
     })
 
     it('should fail to sign up with out of range replacement data', async () => {
         const config = await unirepContract.config()
+        const fieldCount = Number(config.fieldCount)
 
-        const data = Array(config.fieldCount)
+        const data = Array(fieldCount)
             .fill(0)
             .map((_, i) => {
                 if (i >= config.sumFieldCount) {
@@ -454,7 +450,7 @@ describe('User Signup', function () {
 
         const identityHash = genIdentityHash(
             id.secret,
-            attester.address,
+            attesterId,
             epoch,
             chainId
         )
@@ -469,6 +465,7 @@ describe('User Signup', function () {
 
     it('should fail to sign up with too much user data', async () => {
         const config = await unirepContract.config()
+        const fieldCount = Number(config.fieldCount)
         const hash = 1
 
         const tx = unirepContract
@@ -476,8 +473,8 @@ describe('User Signup', function () {
             .manualUserSignUp(
                 epoch,
                 id.commitment,
-                hash,
-                Array(config.fieldCount + 1).fill(1)
+                BigInt(hash),
+                Array(fieldCount + 1).fill(1)
             )
         await expect(tx).to.be.revertedWithCustomError(
             unirepContract,

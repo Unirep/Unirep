@@ -1,4 +1,4 @@
-import { utils } from 'ethers'
+import { ethers } from 'ethers'
 import path from 'path'
 import fs from 'fs'
 import solc from 'solc'
@@ -14,7 +14,7 @@ import { Circuit } from '@unirep/circuits'
  * linkLibrary(
  *   incArtifacts.bytecode,
  *   {
- *     ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
+ *     ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3Address,
  *   }
  * )
  * ```
@@ -27,10 +27,10 @@ export function linkLibrary(
 ): string {
     let linkedBytecode = bytecode
     for (const [name, address] of Object.entries(libraries)) {
-        const placeholder = `__\$${utils
-            .solidityKeccak256(['string'], [name])
+        const placeholder = `__\$${ethers
+            .solidityPackedKeccak256(['string'], [name])
             .slice(2, 36)}\$__`
-        const formattedAddress = utils
+        const formattedAddress = ethers
             .getAddress(address)
             .toLowerCase()
             .replace('0x', '')

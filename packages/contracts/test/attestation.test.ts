@@ -17,21 +17,20 @@ describe('Attestations', function () {
     this.timeout(120000)
 
     let unirepContract
-    let chainId
+    let attester
+    let attesterId
 
     before(async () => {
         const accounts = await ethers.getSigners()
+        attester = accounts[1]
         unirepContract = await deployUnirep(accounts[0])
-        const network = await accounts[0].provider.getNetwork()
-        chainId = network.chainId
+        attesterId = await attester.getAddress()
     })
 
     {
         let snapshot
         beforeEach(async () => {
             snapshot = await ethers.provider.send('evm_snapshot', [])
-            const accounts = await ethers.getSigners()
-            const attester = accounts[1]
             await unirepContract
                 .connect(attester)
                 .attesterSignUp(EPOCH_LENGTH)
@@ -45,9 +44,7 @@ describe('Attestations', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         await expect(
             unirepContract
                 .connect(attester)
@@ -60,9 +57,7 @@ describe('Attestations', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const fieldIndex = 0
         const a1 = poseidon1([1])
         const a2 = F - BigInt(1)
@@ -78,10 +73,10 @@ describe('Attestations', function () {
             .connect(attester)
             .attest(epochKey, epoch, fieldIndex, a2)
 
-        expect(tx).to.emit(unirepContract, 'EpochTreeLeaf').withArgs(
+        await expect(tx).to.emit(unirepContract, 'EpochTreeLeaf').withArgs(
             epoch,
-            attester.address,
-            1, // first epoch tree leaf
+            attesterId,
+            0, // first epoch tree leaf
             genEpochTreeLeaf(epochKey, data)
         )
     })
@@ -110,17 +105,13 @@ describe('Attestations', function () {
     it('should fail to submit attestation after epoch ends', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const oldEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const oldEpoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const epochKey = BigInt(24910)
 
         // epoch transition
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
-        const newEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const newEpoch = await unirepContract.attesterCurrentEpoch(attesterId)
         expect(oldEpoch.toString()).not.equal(newEpoch.toString())
 
         await expect(
@@ -132,9 +123,7 @@ describe('Attestations', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
         const wrongAttester = accounts[5]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const epochKey = BigInt(24910)
 
         await expect(
@@ -145,9 +134,7 @@ describe('Attestations', function () {
     it('should submit attestation with graffiti', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const epochKey = BigInt(24910)
         const fieldIndex = SUM_FIELD_COUNT
         const val = 1
@@ -161,7 +148,7 @@ describe('Attestations', function () {
             .withArgs(
                 epoch,
                 epochKey,
-                attester.address,
+                attesterId,
                 fieldIndex,
                 BigInt(attestationCount) +
                     (BigInt(val) << BigInt(REPL_NONCE_BITS))
@@ -171,9 +158,7 @@ describe('Attestations', function () {
     it('should fail to submit attestation with out of range graffiti', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const epochKey = BigInt(24910)
         await expect(
             unirepContract
@@ -191,9 +176,7 @@ describe('Attestations', function () {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
 
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         const epochKey = BigInt(24910)
 
         const fieldIndex = 1
@@ -205,15 +188,13 @@ describe('Attestations', function () {
 
         await expect(tx)
             .to.emit(unirepContract, 'Attestation')
-            .withArgs(epoch, epochKey, attester.address, fieldIndex, val)
+            .withArgs(epoch, epochKey, attesterId, fieldIndex, val)
     })
 
     it('should get current attestation counter', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
 
         const epochKey = BigInt(24910)
         let attestationCount = await unirepContract.attestationCount()
@@ -232,7 +213,7 @@ describe('Attestations', function () {
                 .withArgs(
                     epoch,
                     epochKey,
-                    attester.address,
+                    attesterId,
                     fieldIndex,
                     BigInt(attestationCount) +
                         (BigInt(val) << BigInt(REPL_NONCE_BITS))
@@ -247,9 +228,7 @@ describe('Attestations', function () {
     it('verify lower bits of replacement field', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
 
         const epochKey = BigInt(24910)
         let attestationCount = await unirepContract.attestationCount()
@@ -263,7 +242,7 @@ describe('Attestations', function () {
                 .attest(epochKey, epoch, fieldIndex, v)
 
             expect(attestationCount).to.equal(
-                (await unirepContract.attestationCount()) - 1
+                Number(await unirepContract.attestationCount()) - 1
             )
 
             await expect(tx)
@@ -271,7 +250,7 @@ describe('Attestations', function () {
                 .withArgs(
                     epoch,
                     epochKey,
-                    attester.address,
+                    attesterId,
                     fieldIndex,
                     BigInt(attestationCount) +
                         (BigInt(v) << BigInt(REPL_NONCE_BITS))

@@ -32,14 +32,16 @@ describe('Reputation proof', function () {
     this.timeout(0)
 
     let unirepContract
+    let unirepAddress
     let repVerifierHelper
     let chainId
 
     before(async () => {
         const accounts = await ethers.getSigners()
         unirepContract = await deployUnirep(accounts[0])
+        unirepAddress = await unirepContract.getAddress()
         repVerifierHelper = await deployVerifierHelper(
-            unirepContract.address,
+            unirepAddress,
             accounts[0],
             Circuit.reputation
         )
@@ -65,11 +67,11 @@ describe('Reputation proof', function () {
     it('should generate a zero reputation proof', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -103,11 +105,11 @@ describe('Reputation proof', function () {
     it('should reveal epoch key nonce', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -144,11 +146,11 @@ describe('Reputation proof', function () {
     it('should not reveal epoch key nonce', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -185,11 +187,11 @@ describe('Reputation proof', function () {
     it('should prove minRep', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -206,13 +208,7 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const minRep = 1
-        const epochKey = genEpochKey(
-            id.secret,
-            attester.address,
-            epoch,
-            0,
-            chainId
-        )
+        const epochKey = genEpochKey(id.secret, attesterId, epoch, 0, chainId)
         const field = userState.sync.settings.sumFieldCount
 
         await unirepContract
@@ -235,9 +231,7 @@ describe('Reputation proof', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        const toEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const toEpoch = await unirepContract.attesterCurrentEpoch(attesterId)
         {
             await userState.waitForSync()
             const { publicSignals, proof } =
@@ -271,11 +265,11 @@ describe('Reputation proof', function () {
     it('should prove maxRep', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -292,13 +286,7 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const maxRep = 2
-        const epochKey = genEpochKey(
-            id.secret,
-            attester.address,
-            epoch,
-            0,
-            chainId
-        )
+        const epochKey = genEpochKey(id.secret, attesterId, epoch, 0, chainId)
         const field = userState.sync.settings.sumFieldCount
 
         await unirepContract
@@ -321,9 +309,7 @@ describe('Reputation proof', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        const toEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const toEpoch = await unirepContract.attesterCurrentEpoch(attesterId)
         {
             await userState.waitForSync()
             const { publicSignals, proof } =
@@ -357,11 +343,11 @@ describe('Reputation proof', function () {
     it('should prove graffiti', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const attesterId = BigInt(attester.address)
+        const attesterId = await attester.getAddress()
         const id = new Identity()
         const userState = await genUserState(
             ethers.provider,
-            unirepContract.address,
+            unirepAddress,
             id,
             attesterId
         )
@@ -378,13 +364,7 @@ describe('Reputation proof', function () {
         await userState.waitForSync()
 
         const graffiti = BigInt(12345)
-        const epochKey = genEpochKey(
-            id.secret,
-            attester.address,
-            epoch,
-            0,
-            chainId
-        )
+        const epochKey = genEpochKey(id.secret, attesterId, epoch, 0, chainId)
         const field = userState.sync.settings.sumFieldCount
         await unirepContract
             .connect(attester)
@@ -394,9 +374,7 @@ describe('Reputation proof', function () {
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
-        const toEpoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const toEpoch = await unirepContract.attesterCurrentEpoch(attesterId)
         {
             await userState.waitForSync()
             const { publicSignals, proof } =

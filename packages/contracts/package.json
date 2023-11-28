@@ -30,27 +30,31 @@
         "errorcode": "node ./scripts/errorCodes"
     },
     "dependencies": {
-        "@openzeppelin/contracts": "^4.9.3",
+        "@openzeppelin/contracts": "^5.0.0",
         "@unirep/circuits": "2.0.0-beta-5",
         "@unirep/utils": "2.0.0-beta-5",
         "@zk-kit/incremental-merkle-tree.sol": "^1.7.0",
-        "ethers": "^5.7.2",
+        "ethers": "^6.9.0",
         "global-factory": "^0.0.2",
         "poseidon-solidity": "^0.0.5",
-        "solc": "^0.8.21"
+        "solc": "^0.8.23-fixed"
     },
     "devDependencies": {
-        "@nomicfoundation/hardhat-chai-matchers": "^1.0.5",
-        "@nomiclabs/hardhat-ethers": "^2.0.6",
-        "@semaphore-protocol/identity": "^3.10.1",
-        "@typechain/ethers-v5": "^11.1.1",
-        "@typechain/hardhat": "^6.1.0",
-        "hardhat": "^2.12.7",
+        "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
+        "@nomicfoundation/hardhat-ethers": "^3.0.5",
+        "@semaphore-protocol/identity": "^3.15.1",
+        "@typechain/ethers-v6": "^0.5.1",
+        "@typechain/hardhat": "^9.1.0",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "^20.10.0",
+        "chai": "^4.3.10",
+        "hardhat": "^2.19.1",
         "hardhat-gas-reporter": "^1.0.8",
         "lcov-badge-generator": "^1.0.5",
-        "solidity-coverage": "^0.8.4",
+        "mocha": "^10.2.0",
+        "solidity-coverage": "^0.8.5",
         "ts-node": "^10.9.1",
-        "typechain": "^8.3.1",
-        "typescript": "^4.7.3"
+        "typechain": "^8.3.2",
+        "typescript": "^5.3.2"
     }
 }

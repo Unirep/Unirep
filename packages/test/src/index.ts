@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import { Prover, CircuitConfig } from '@unirep/circuits'
 import { defaultProver } from '@unirep/circuits/provers/defaultProver'
 import { Identity } from '@semaphore-protocol/identity'
-import { genRandomSalt } from '@unirep/utils'
+import { genSignature } from '@unirep/contracts'
 import { Synchronizer, UserState } from '@unirep/core'
 import { deployUnirep } from '@unirep/contracts/deploy'
 
@@ -12,8 +12,9 @@ export async function bootstrapUnirep(
     prover: Prover = defaultProver
 ) {
     const unirepContract = await deployUnirep(provider, config, prover)
+    const unirepAddress = await unirepContract.getAddress()
     const synchronizer = new Synchronizer({
-        unirepAddress: unirepContract.address,
+        unirepAddress,
         provider,
     })
     return synchronizer
@@ -23,17 +24,21 @@ export async function bootstrapAttester(
     synchronizer: Synchronizer,
     epochLength: number = 300
 ) {
-    const { unirepContract } = synchronizer.unirepContract
+    const { unirepContract } = synchronizer
     const attester = ethers.Wallet.createRandom()
-    const sigdata = ethers.utils.solidityKeccak256(
-        ['address', 'address'],
-        [attester.address, unirepContract.address]
+    const attesterAddress = await attester.getAddress()
+    const unirepAddress = await unirepContract.getAddress()
+    const { chainId } = await synchronizer.provider.getNetwork()
+    const sigdata = await genSignature(
+        unirepAddress,
+        attester as any,
+        epochLength,
+        chainId
     )
-    const sig = attester.signMessage(sigdata)
     await unirepContract
-        .attesterSignUpViaRelayer(attester.address, epochLength, sig)
+        .attesterSignUpViaRelayer(attesterAddress, epochLength, sigdata)
         .then((t) => t.wait())
-    return attester.address
+    return attesterAddress
 }
 
 // users
@@ -42,7 +47,7 @@ export async function bootstrapUsers(
     userCount = 5,
     prover: Prover = defaultProver
 ) {
-    const { unirepContract } = synchronizer.unirepContract
+    const { unirepContract } = synchronizer
     // synchronizer should be authed to send transactions
     const ids = [] as Identity[]
     for (let x = 0; x < userCount; x++) {
@@ -82,15 +87,15 @@ export async function bootstrapAttestations(
             .userSignUp(r.publicSignals, r.proof)
             .then((t) => t.wait())
         await userState.waitForSync()
-        const epochKey = userState.getEpochKeys()
+        const epochKey = userState.getEpochKeys(epoch)[0] as bigint
         for (let j = 0; j < attestationCount; j++) {
-            const posRep = Math.floor(Math.random() * 10)
-            const negRep = Math.floor(Math.random() * 10)
-            const graffiti = Math.random() > 0.5 ? genRandomSalt() : BigInt(0)
-
+            const fieldIndex = Math.floor(
+                Math.random() * synchronizer.settings.fieldCount
+            )
+            const change = Math.floor(Math.random() * 10)
             await unirepContract
                 .connect(account)
-                .submitAttestation(epoch, epochKey, posRep, negRep, graffiti)
+                .attest(epoch, epochKey, fieldIndex, change)
                 .then((t) => t.wait())
         }
     }

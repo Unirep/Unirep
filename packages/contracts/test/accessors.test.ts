@@ -40,12 +40,11 @@ describe('Attester getters', function () {
     it('should get member count', async () => {
         const accounts = await ethers.getSigners()
         const attester = accounts[1]
-        const epoch = await unirepContract.attesterCurrentEpoch(
-            attester.address
-        )
+        const attesterId = await attester.getAddress()
+        const epoch = await unirepContract.attesterCurrentEpoch(attesterId)
         {
             const numberOfUsers = await unirepContract.attesterMemberCount(
-                attester.address
+                attesterId
             )
             expect(numberOfUsers).to.equal(0)
         }
@@ -56,7 +55,7 @@ describe('Attester getters', function () {
                 stringifyBigInts({
                     epoch,
                     identity_secret: id.secret,
-                    attester_id: attester.address,
+                    attester_id: attesterId,
                     chain_id: chainId,
                 })
             )
@@ -70,7 +69,7 @@ describe('Attester getters', function () {
                 .userSignUp(publicSignals, proof)
                 .then((t) => t.wait())
             const numberOfUsers = await unirepContract.attesterMemberCount(
-                attester.address
+                attesterId
             )
             expect(numberOfUsers).to.equal(x)
         }

@@ -17,7 +17,7 @@ import { ethers } from 'ethers'
 import abi from '@unirep/contracts/abi/Unirep.json'
 
 const unirepAddress = '0x...'
-const provider = new ethers.providers.JsonRpcProvider(PROVIDER)
+const provider = new ethers.JsonRpcProvider(PROVIDER)
 const unirep = new ethers.Contract(
     unirepAddress,
     abi,

@@ -111,24 +111,18 @@ await tx.wait()
 
 ```solidity
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 import { Unirep } from "@unirep/contracts/Unirep.sol";
-import { IVerifier } from "@unirep/contracts/interfaces/IVerifier.sol";
 
 contract UnirepApp {
     Unirep public unirep;
-    IVerifier public dataVerifier;
 
     constructor(
         Unirep _unirep,
-        IVerifier _dataVerifier,
         uint48 _epochLength
     ) {
         // set unirep address
         unirep = _unirep;
-
-        // set verifier address
-        dataVerifier = _dataVerifier;
 
         // sign up as an attester
         unirep.attesterSignUp(_epochLength);
