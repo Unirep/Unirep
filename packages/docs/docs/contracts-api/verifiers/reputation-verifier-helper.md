@@ -24,7 +24,7 @@ import { Circuit, ReputationProof } from '@unirep/circuits'
 
 // deploys reputation verifier helper contract
 const reputationVerifierHelper = await deployVerifierHelper(
-  unirep.address,
+  await unirep.getAddress(),
   accounts[0],
   Circuit.reputation
 )

@@ -25,7 +25,7 @@ import { Circuit, EpochKeyProof } from '@unirep/circuits'
 // deploys epoch key verifier helper contract
 const unirep = await deployUnirep(accounts[0])
 const epochKeyVerifierHelper = await deployVerifierHelper(
-  unirep.address,
+  await unirep.getAddress(),
   accounts[0],
   Circuit.epochKey
 )

@@ -18,13 +18,14 @@ import {
 } from '@unirep/contracts/typechain'
 
   const unirep = await deployUnirep(deployer)
+  const unirepAddress = await unirep.getAddress()
   const reputationVerifierHelper = await deployVerifierHelper(
-      unirep.address,
+      unirepAddress,
       deployer,
       Circuit.reputation
   )
   const epochKeyVerifierHelper = await deployVerifierHelper(
-      unirep.address,
+      unirepAddress,
       deployer,
       Circuit.epochKey
   )
@@ -32,19 +33,20 @@ import {
   const nft = await nftF.deploy(
       'ipfs://QmNtYnjqeqWbRGC4R7fd9DCXWnQF87ufv7S2zGULtbSpLA'
   )
-  await nft.deployed()
+  await nft.waitForDeployment()
 
   const votingF = new UnirepVoting__factory(deployer)
   const voting = await votingF.deploy(
-      unirep.address,
-      reputationVerifierHelper.address,
-      epochKeyVerifierHelper.address,
-      nft.address,
+      unirepAddress,
+      await reputationVerifierHelper.getAddress(),
+      await epochKeyVerifierHelper.getAddress(),
+      await nft.getAddress(),
       numTeams,
       epochLength
   )
-  await nft.setVotingAddress(voting.address).then((t) => t.wait())
-  await voting.deployed()
+  await voting.waitForDeployment()
+  const votingAddress = await voting.getAddress()
+  await nft.setVotingAddress(votingAddress).then((t) => t.wait())
 ```
 ## userSignUp
 
