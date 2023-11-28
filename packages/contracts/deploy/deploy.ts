@@ -49,7 +49,6 @@ export const retryAsNeeded = async (fn: any, maxRetry = 10) => {
         try {
             return await fn()
         } catch (err) {
-            console.log(err)
             if (++retryCount > maxRetry) throw err
             backoff *= 2
             console.log(`Failed, waiting ${backoff}ms`)

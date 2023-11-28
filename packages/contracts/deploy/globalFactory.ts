@@ -29,14 +29,15 @@ const GlobalFactory = async (factory: ContractFactory, _signer: Signer) => {
         const balance = await signer.provider?.getBalance(
             globalDeployerDeployer
         )
-        const gasPrice = BigInt(100000000000)
-        const gasLimit = BigInt(100000)
-        if (BigInt(balance.toString()) < gasPrice * gasLimit) {
+        const estimatedGas = await signer.estimateGas({
+            to: globalDeployerDeployer,
+        })
+        if (BigInt(balance.toString()) < estimatedGas) {
             // send that much to the deployer address
             await signer
                 .sendTransaction({
                     to: globalDeployerDeployer,
-                    value: (gasPrice * gasLimit).toString(),
+                    value: estimatedGas.toString(),
                 })
                 .then((t) => t.wait())
         }

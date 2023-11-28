@@ -692,7 +692,7 @@ export class Synchronizer extends EventEmitter {
      *   get contracts(){
      *     return {
      *       ...super.contracts,
-     *       [this.appContract.address]: {
+     *       [this.appContractAddress]: {
      *           contract: this.appContract,
      *           eventNames: [
      *             'Event1',

@@ -14,7 +14,7 @@ import { Circuit } from '@unirep/circuits'
  * linkLibrary(
  *   incArtifacts.bytecode,
  *   {
- *     ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3.address,
+ *     ['poseidon-solidity/PoseidonT3.sol:PoseidonT3']: PoseidonT3Address,
  *   }
  * )
  * ```
