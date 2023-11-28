@@ -34,7 +34,7 @@ const KEY_URL = `https://keys.unirep.io/${version}/`
  * import { WebProver } from '@unirep/circuits/provers/web'
  *
  * // For a local key server
- * const prover = new WebProver('http://localhost:8000/keys/')
+ * const prover = new WebProver('http://127.0.0.1:8000/keys/')
  * await prover.genProofAndPublicSignals(Circuit.signup, {
  *  // circuit inputs
  * })
