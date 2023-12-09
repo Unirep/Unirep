@@ -7,6 +7,7 @@ import {
     genStateTreeLeaf,
     F,
     MAX_EPOCH,
+    REP_BITS,
 } from '@unirep/utils'
 import { poseidon2 } from 'poseidon-lite'
 import {
@@ -528,9 +529,12 @@ export default class UserState {
      * @param epochKeyNonce The input epoch key nonce to be checked.
      */
     private _checkEpkNonce = (epochKeyNonce: number) => {
-        if (epochKeyNonce >= this.sync.settings.numEpochKeyNoncePerEpoch)
+        if (
+            epochKeyNonce >= this.sync.settings.numEpochKeyNoncePerEpoch ||
+            epochKeyNonce < 0
+        )
             throw new Error(
-                `@unirep/core:UserState: epochKeyNonce (${epochKeyNonce}) must be less than max epoch nonce`
+                `@unirep/core:UserState: epochKeyNonce (${epochKeyNonce}) must be less than max epoch nonce and not negative`
             )
     }
 
@@ -551,6 +555,20 @@ export default class UserState {
         if (this.chainId === -1) {
             const { chainId } = await this.sync.provider.getNetwork()
             this._chainId = chainId
+        }
+    }
+
+    /**
+     * @private
+     * Check if the input exceeds the maximum bit
+     * @param input The input value
+     * @param bit The bit number
+     */
+    private _checkBit = (input: bigint, bit: number) => {
+        if (input >= BigInt(1) << BigInt(bit)) {
+            throw new Error(
+                `@unirep/core:UserState: input ${input} exceeds the maximum bit ${bit}`
+            )
         }
     }
 
@@ -742,8 +760,8 @@ export default class UserState {
      */
     public genProveReputationProof = async (options: {
         epkNonce?: number
-        minRep?: number
-        maxRep?: number
+        minRep?: number | bigint | string
+        maxRep?: number | bigint | string
         graffiti?: bigint | string
         proveZeroRep?: boolean
         revealNonce?: boolean
@@ -752,6 +770,8 @@ export default class UserState {
     }): Promise<ReputationProof> => {
         await this._checkChainId()
         const { minRep, maxRep, graffiti, proveZeroRep, revealNonce } = options
+        this._checkBit(BigInt(minRep ?? 0), Number(REP_BITS))
+        this._checkBit(BigInt(maxRep ?? 0), Number(REP_BITS))
         const nonce = options.epkNonce ?? 0
         const attesterId = toDecString(
             options.attesterId ?? this.sync.attesterId
