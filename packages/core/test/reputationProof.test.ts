@@ -467,18 +467,6 @@ describe('Reputation proof', function () {
             .attest(epochKey, epoch, field, repLimit)
             .then((t) => t.wait())
 
-        // setting posRep to 5
-        await unirepContract
-            .connect(attester)
-            .attest(epochKey, epoch, 0, 5)
-            .then((t) => t.wait())
-
-        // setting negRep to 3
-        await unirepContract
-            .connect(attester)
-            .attest(epochKey, epoch, 1, 3)
-            .then((t) => t.wait())
-
         await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
         await ethers.provider.send('evm_mine', [])
 
