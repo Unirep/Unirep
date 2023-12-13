@@ -440,8 +440,9 @@ export default class UserState {
             })
         }
 
-        const signupEpoch = signup?.epoch ?? 0
-        const latestEpoch = Math.max(fromEpoch, signupEpoch)
+        const transitionedEpoch =
+            savedData?.latestTransitionedEpoch ?? signup?.epoch
+        const latestEpoch = Math.max(fromEpoch, transitionedEpoch)
         const allNullifiers = [] as any
         for (let x = latestEpoch; x <= _toEpoch; x++) {
             allNullifiers.push(
@@ -466,10 +467,8 @@ export default class UserState {
             },
         })
 
-        let latestTransitionedEpoch =
-            savedData?.latestTransitionedEpoch ?? signup.epoch
-
-        for (let x = fromEpoch; x <= _toEpoch; x++) {
+        let latestTransitionedEpoch = transitionedEpoch
+        for (let x = transitionedEpoch; x <= _toEpoch; x++) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
@@ -491,7 +490,7 @@ export default class UserState {
                     break
                 }
             }
-            if (!usted && x !== signupEpoch) continue
+            if (!usted && x !== signup?.epoch) continue
             orClauses.push({
                 epochKey: epks,
                 epoch: x,
@@ -526,7 +525,7 @@ export default class UserState {
                 transitionedData = data
             }
         }
-        if (latestTransitionedEpoch !== signupEpoch) {
+        if (latestTransitionedEpoch !== signup?.epoch) {
             await this._updateData(
                 transitionedData,
                 latestTransitionedEpoch,
