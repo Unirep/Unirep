@@ -331,4 +331,22 @@ describe('User state', function () {
         expect(valid).to.be.true
         userState.stop()
     })
+
+    it('get epoch key with invalid nonce should fail', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const attesterId = BigInt(attester.address)
+        const id = new Identity()
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesterId
+        )
+        await userState.start()
+        await userState.waitForSync()
+        const maxNonce = userState.sync.settings.numEpochKeyNoncePerEpoch
+        expect(() => userState.getEpochKeys(0, maxNonce)).to.throw()
+        expect(() => userState.getEpochKeys(0, -1)).to.throw()
+    })
 })
