@@ -909,7 +909,7 @@ export class Synchronizer extends EventEmitter {
      */
     async nullifierExist(nullifier: any) {
         const epochEmitted = await this.unirepContract.usedNullifiers(nullifier)
-        return epochEmitted.gt(0)
+        return epochEmitted
     }
 
     /**
