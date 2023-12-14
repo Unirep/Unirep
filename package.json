@@ -49,8 +49,8 @@
         "typescript": "^4.7.3"
     },
     "lint-staged": {
-        "**/{src,test,config,scripts,circuits}/**/*.{ts,json,sol}": [
-            "prettier --write"
+        "*": [
+            "prettier . --write"
         ]
     },
     "dependencies": {

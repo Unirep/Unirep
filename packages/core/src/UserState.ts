@@ -96,6 +96,9 @@ export default class UserState {
         return this._chainId
     }
 
+    /**
+     * Read the database object.
+     */
     get db() {
         return this._db
     }
@@ -184,7 +187,7 @@ export default class UserState {
     ): Promise<boolean> {
         this._checkSync()
         this.sync.checkAttesterId(attesterId)
-        const signup = await this.sync.db.findOne('UserSignUp', {
+        const signup = await this.db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
                 attesterId: toDecString(attesterId),
@@ -211,7 +214,7 @@ export default class UserState {
         })
         let earlistEpoch = savedData?.latestTransitionedEpoch ?? 0
         if (!savedData) {
-            const signup = await this.sync.db.findOne('UserSignUp', {
+            const signup = await this.db.findOne('UserSignUp', {
                 where: {
                     commitment: this.commitment.toString(),
                     attesterId: _attesterId,
@@ -236,7 +239,7 @@ export default class UserState {
                     this.chainId
                 ).toString()
             )
-            const n = await this.sync.db.findOne('Nullifier', {
+            const n = await this.db.findOne('Nullifier', {
                 where: {
                     nullifier: nullifiers,
                 },
@@ -286,7 +289,7 @@ export default class UserState {
             data,
             this.chainId
         )
-        const foundLeaf = await this.sync.db.findOne('StateTreeLeaf', {
+        const foundLeaf = await this.db.findOne('StateTreeLeaf', {
             where: {
                 epoch: currentEpoch,
                 hash: leaf.toString(),
@@ -357,6 +360,13 @@ export default class UserState {
         }
     }
 
+    /**
+     * @private
+     * Update user state data.
+     * @param data The latest transitioned data.
+     * @param latestTransitionedEpoch The latest found transitioned epoch.
+     * @param attesterId The attester ID.
+     */
     private _updateData = async (
         data: bigint[],
         latestTransitionedEpoch: number,
@@ -370,7 +380,7 @@ export default class UserState {
             data,
             this.chainId
         )
-        const foundLeaf = await this.sync.db.findOne('StateTreeLeaf', {
+        const foundLeaf = await this.db.findOne('StateTreeLeaf', {
             where: {
                 epoch: latestTransitionedEpoch,
                 hash: leaf.toString(),
@@ -405,7 +415,8 @@ export default class UserState {
      * Learn more about reputation proofs [here](https://developer.unirep.io/docs/circuits-api/classes/src.ReputationProof.md).
      * :::
      * @param toEpoch The latest epoch that the reputation is accumulated. Default: current epoch.
-     * @param attesterId The attester to be queried. Default: `this.attesterId`
+     * @param attesterId The attester to be queried. Default: `this.sync.attesterId`
+     * @param fromEpoch The epoch to start querying from. Default: `0`.
      * @returns The data object
      */
     public getData = async (
@@ -424,7 +435,7 @@ export default class UserState {
         const data = new Array(this.sync.settings.fieldCount).fill(BigInt(0))
         if (savedData) data.map((_, i) => BigInt(savedData.data[`${i}`]))
         const orClauses = [] as any[]
-        const signup = await this.sync.db.findOne('UserSignUp', {
+        const signup = await this.db.findOne('UserSignUp', {
             where: {
                 commitment: this.commitment.toString(),
                 attesterId: _attesterId,
@@ -457,7 +468,7 @@ export default class UserState {
                 )
             )
         }
-        const sortedNullifiers = await this.sync.db.findMany('Nullifier', {
+        const sortedNullifiers = await this.db.findMany('Nullifier', {
             where: {
                 attesterId: _attesterId,
                 nullifier: allNullifiers,
@@ -498,7 +509,7 @@ export default class UserState {
             latestTransitionedEpoch = x
         }
         if (orClauses.length === 0) return data
-        const attestations = await this.sync.db.findMany('Attestation', {
+        const attestations = await this.db.findMany('Attestation', {
             where: {
                 OR: orClauses,
                 attesterId: _attesterId,
@@ -565,7 +576,7 @@ export default class UserState {
         this.sync.checkAttesterId(_attesterId)
         const data = Array(this.sync.settings.fieldCount).fill(BigInt(0))
         if (typeof epoch !== 'number') throw new Error('epoch must be number')
-        const attestations = await this.sync.db.findMany('Attestation', {
+        const attestations = await this.db.findMany('Attestation', {
             where: {
                 epoch,
                 epochKey: epochKey.toString(),
@@ -636,7 +647,7 @@ export default class UserState {
         attesterId: bigint | string
     ) => {
         this._checkSync()
-        const attestations = await this.sync.db.findMany('Attestation', {
+        const attestations = await this.db.findMany('Attestation', {
             where: {
                 epoch,
                 attesterId: toDecString(attesterId),
@@ -703,7 +714,7 @@ export default class UserState {
             )
         const historyTree = await this.sync.genHistoryTree(attesterId)
         const leafHash = poseidon2([stateTree.root, epochTree.root])
-        const leaf = await this.sync.db.findOne('HistoryTreeLeaf', {
+        const leaf = await this.db.findOne('HistoryTreeLeaf', {
             where: {
                 attesterId,
                 leaf: leafHash.toString(),
@@ -715,7 +726,7 @@ export default class UserState {
         } else {
             // the epoch hasn't been ended onchain yet
             // add the leaf offchain to make the proof
-            const leafCount = await this.sync.db.count('HistoryTreeLeaf', {
+            const leafCount = await this.db.count('HistoryTreeLeaf', {
                 attesterId,
             })
             historyTree.insert(leafHash)
