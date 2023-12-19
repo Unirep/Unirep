@@ -89,7 +89,7 @@ jobs:
                   name: Build
                   command: |
                       cp $ABI_ORIGIN $ABI_COPY
-                      yarn build
+                      yarn circuits keys && yarn build
             - run:
                   name: Check ABI
                   command: |
@@ -141,7 +141,6 @@ jobs:
                   at: ~/project
             - run: *node_version
             - run: *check_version
-            - run: *download_circom
             - run:
                   name: Test
                   command: yarn circuits test

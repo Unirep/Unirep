@@ -23,6 +23,7 @@
         "buildSnarks": "node --max-old-space-size=8192 scripts/buildSnarks.mjs",
         "buildParallel": "node --max-old-space-size=8192 scripts/buildParallel.mjs",
         "buildTs": "tsc",
+        "keys": "./scripts/downloadKeys.sh",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "buildOverwrite": "find ./zksnarkBuild -type f -not -name '*.ptau' -delete && yarn build"
