@@ -1,32 +1,14 @@
 {
     "sepolia": {
         "Unirep": {
-            "address": "0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f",
-            "startBlock": 4499759
-        }
-    },
-    "goerli": {
-        "Unirep": {
-            "address": "0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f",
-            "startBlock": 9886691
-        }
-    },
-    "optimism-goerli": {
-        "Unirep": {
-            "address": "0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f",
-            "startBlock": 16008800
-        }
-    },
-    "arbitrum-goerli": {
-        "Unirep": {
-            "address": "0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f",
-            "startBlock": 48337605
+            "address": "0x83cB6AF63eAfEc7998cC601eC3f56d064892b386",
+            "startBlock": 4916586
         }
     },
     "fuji": {
         "Unirep": {
-            "address": "0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f",
-            "startBlock": 26822782
+            "address": "0x83cB6AF63eAfEc7998cC601eC3f56d064892b386",
+            "startBlock": 28680380
         }
     },
     "localhost": {

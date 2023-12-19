@@ -78,6 +78,8 @@ const unirepContract: Unirep = await deployUnirep(deployer)
 
 ## 🙆🏻‍♀️ Get UniRep contract with address
 
+**Check current deployment: [🤝 Testnet Deployment](https://developer.unirep.io/docs/testnet-deployment)**
+
 ```typescript
 import { getUnirepContract, Unirep } from '@unirep/contracts'
 
