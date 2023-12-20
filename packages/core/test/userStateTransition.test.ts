@@ -128,7 +128,7 @@ describe('User state transition', function () {
             )
             await userState.waitForSync()
             const toEpoch = await userState.sync.loadCurrentEpoch()
-            const { publicSignals, proof } =
+            const { publicSignals, proof, epochKeys } =
                 await userState.genUserStateTransitionProof({ toEpoch })
             // submit it
             await unirepContract
@@ -145,6 +145,11 @@ describe('User state transition', function () {
             )
             stateTree.insert(leaf)
             rootHistories.push(stateTree.root)
+            await userState.waitForSync()
+            const nullifierExist = await userState.sync.nullifierExist(
+                epochKeys[0]
+            )
+            expect(nullifierExist).to.be.true
 
             userState.stop()
         }

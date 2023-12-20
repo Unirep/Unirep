@@ -2,13 +2,10 @@
 title: Subgraph
 ---
 
-export const contractVersion = '2.0.0-beta-5'
+export const contractVersion = '2.0.0'
 export const urlBase = 'https://api.studio.thegraph.com/query/48080'
 export const NetworkURL = {
-    Goerli: urlBase + '/goerli/v' + contractVersion,
     Sepolia: urlBase + '/sepolia/v' + contractVersion,
-    ArbitrumGoerli: urlBase + '/arbitrum-goerli/v' + contractVersion,
-    OptimismGoerli: urlBase + '/optimism-goerli/v' + contractVersion,
     Fuji: urlBase + '/fuji/v' + contractVersion,
 }
 
@@ -31,32 +28,14 @@ The Graph protocol uses the [GraphQL](https://graphql.org/) query language. For 
         <th>API</th>
     </tr>
     <tr>
-        <td>Goerli</td>
-        <td>
-            <a href={`${NetworkURL.Goerli}`}>{NetworkURL.Goerli}</a>
-        </td>
-    </tr>
-    <tr>
         <td>Sepolia</td>
         <td>
             <a href={`${NetworkURL.Sepolia}`}>{NetworkURL.Sepolia}</a>
         </td>
     </tr>
     <tr>
-        <td>Arbitrum Goerli</td>
-        <td>
-            <a href={`${NetworkURL.ArbitrumGoerli}`}>
-                {NetworkURL.ArbitrumGoerli}
-            </a>
-        </td>
-    </tr>
-    <tr>
-        <td>Optimism Goerli</td>
-        <td>
-            <a href={`${NetworkURL.OptimismGoerli}`}>
-                {NetworkURL.OptimismGoerli}
-            </a>
-        </td>
+        <td>Arbitrum Sepolia</td>
+        <td>NOT SUPPORTED YET</td>
     </tr>
     <tr>
         <td>Avalanche Fuji</td>

@@ -426,4 +426,83 @@ describe('Reputation proof', function () {
         checkSignals(signals, proof)
         userState.stop()
     })
+
+    it('should not prove the reputation exceeds bit constraint in circuits', async () => {
+        const accounts = await ethers.getSigners()
+        const attester = accounts[1]
+        const attesterId = BigInt(attester.address)
+        const id = new Identity()
+        const userState = await genUserState(
+            ethers.provider,
+            unirepContract.address,
+            id,
+            attesterId
+        )
+
+        const epoch = await userState.sync.loadCurrentEpoch()
+        {
+            const { publicSignals, proof } = await userState.genUserSignUpProof(
+                { epoch }
+            )
+            await unirepContract
+                .connect(attester)
+                .userSignUp(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+        await userState.waitForSync()
+        const repLimit = BigInt(1) << BigInt(64)
+
+        const epochKey = genEpochKey(
+            id.secret,
+            attester.address,
+            epoch,
+            0,
+            chainId
+        )
+        const field = userState.sync.settings.sumFieldCount
+
+        // should be able to receive, because data field is 254-bits
+        await unirepContract
+            .connect(attester)
+            .attest(epochKey, epoch, field, repLimit)
+            .then((t) => t.wait())
+
+        await ethers.provider.send('evm_increaseTime', [EPOCH_LENGTH])
+        await ethers.provider.send('evm_mine', [])
+
+        const toEpoch = await unirepContract.attesterCurrentEpoch(
+            attester.address
+        )
+        {
+            await userState.waitForSync()
+            const { publicSignals, proof } =
+                await userState.genUserStateTransitionProof({
+                    toEpoch,
+                })
+            await unirepContract
+                .connect(accounts[4])
+                .userStateTransition(publicSignals, proof)
+                .then((t) => t.wait())
+        }
+
+        await userState.waitForSync()
+        await new Promise<void>((rs, rj) => {
+            userState
+                .genProveReputationProof({
+                    minRep: repLimit,
+                })
+                .then(() => rj())
+                .catch(() => rs())
+        })
+        await new Promise<void>((rs, rj) => {
+            userState
+                .genProveReputationProof({
+                    maxRep: repLimit,
+                })
+                .then(() => rj())
+                .catch(() => rs())
+        })
+
+        userState.stop()
+    })
 })
