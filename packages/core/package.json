@@ -1,6 +1,6 @@
 {
     "name": "@unirep/core",
-    "version": "2.0.0-beta-6",
+    "version": "2.0.0",
     "description": "",
     "main": "build/src/index.js",
     "types": "build/src/index.d.ts",
@@ -31,13 +31,13 @@
         "typescript": "^4.7.3"
     },
     "dependencies": {
-        "@semaphore-protocol/identity": "^3.10.1",
-        "@unirep/circuits": "2.0.0-beta-5",
-        "@unirep/contracts": "2.0.0-beta-5",
-        "@unirep/utils": "2.0.0-beta-5",
-        "anondb": "^0.0.21",
-        "async-lock": "^1.4.0",
-        "ethers": "^5.7.2",
-        "nanoid": "^3.3.6"
+        "@semaphore-protocol/identity": "3.10.1",
+        "@unirep/circuits": "2.0.0",
+        "@unirep/contracts": "2.0.0",
+        "@unirep/utils": "2.0.0",
+        "anondb": "0.0.21",
+        "async-lock": "1.4.0",
+        "ethers": "5.7.2",
+        "nanoid": "3.3.6"
     }
 }

@@ -59,6 +59,8 @@ yarn add @unirep/core
 
 ## 📔 Usage
 
+**Check current deployment: [🤝 Testnet Deployment](https://developer.unirep.io/docs/testnet-deployment)**
+
 ### Synchronizer ⏲
 
 **Construct a synchronizer**

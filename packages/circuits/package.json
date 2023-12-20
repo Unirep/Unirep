@@ -1,6 +1,6 @@
 {
     "name": "@unirep/circuits",
-    "version": "2.0.0-beta-5",
+    "version": "2.0.0",
     "main": "dist/src/index.js",
     "types": "dist/src/index.d.ts",
     "repository": "https://github.com/unirep/unirep.git",
@@ -18,21 +18,22 @@
         "ethereum"
     ],
     "scripts": {
-        "pre": "node scripts/prepare",
+        "pre": "yarn keys && node scripts/prepare",
         "build": "yarn buildTs && yarn buildParallel && yarn copyCircom",
         "buildSnarks": "node --max-old-space-size=8192 scripts/buildSnarks.mjs",
         "buildParallel": "node --max-old-space-size=8192 scripts/buildParallel.mjs",
         "buildTs": "tsc",
+        "keys": "./scripts/downloadKeys.sh",
         "copyCircom": "rm -rf ./dist/zksnarkBuild && cp -rf ./zksnarkBuild ./dist/zksnarkBuild",
         "test": "mocha -r ts-node/register test/*.test.ts --exit",
         "buildOverwrite": "find ./zksnarkBuild -type f -not -name '*.ptau' -delete && yarn build"
     },
     "dependencies": {
-        "@unirep/utils": "2.0.0-beta-5",
-        "snarkjs": "^0.7.0"
+        "@unirep/utils": "2.0.0",
+        "snarkjs": "0.7.2"
     },
     "devDependencies": {
-        "@semaphore-protocol/identity": "^3.10.1",
+        "@semaphore-protocol/identity": "3.10.1",
         "mocha": "^10.2.0",
         "node-fetch": "^2.6.7",
         "typescript": "^5.1.6"
