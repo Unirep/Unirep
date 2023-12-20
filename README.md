@@ -52,17 +52,32 @@ For more information, refer to the [documentation](https://developer.unirep.io/)
 
 ## 🛠 Install and test
 
-Install and build
+- Install
 
-```bash
-yarn && yarn build
-```
+  ```bash
+  yarn install
+  ```
 
-Run test
+- Build with [trusted setup keys](https://ceremony.unirep.io)
 
-```bash
-yarn test
-```
+  ```bash
+  yarn circuits keys && yarn build
+  ```
+
+  Or build with phase 1 trusted setup circuits
+
+  ```bash
+  yarn build
+  ```
+
+  > If you want to contribute to the circuits
+  > Please run `yarn circuits buildOverwrite` to update keys
+
+- Run test
+
+  ```bash
+  yarn test
+  ```
 
 ## 🎯 Contributing
 

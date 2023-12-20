@@ -72,6 +72,7 @@ jobs:
     build:
         machine:
             image: ubuntu-2204:2022.04.1
+        resource_class: large
         environment:
             ABI_ORIGIN: packages/contracts/abi/Unirep.json
             ABI_COPY: packages/contracts/abi/Unirep_temp.json
@@ -95,6 +96,11 @@ jobs:
                   command: |
                       diff $ABI_ORIGIN $ABI_COPY
                       rm $ABI_COPY
+            - run:
+                  name: Clean Ptau file
+                  command: |
+                      rm packages/circuits/zksnarkBuild/*.ptau
+                      rm packages/circuits/dist/zksnarkBuild/*.ptau
             - persist_to_workspace:
                   root: ~/project
                   paths:
