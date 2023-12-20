@@ -357,9 +357,9 @@ export default class UserState {
      */
     parseReplData(replData: bigint) {
         const data =
-            (replData / BigInt(1)) << BigInt(this.sync.settings.replNonceBits)
+            replData / (BigInt(1) << BigInt(this.sync.settings.replNonceBits))
         const nonce =
-            replData % BigInt(1) << BigInt(this.sync.settings.replNonceBits)
+            replData % (BigInt(1) << BigInt(this.sync.settings.replNonceBits))
         return {
             data,
             nonce,
