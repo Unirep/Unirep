@@ -137,7 +137,7 @@ See [Testnet Deployment](../testnet-deployment.mdx) to see the currently deploye
 :::
 
 **The following actions are initiated by either an attester or a user.**<br/>
-Read the section [users and attesters](protocol/users-and-attesters.md) to learn more.
+Read the section [users and attesters](../protocol/users-and-attesters.md) to learn more.
 
 ## 🤖 Attester sign up
 
@@ -147,7 +147,7 @@ The app builder must sign up with `Unirep.sol` as an attester. There are two way
 
 ### 1. Attester sign up with a wallet 👛
 
-Connect a wallet with a private key and a provider, and then call [`attesterSignUp`](contracts-api/unirep-sol.md#attestersignup) in `Unirep.sol`.
+Connect a wallet with a private key and a provider, and then call [`attesterSignUp`](../contracts-api/unirep-sol.md#attestersignup) in `Unirep.sol`.
 
 ```ts
 // deploy or connect to a unirep smart contract
@@ -164,7 +164,7 @@ await tx.wait()
 ```
 
 :::info
-See [Define epoch length](getting-started/create-unirep-app.mdx#define-epoch-length) for more information.
+See [Define epoch length](./create-unirep-app.mdx#define-epoch-length) for more information.
 :::
 
 The `msg.sender` will be recorded as an attester ID in `Unirep.sol`. The attester should connect to this wallet to help users sign up and send attestations to users.
@@ -195,9 +195,9 @@ contract App {
 
 ## 👤 User sign up
 
-The attester can now start signing up users. Users of this application should provide a [signup proof](circuits-api/circuits.md#signup-proof) which includes:
+The attester can now start signing up users. Users of this application should provide a [signup proof](../circuits-api/circuits.md#signup-proof) which includes:
 1. Proving the user owns a [Semaphore identity](https://semaphore.appliedzkp.org/)
-2. Proving the user has initialized [data](protocol/data.md)
+2. Proving the user has initialized [data](../protocol/data.md)
 3. Proving the user wants to sign up to this attester (proving attester ID)
 
 ### User generates sign up proof
@@ -270,12 +270,12 @@ const { proof, publicSignals } = await userState.genUserSignUpProof()
 ```
 
 :::info
-See [`UserState`](core-api/user-state.md) for more information.
+See [`UserState`](../core-api/user-state.md) for more information.
 :::
 
 ### Attester submits sign up proof
 
-The attester will submit this proof by calling the [`userSignUp`](contracts-api/unirep-sol.md#usersignup) function on `Unirep.sol`.
+The attester will submit this proof by calling the [`userSignUp`](../contracts-api/unirep-sol.md#usersignup) function on `Unirep.sol`.
 
 ```mdx-code-block
 <Tabs
@@ -321,12 +321,12 @@ A user can check if they have signed up successfully with `userState`:
 await userState.waitForSync()
 console.log(await userState.hasSignedUp()) // true
 ```
-See [`waitForSync`](core-api/synchronizer.md#waitforsync) for more information.
+See [`waitForSync`](../core-api/synchronizer.md#waitforsync) for more information.
 :::
 
 ## 📮 Attestation
 
-Users must provide [epoch keys](protocol/epoch-key.md) to receive [data](protocol/data.md) from attesters, similar to how Ethereum users provide address to receive ETH. An [attestation](protocol/attestation.md) is the data an attester gives to a specified epoch key.
+Users must provide [epoch keys](../protocol/epoch-key.md) to receive [data](../protocol/data.md) from attesters, similar to how Ethereum users provide address to receive ETH. An [attestation](../protocol/attestation.md) is the data an attester gives to a specified epoch key.
 
 ### User generates epoch keys
 
@@ -381,13 +381,13 @@ const epochKey = genEpochKey(
 ```
 
 :::info
-See [`genEpochKey`](utils-api/helpers.md#genepochkey) for more information.
+See [`genEpochKey`](../utils-api/helpers.md#genepochkey) for more information.
 :::
 
 
 ### Attester submits the transaction
 
-The attester will submit attestations by calling the [`attest`](contracts-api/unirep-sol.md#attest) function on `Unirep.sol`.<br/>
+The attester will submit attestations by calling the [`attest`](../contracts-api/unirep-sol.md#attest) function on `Unirep.sol`.<br/>
 To add to a user's data:
 ```
 data[0] += 5
@@ -403,7 +403,7 @@ There are **addition data fields** and **replacement data fields**. Please make 
 
 For example, if `SUM_FIELD_COUNT = 4` then the `data[4]` will be *replaced* by the `change` but not added together.
 
-See [Data](protocol/data.md) for more information.
+See [Data](../protocol/data.md) for more information.
 :::
 
 
@@ -470,7 +470,7 @@ To verify an epoch key on-chain, see [Verify epoch key on-chain](./create-unirep
 
 ## ⏱️ User state transition
 
-After an epoch ends, the user will perform [user state transition](protocol/user-state-transition.md) to finalize the state in the previous epoch, and use a new state to receive more data in a new epoch.
+After an epoch ends, the user will perform [user state transition](../protocol/user-state-transition.md) to finalize the state in the previous epoch, and use a new state to receive more data in a new epoch.
 
 The user state transition proof must be built by the user because only the user holds the Semaphore identity secret key.
 
@@ -484,7 +484,7 @@ const { proof, publicSignals } = await userState.genUserStateTransitionProof()
 ```
 
 :::info
-See [`genUserStateTransitionProof`](core-api/user-state.md#genuserstatetransitionproof) for more information.
+See [`genUserStateTransitionProof`](../core-api/user-state.md#genuserstatetransitionproof) for more information.
 :::
 
 ### A transition proof can be relayed
@@ -538,7 +538,7 @@ function transition(
 ```
 
 :::info
-See [`userStateTransition`](contracts-api/unirep-sol.md#userstatetransition) for more information.
+See [`userStateTransition`](../contracts-api/unirep-sol.md#userstatetransition) for more information.
 :::
 
 ## 🔐 Prove data
@@ -569,20 +569,20 @@ In the [above attestation](#attester-submits-the-transaction), the user's `data[
 
 Therefore in this case `data[0] - data[1]` = `5`.
 
-Use [`getProvableData`](core-api/user-state.md#getprovabledata) to know the data that a user can prove.
+Use [`getProvableData`](../core-api/user-state.md#getprovabledata) to know the data that a user can prove.
 
 ```ts
 const data = await userState.getProvableData()
 ```
 
 :::info
-See [`reputationProof`](circuits-api/circuits.md#prove-reputation-proof) for more information.
+See [`reputationProof`](../circuits-api/circuits.md#prove-reputation-proof) for more information.
 :::
 
 ### Other users and attesters verify the proof
 
 :::info
-See [`ReputationVerifierHelper`](contracts-api/verifiers/reputation-verifier-helper.md) to learn how to deploy and use the `repVerifier`.
+See [`ReputationVerifierHelper`](../contracts-api/verifiers/reputation-verifier-helper.md) to learn how to deploy and use the `repVerifier`.
 :::
 
 ```mdx-code-block

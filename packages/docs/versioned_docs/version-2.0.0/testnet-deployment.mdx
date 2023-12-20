@@ -2,10 +2,11 @@
 title: Testnet Addresses
 ---
 
-export const coreVersion = '2.0.0-beta-6'
-export const contractsVersion = '2.0.0-beta-5'
-export const circuitsVersion = '2.0.0-beta-5'
-export const utilsVersion = '2.0.0-beta-5'
+export const coreVersion = require('@unirep/core/package.json').version
+export const contractsVersion =
+    require('@unirep/contracts/package.json').version
+export const circuitsVersion = require('@unirep/circuits/package.json').version
+export const utilsVersion = require('@unirep/utils/package.json').version
 
 ## Deployment
 
@@ -39,8 +40,7 @@ import TabItem from '@theme/TabItem'
     defaultValue="sepolia"
     values={[
         { label: 'Sepolia', value: 'sepolia' },
-        { label: 'Optimism Goerli', value: 'opt-goerli' },
-        { label: 'Arbitrum Goerli', value: 'arb-goerli' },
+        { label: 'Arbitrum Sepolia', value: 'arb-sepolia' },
         { label: 'Avalanche Fuji', value: 'ava-fuji' },
     ]}
 >
@@ -56,80 +56,80 @@ import TabItem from '@theme/TabItem'
                 <tr>
                     <td>Unirep.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f">
-                            0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f
+                        <a href="https://sepolia.etherscan.io/address/0x83cB6AF63eAfEc7998cC601eC3f56d064892b386">
+                            0x83cB6AF63eAfEc7998cC601eC3f56d064892b386
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyVerifier.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0x6A876842132d8640221AdB68683fB3bA63Ca18dc">
-                            0x6A876842132d8640221AdB68683fB3bA63Ca18dc
+                        <a href="https://sepolia.etherscan.io/address/0x46EE928e44E18f424E400CbA6a6807BDEEcb7676">
+                            0x46EE928e44E18f424E400CbA6a6807BDEEcb7676
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyVerifierHelper.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0x3298a2a38f6a2E1B1BDB3Bf8c48973102e037B82">
-                            0x3298a2a38f6a2E1B1BDB3Bf8c48973102e037B82
+                        <a href="https://sepolia.etherscan.io/address/0xaEdfbb0C5a57620DbF645f6Cc8F2dE5832564855">
+                            0xaEdfbb0C5a57620DbF645f6Cc8F2dE5832564855
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyLiteVerifier.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0x7cb151E36Fa90aa8f325A4390782d16be13ec005">
-                            0x7cb151E36Fa90aa8f325A4390782d16be13ec005
+                        <a href="https://sepolia.etherscan.io/address/0x346742319D70A2299f7c4A55C3b1D8B4d7C77eC5">
+                            0x346742319D70A2299f7c4A55C3b1D8B4d7C77eC5
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyLiteVerifierHelper.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0xc61b39eF00808c203F6dAE292d9EFE3e4Ff89a4D">
-                            0xc61b39eF00808c203F6dAE292d9EFE3e4Ff89a4D
+                        <a href="https://sepolia.etherscan.io/address/0x5B33D83A972fa2b1336b945FF8F1Cab8DfD17532">
+                            0x5B33D83A972fa2b1336b945FF8F1Cab8DfD17532
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ReputationVerifier.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0x5b7b905544F9cf919B963555430EA7EA3dbC4F43">
-                            0x5b7b905544F9cf919B963555430EA7EA3dbC4F43
+                        <a href="https://sepolia.etherscan.io/address/0x9B393de71752f004A120e3E5c1ddA1681f31ae8f">
+                            0x9B393de71752f004A120e3E5c1ddA1681f31ae8f
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ReputationVerifierHelper.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0x9e83f66C4ae3831F6edeaE3E1f297e41a3C61A51">
-                            0x9e83f66C4ae3831F6edeaE3E1f297e41a3C61A51
+                        <a href="https://sepolia.etherscan.io/address/0x5764503318880b702FaAd653951a506F0F8cF47B">
+                            0x5764503318880b702FaAd653951a506F0F8cF47B
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>SignupVerifier.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0xA81257Da9D308b3F904D53f2d9FAfF0d552734cc">
-                            0xA81257Da9D308b3F904D53f2d9FAfF0d552734cc
+                        <a href="https://sepolia.etherscan.io/address/0x2404789B9B4Beab901AbaA5e9eBA47A5eD89747A">
+                            0x2404789B9B4Beab901AbaA5e9eBA47A5eD89747A
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>UserStateTransitionVerifier.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0x28b65BB03C8AFBd60700C14370ae5592426c4a71">
-                            0x28b65BB03C8AFBd60700C14370ae5592426c4a71
+                        <a href="https://sepolia.etherscan.io/address/0xe5AEB664E19c07E861B68A046957501cd6e56a68">
+                            0xe5AEB664E19c07E861B68A046957501cd6e56a68
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ScopeNullifierVerifier.sol</td>
                     <td>
-                        <a href="https://sepolia.etherscan.io/address/0x439d288EDbB12a0CBa86376F12E6B1605fC3700B">
-                            0x439d288EDbB12a0CBa86376F12E6B1605fC3700B
+                        <a href="https://sepolia.etherscan.io/address/0x2E5F94fc629294B0f36385A1F69FAE494Ce04731">
+                            0x2E5F94fc629294B0f36385A1F69FAE494Ce04731
                         </a>
                     </td>
                 </tr>
@@ -172,80 +172,80 @@ import TabItem from '@theme/TabItem'
                 <tr>
                     <td>Unirep.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f">
-                            0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f
+                        <a href="https://goerli-optimism.etherscan.io/address/0x83cB6AF63eAfEc7998cC601eC3f56d064892b386">
+                            0x83cB6AF63eAfEc7998cC601eC3f56d064892b386
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyVerifier.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0x6A876842132d8640221AdB68683fB3bA63Ca18dc">
-                            0x6A876842132d8640221AdB68683fB3bA63Ca18dc
+                        <a href="https://goerli-optimism.etherscan.io/address/0x46EE928e44E18f424E400CbA6a6807BDEEcb7676">
+                            0x46EE928e44E18f424E400CbA6a6807BDEEcb7676
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyVerifierHelper.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0x3298a2a38f6a2E1B1BDB3Bf8c48973102e037B82">
-                            0x3298a2a38f6a2E1B1BDB3Bf8c48973102e037B82
+                        <a href="https://goerli-optimism.etherscan.io/address/0xaEdfbb0C5a57620DbF645f6Cc8F2dE5832564855">
+                            0xaEdfbb0C5a57620DbF645f6Cc8F2dE5832564855
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyLiteVerifier.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0x7cb151E36Fa90aa8f325A4390782d16be13ec005">
-                            0x7cb151E36Fa90aa8f325A4390782d16be13ec005
+                        <a href="https://goerli-optimism.etherscan.io/address/0x346742319D70A2299f7c4A55C3b1D8B4d7C77eC5">
+                            0x346742319D70A2299f7c4A55C3b1D8B4d7C77eC5
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyLiteVerifierHelper.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0xc61b39eF00808c203F6dAE292d9EFE3e4Ff89a4D">
-                            0xc61b39eF00808c203F6dAE292d9EFE3e4Ff89a4D
+                        <a href="https://goerli-optimism.etherscan.io/address/0x5B33D83A972fa2b1336b945FF8F1Cab8DfD17532">
+                            0x5B33D83A972fa2b1336b945FF8F1Cab8DfD17532
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ReputationVerifier.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0x5b7b905544F9cf919B963555430EA7EA3dbC4F43">
-                            0x5b7b905544F9cf919B963555430EA7EA3dbC4F43
+                        <a href="https://goerli-optimism.etherscan.io/address/0x9B393de71752f004A120e3E5c1ddA1681f31ae8f">
+                            0x9B393de71752f004A120e3E5c1ddA1681f31ae8f
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ReputationVerifierHelper.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0x9e83f66C4ae3831F6edeaE3E1f297e41a3C61A51">
-                            0x9e83f66C4ae3831F6edeaE3E1f297e41a3C61A51
+                        <a href="https://goerli-optimism.etherscan.io/address/0x5764503318880b702FaAd653951a506F0F8cF47B">
+                            0x5764503318880b702FaAd653951a506F0F8cF47B
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>SignupVerifier.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0xA81257Da9D308b3F904D53f2d9FAfF0d552734cc">
-                            0xA81257Da9D308b3F904D53f2d9FAfF0d552734cc
+                        <a href="https://goerli-optimism.etherscan.io/address/0x2404789B9B4Beab901AbaA5e9eBA47A5eD89747A">
+                            0x2404789B9B4Beab901AbaA5e9eBA47A5eD89747A
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>UserStateTransitionVerifier.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0x28b65BB03C8AFBd60700C14370ae5592426c4a71">
-                            0x28b65BB03C8AFBd60700C14370ae5592426c4a71
+                        <a href="https://goerli-optimism.etherscan.io/address/0xe5AEB664E19c07E861B68A046957501cd6e56a68">
+                            0xe5AEB664E19c07E861B68A046957501cd6e56a68
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ScopeNullifierVerifier.sol</td>
                     <td>
-                        <a href="https://goerli-optimism.etherscan.io/address/0x439d288EDbB12a0CBa86376F12E6B1605fC3700B">
-                            0x439d288EDbB12a0CBa86376F12E6B1605fC3700B
+                        <a href="https://goerli-optimism.etherscan.io/address/0x2E5F94fc629294B0f36385A1F69FAE494Ce04731">
+                            0x2E5F94fc629294B0f36385A1F69FAE494Ce04731
                         </a>
                     </td>
                 </tr>
@@ -276,7 +276,7 @@ import TabItem from '@theme/TabItem'
             </tbody>
         </table>
     </TabItem>
-    <TabItem value="arb-goerli">
+    <TabItem value="arb-sepolia">
         <table>
             <thead>
                 <tr>
@@ -288,87 +288,87 @@ import TabItem from '@theme/TabItem'
                 <tr>
                     <td>Unirep.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f">
-                            0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f
+                        <a href="https://sepolia.arbiscan.io/address/0x83cB6AF63eAfEc7998cC601eC3f56d064892b386">
+                            0x83cB6AF63eAfEc7998cC601eC3f56d064892b386
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x6A876842132d8640221AdB68683fB3bA63Ca18dc">
-                            0x6A876842132d8640221AdB68683fB3bA63Ca18dc
+                        <a href="https://sepolia.arbiscan.io/address/0x46EE928e44E18f424E400CbA6a6807BDEEcb7676">
+                            0x46EE928e44E18f424E400CbA6a6807BDEEcb7676
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyVerifierHelper.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x3298a2a38f6a2E1B1BDB3Bf8c48973102e037B82">
-                            0x3298a2a38f6a2E1B1BDB3Bf8c48973102e037B82
+                        <a href="https://sepolia.arbiscan.io/address/0xaEdfbb0C5a57620DbF645f6Cc8F2dE5832564855">
+                            0xaEdfbb0C5a57620DbF645f6Cc8F2dE5832564855
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyLiteVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x7cb151E36Fa90aa8f325A4390782d16be13ec005">
-                            0x7cb151E36Fa90aa8f325A4390782d16be13ec005
+                        <a href="https://sepolia.arbiscan.io/address/0x346742319D70A2299f7c4A55C3b1D8B4d7C77eC5">
+                            0x346742319D70A2299f7c4A55C3b1D8B4d7C77eC5
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyLiteVerifierHelper.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0xc61b39eF00808c203F6dAE292d9EFE3e4Ff89a4D">
-                            0xc61b39eF00808c203F6dAE292d9EFE3e4Ff89a4D
+                        <a href="https://sepolia.arbiscan.io/address/0x5B33D83A972fa2b1336b945FF8F1Cab8DfD17532">
+                            0x5B33D83A972fa2b1336b945FF8F1Cab8DfD17532
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ReputationVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x5b7b905544F9cf919B963555430EA7EA3dbC4F43">
-                            0x5b7b905544F9cf919B963555430EA7EA3dbC4F43
+                        <a href="https://sepolia.arbiscan.io/address/0x9B393de71752f004A120e3E5c1ddA1681f31ae8f">
+                            0x9B393de71752f004A120e3E5c1ddA1681f31ae8f
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ReputationVerifierHelper.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x9e83f66C4ae3831F6edeaE3E1f297e41a3C61A51">
-                            0x9e83f66C4ae3831F6edeaE3E1f297e41a3C61A51
+                        <a href="https://sepolia.arbiscan.io/address/0x5764503318880b702FaAd653951a506F0F8cF47B">
+                            0x5764503318880b702FaAd653951a506F0F8cF47B
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>SignupVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0xA81257Da9D308b3F904D53f2d9FAfF0d552734cc">
-                            0xA81257Da9D308b3F904D53f2d9FAfF0d552734cc
+                        <a href="https://sepolia.arbiscan.io/address/0x2404789B9B4Beab901AbaA5e9eBA47A5eD89747A">
+                            0x2404789B9B4Beab901AbaA5e9eBA47A5eD89747A
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>UserStateTransitionVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x28b65BB03C8AFBd60700C14370ae5592426c4a71">
-                            0x28b65BB03C8AFBd60700C14370ae5592426c4a71
+                        <a href="https://sepolia.arbiscan.io/address/0xe5AEB664E19c07E861B68A046957501cd6e56a68">
+                            0xe5AEB664E19c07E861B68A046957501cd6e56a68
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ScopeNullifierVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x439d288EDbB12a0CBa86376F12E6B1605fC3700B">
-                            0x439d288EDbB12a0CBa86376F12E6B1605fC3700B
+                        <a href="https://sepolia.arbiscan.io/address/0x2E5F94fc629294B0f36385A1F69FAE494Ce04731">
+                            0x2E5F94fc629294B0f36385A1F69FAE494Ce04731
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>IncrementalBinaryTree.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x6471a2f0a5A9ed97F34Ac9768d77a4E5fD906bDb">
+                        <a href="https://sepolia.arbiscan.io/address/0x6471a2f0a5A9ed97F34Ac9768d77a4E5fD906bDb">
                             0x6471a2f0a5A9ed97F34Ac9768d77a4E5fD906bDb
                         </a>
                     </td>
@@ -376,7 +376,7 @@ import TabItem from '@theme/TabItem'
                 <tr>
                     <td>ReusableMerkleTree.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x4636dc8202Db826b84023B1351aE05c1904C6BF8">
+                        <a href="https://sepolia.arbiscan.io/address/0x4636dc8202Db826b84023B1351aE05c1904C6BF8">
                             0x4636dc8202Db826b84023B1351aE05c1904C6BF8
                         </a>
                     </td>
@@ -384,7 +384,7 @@ import TabItem from '@theme/TabItem'
                 <tr>
                     <td>LazyMerkleTree.sol</td>
                     <td>
-                        <a href="https://testnet.arbiscan.io/address/0x89C249Bf3baB12fdb93F47b0474a53F10465b4bA">
+                        <a href="https://sepolia.arbiscan.io/address/0x89C249Bf3baB12fdb93F47b0474a53F10465b4bA">
                             0x89C249Bf3baB12fdb93F47b0474a53F10465b4bA
                         </a>
                     </td>
@@ -404,80 +404,80 @@ import TabItem from '@theme/TabItem'
                 <tr>
                     <td>Unirep.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f">
-                            0xD91ca7eAB8ac0e37681362271DEB11a7fc4e0d4f
+                        <a href="https://testnet.snowtrace.io/address/0x83cB6AF63eAfEc7998cC601eC3f56d064892b386">
+                            0x83cB6AF63eAfEc7998cC601eC3f56d064892b386
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0x6A876842132d8640221AdB68683fB3bA63Ca18dc">
-                            0x6A876842132d8640221AdB68683fB3bA63Ca18dc
+                        <a href="https://testnet.snowtrace.io/address/0x46EE928e44E18f424E400CbA6a6807BDEEcb7676">
+                            0x46EE928e44E18f424E400CbA6a6807BDEEcb7676
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyVerifierHelper.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0x3298a2a38f6a2E1B1BDB3Bf8c48973102e037B82">
-                            0x3298a2a38f6a2E1B1BDB3Bf8c48973102e037B82
+                        <a href="https://testnet.snowtrace.io/address/0xaEdfbb0C5a57620DbF645f6Cc8F2dE5832564855">
+                            0xaEdfbb0C5a57620DbF645f6Cc8F2dE5832564855
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyLiteVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0x7cb151E36Fa90aa8f325A4390782d16be13ec005">
-                            0x7cb151E36Fa90aa8f325A4390782d16be13ec005
+                        <a href="https://testnet.snowtrace.io/address/0x346742319D70A2299f7c4A55C3b1D8B4d7C77eC5">
+                            0x346742319D70A2299f7c4A55C3b1D8B4d7C77eC5
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>EpochKeyLiteVerifierHelper.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0xc61b39eF00808c203F6dAE292d9EFE3e4Ff89a4D">
-                            0xc61b39eF00808c203F6dAE292d9EFE3e4Ff89a4D
+                        <a href="https://testnet.snowtrace.io/address/0x5B33D83A972fa2b1336b945FF8F1Cab8DfD17532">
+                            0x5B33D83A972fa2b1336b945FF8F1Cab8DfD17532
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ReputationVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0x5b7b905544F9cf919B963555430EA7EA3dbC4F43">
-                            0x5b7b905544F9cf919B963555430EA7EA3dbC4F43
+                        <a href="https://testnet.snowtrace.io/address/0x9B393de71752f004A120e3E5c1ddA1681f31ae8f">
+                            0x9B393de71752f004A120e3E5c1ddA1681f31ae8f
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ReputationVerifierHelper.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0x9e83f66C4ae3831F6edeaE3E1f297e41a3C61A51">
-                            0x9e83f66C4ae3831F6edeaE3E1f297e41a3C61A51
+                        <a href="https://testnet.snowtrace.io/address/0x5764503318880b702FaAd653951a506F0F8cF47B">
+                            0x5764503318880b702FaAd653951a506F0F8cF47B
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>SignupVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0xA81257Da9D308b3F904D53f2d9FAfF0d552734cc">
-                            0xA81257Da9D308b3F904D53f2d9FAfF0d552734cc
+                        <a href="https://testnet.snowtrace.io/address/0x2404789B9B4Beab901AbaA5e9eBA47A5eD89747A">
+                            0x2404789B9B4Beab901AbaA5e9eBA47A5eD89747A
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>UserStateTransitionVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0x28b65BB03C8AFBd60700C14370ae5592426c4a71">
-                            0x28b65BB03C8AFBd60700C14370ae5592426c4a71
+                        <a href="https://testnet.snowtrace.io/address/0xe5AEB664E19c07E861B68A046957501cd6e56a68">
+                            0xe5AEB664E19c07E861B68A046957501cd6e56a68
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td>ScopeNullifierVerifier.sol</td>
                     <td>
-                        <a href="https://testnet.snowtrace.io/address/0x439d288EDbB12a0CBa86376F12E6B1605fC3700B">
-                            0x439d288EDbB12a0CBa86376F12E6B1605fC3700B
+                        <a href="https://testnet.snowtrace.io/address/0x2E5F94fc629294B0f36385A1F69FAE494Ce04731">
+                            0x2E5F94fc629294B0f36385A1F69FAE494Ce04731
                         </a>
                     </td>
                 </tr>
@@ -531,16 +531,13 @@ You can interact with a [demo attester](https://demo.unirep.io) to get a feel fo
 
 Proving keys for this contract can be accessed at the following url:
 
--   <a href={`https://keys.unirep.io/${circuitsVersion}/`}>
-        https://keys.unirep.io/{circuitsVersion}/
-    </a>
+-   <a href={'https://keys.unirep.io/2.0.0/'}>https://keys.unirep.io/2.0.0/</a>
 
 This URL is used in the [web prover](circuits-api/classes/provers_web.WebProver).
 
-:::danger
-These keys have not had a secure phase 2 trusted setup.
-
-**Use these keys at your own risk.**
+:::info
+These keys have had a secure phase 2 trusted setup. <br/>
+Check out the trusted setup ceremony: **[THE CELESTIAL CALL](https://ceremony.unirep.io/)**
 :::
 
 Read more about trusted setups:
