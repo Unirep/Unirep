@@ -42,14 +42,20 @@ contract BaseVerifierHelper {
     }
 
     struct SpendReputationSignals {
-        bool revealNonce;
-        uint8 nonce;
-        uint48 epoch;
-        uint160 attesterId;
-        uint256 epochTreeRoot;
-        uint256 updatedEpochTreeRoot;
         uint256 spenderData;
         uint256 receiverData;
+        uint256 epochTreeElements;
+        uint256 epochTreeIndices;
+        uint256 spendAmount;
+        uint256 epochTreeRoot;
+        uint256 updatedEpochTreeRoot;
+        uint160 attesterId;
+        uint160 spenderIdentitySecret;
+        uint160 receiverIdentitySecret;
+        uint48 epoch;
+        uint48 chainId;
+        uint8 nonce;
+        bool revealNonce;
     }
 
     error AttesterInvalid();
@@ -73,12 +79,12 @@ contract BaseVerifierHelper {
             uint48 chainId
         )
     {
-        uint8 nonceBits = 8;
-        uint8 epochBits = 48;
-        uint8 attesterIdBits = 160;
-        uint8 revealNonceBit = 1;
-        uint8 chainIdBits = 36;
-        uint8 accBits = 0;
+        uint16 nonceBits = 8;
+        uint16 epochBits = 48;
+        uint16 attesterIdBits = 160;
+        uint16 revealNonceBit = 1;
+        uint16 chainIdBits = 36;
+        uint16 accBits = 0;
 
         nonce = uint8(shiftAndParse(control, accBits, nonceBits));
         accBits += nonceBits;
@@ -99,10 +105,40 @@ contract BaseVerifierHelper {
 
     function shiftAndParse(
         uint256 data,
-        uint8 shiftBits,
-        uint8 variableBits
+        uint16 shiftBits,
+        uint16 variableBits
     ) public pure returns (uint256) {
         return (data >> shiftBits) & ((1 << variableBits) - 1);
+    }
+
+    function decodeSpendReputationControl(
+        uint256 control
+    )
+        public
+        pure
+        returns (
+            uint160 spenderIdentitySecret,
+            uint160 receiverIdentitySecret,
+            uint256 spendAmount
+        )
+    {
+        uint16 spenderIdentitySecretBits = 160;
+        uint16 receiverIdentitySecretBits = 160;
+        uint16 spendAmountBits = 256;
+        uint16 accBits = 0;
+
+        spenderIdentitySecret = uint160(
+            shiftAndParse(control, accBits, spenderIdentitySecretBits)
+        );
+        accBits += spenderIdentitySecretBits;
+
+        receiverIdentitySecret = uint160(
+            shiftAndParse(control, accBits, receiverIdentitySecretBits)
+        );
+        accBits += receiverIdentitySecretBits;
+
+        spendAmount = uint256(shiftAndParse(control, accBits, spendAmountBits));
+        accBits += spendAmountBits;
     }
 
     constructor(Unirep _unirep, IVerifier _verifier) {

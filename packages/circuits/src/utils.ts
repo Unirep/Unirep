@@ -6,6 +6,7 @@ import {
     ReputationControl,
     SignupControl,
     UserStateTransitionControl,
+    SpendReputationControl,
 } from './type'
 
 /**
@@ -252,4 +253,55 @@ export const buildSignupControl = (
     control += BigInt(chainId) << accBits
 
     return control
+}
+
+export const buildSpendReputationControl = (
+    params: SpendReputationControl,
+    config: CircuitConfig = CircuitConfig.default
+): bigint => {
+    const { spenderIdentitySecret, receiverIdentitySecret, spendAmount } =
+        params
+    const { REP_BITS, ONE_BIT } = config
+    let control = BigInt(0)
+    let accBits = BigInt(0)
+    control += spenderIdentitySecret
+    accBits += REP_BITS
+
+    control += receiverIdentitySecret << accBits
+    accBits += REP_BITS
+
+    control += spendAmount << accBits
+
+    return control
+}
+
+export const decodeSpendReputationControl = (
+    control: bigint,
+    config: CircuitConfig = CircuitConfig.default
+): SpendReputationControl => {
+    const { REP_BITS, ONE_BIT } = config
+
+    let accBits = BigInt(0)
+
+    const spenderIdentitySecret = shiftBits(control, accBits, REP_BITS)
+    accBits += REP_BITS
+
+    const receiverIdentitySecret = shiftBits(control, accBits, REP_BITS)
+    accBits += REP_BITS
+
+    const epochTreeElements = shiftBits(control, accBits, ONE_BIT)
+    accBits += ONE_BIT
+
+    const epochTreeIndices = shiftBits(control, accBits, ONE_BIT)
+    accBits += ONE_BIT
+
+    const spendAmount = shiftBits(control, accBits, ONE_BIT)
+
+    return {
+        spenderIdentitySecret,
+        receiverIdentitySecret,
+        epochTreeElements,
+        epochTreeIndices,
+        spendAmount,
+    }
 }

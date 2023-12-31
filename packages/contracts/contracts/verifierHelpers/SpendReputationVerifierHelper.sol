@@ -17,16 +17,20 @@ contract SpendReputationVerifierHelper is BaseVerifierHelper {
         SpendReputationSignals memory signals;
         signals.spenderData = publicSignals[0];
         signals.receiverData = publicSignals[1];
-        signals.epochTreeRoot = publicSignals[3];
-        signals.updatedEpochTreeRoot = publicSignals[4];
-
-        // now decode the control values
+        signals.epochTreeRoot = publicSignals[2];
+        signals.updatedEpochTreeRoot = publicSignals[5];
         (
-            signals.revealNonce,
-            signals.attesterId,
+            signals.nonce,
             signals.epoch,
-            signals.nonce
-        ) = super.decodeEpochKeyControl(publicSignals[2]);
+            signals.attesterId,
+            signals.revealNonce,
+            signals.chainId
+        ) = super.decodeEpochKeyControl(publicSignals[3]);
+        (
+            signals.spenderIdentitySecret,
+            signals.receiverIdentitySecret,
+            signals.spendAmount
+        ) = super.decodeSpendReputationControl(publicSignals[4]);
 
         if (signals.attesterId >= type(uint160).max) revert AttesterInvalid();
 

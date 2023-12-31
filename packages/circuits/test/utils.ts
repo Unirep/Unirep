@@ -7,10 +7,12 @@ import CircuitConfig from '../src/CircuitConfig'
 import { defaultProver } from '../provers/defaultProver'
 const {
     STATE_TREE_DEPTH,
+    EPOCH_TREE_DEPTH,
     SUM_FIELD_COUNT,
     FIELD_COUNT,
     REPL_NONCE_BITS,
     MAX_SAFE_BITS,
+    NUM_EPOCH_KEY_NONCE_PER_EPOCH,
 } = CircuitConfig
 
 export const randomData = () => [
@@ -258,4 +260,73 @@ export {
     genReputationCircuitInput,
     genProofAndVerify,
     genPreventDoubleActionCircuitInput,
+    genSpendReputationCircuitInput,
+}
+
+const genSpendReputationCircuitInput = (config: {
+    epoch: number
+    nonce: number
+    revealNonce?: number
+    attesterId: number | bigint
+    spenderIdentitySecret: number | bigint
+    receiverIdentitySecret: number | bigint
+    spenderData: bigint[][]
+    receiverData: bigint[][]
+    chainId: number | bigint
+    spendAmount: bigint[][]
+}) => {
+    const {
+        epoch,
+        nonce,
+        revealNonce,
+        attesterId,
+        spenderIdentitySecret,
+        receiverIdentitySecret,
+        spenderData,
+        receiverData,
+        chainId,
+        spendAmount,
+    } = Object.assign({}, config)
+
+    // Global epoch tree
+    const epochTree = new utils.IncrementalMerkleTree(EPOCH_TREE_DEPTH)
+    const epochKeys = Array(NUM_EPOCH_KEY_NONCE_PER_EPOCH)
+        .fill(null)
+        .map((_, i) =>
+            utils.genEpochKey(
+                BigInt(spenderIdentitySecret),
+                BigInt(attesterId),
+                epoch,
+                nonce,
+                chainId
+            )
+        )
+    const spenderHashedLeaf = utils.genEpochTreeLeaf(
+        epochKeys[0],
+        spenderData[0]
+    )
+    const receiverHashedLeaf = utils.genEpochTreeLeaf(
+        epochKeys[0],
+        receiverData[0]
+    )
+    epochTree.insert(spenderHashedLeaf)
+    epochTree.insert(receiverHashedLeaf)
+    const epochTreeProof = epochTree.createProof(0) // if there is only one GST leaf, the index is 0
+
+    const circuitInputs = {
+        spender_identity_secret: spenderIdentitySecret,
+        receiver_identity_secret: receiverIdentitySecret,
+        spender_data: spenderData,
+        receiver_data: receiverData,
+        attester_id: attesterId,
+        reveal_nonce: revealNonce ?? 0,
+        epoch,
+        nonce,
+        chain_id: chainId ?? 0,
+        epoch_tree_root: epochTreeProof.root,
+        epoch_tree_elements: epochKeys.map(() => epochTreeProof.siblings),
+        epoch_tree_indices: epochKeys.map(() => epochTreeProof.pathIndices),
+        spend_amount: spendAmount,
+    }
+    return utils.stringifyBigInts(circuitInputs)
 }
