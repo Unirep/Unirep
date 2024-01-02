@@ -1,6 +1,7 @@
 import { Groth16Proof, PublicSignals } from 'snarkjs'
-import { version } from '../package.json'
+// import { version } from '../package.json'
 
+const version = '2.0.0' // trusted setup version
 const KEY_URL = `https://keys.unirep.io/${version}/`
 
 /**
