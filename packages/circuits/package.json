@@ -29,6 +29,7 @@
         "buildOverwrite": "find ./zksnarkBuild -type f -not -name '*.ptau' -delete && yarn build"
     },
     "dependencies": {
+        "@types/snarkjs": "0.7.7",
         "@unirep/utils": "2.0.0",
         "snarkjs": "0.7.2"
     },
