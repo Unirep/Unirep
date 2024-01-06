@@ -6,6 +6,7 @@ export const contractVersion = '2.0.0'
 export const urlBase = 'https://api.studio.thegraph.com/query/48080'
 export const NetworkURL = {
     Sepolia: urlBase + '/sepolia/v' + contractVersion,
+    OptimismGoerli: urlBase + '/optimism-goerli/v' + contractVersion,
     Fuji: urlBase + '/fuji/v' + contractVersion,
 }
 
@@ -36,6 +37,18 @@ The Graph protocol uses the [GraphQL](https://graphql.org/) query language. For 
     <tr>
         <td>Arbitrum Sepolia</td>
         <td>NOT SUPPORTED YET</td>
+    </tr>
+    <tr>
+        <td>Optimism Sepolia</td>
+        <td>NOT SUPPORTED YET</td>
+    </tr>
+    <tr>
+        <td>Optimism Goerli</td>
+        <td>
+            <a href={`${NetworkURL.OptimismGoerli}`}>
+                {NetworkURL.OptimismGoerli}
+            </a>
+        </td>
     </tr>
     <tr>
         <td>Avalanche Fuji</td>

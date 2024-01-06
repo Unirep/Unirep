@@ -11,6 +11,12 @@
             "startBlock": 28680380
         }
     },
+    "optimism-goerli": {
+        "Unirep": {
+            "address": "0x83cB6AF63eAfEc7998cC601eC3f56d064892b386",
+            "startBlock": 19548051
+        }
+    },
     "localhost": {
         "Unirep": {
             "address": "0xD9801245639F53064E0567cE4A1f31A7B156811e",
