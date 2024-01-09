@@ -46,6 +46,14 @@ export type SignupControl = {
     chainId: bigint
 }
 
+export type SpendReputationControl = {
+    spenderIdentitySecret: bigint
+    receiverIdentitySecret: bigint
+    epochTreeElements: bigint
+    epochTreeIndices: bigint
+    spendAmount: bigint
+}
+
 /**
  * Name of the circuits that are used in Unirep protocol
  * @example
@@ -61,6 +69,7 @@ export enum Circuit {
     signup = 'signup',
     epochKeyLite = 'epochKeyLite',
     scopeNullifier = 'scopeNullifier',
+    spendReputation = 'spendReputation',
 }
 
 /**

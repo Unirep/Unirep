@@ -17,6 +17,7 @@ const VerifierHelpers = {
     epochKey: Circuit.epochKey,
     epochKeyLite: Circuit.epochKeyLite,
     reputation: Circuit.reputation,
+    spendReputation: Circuit.spendReputation,
 }
 
 /**
