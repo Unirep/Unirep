@@ -1,0 +1,221 @@
+---
+title: Subgraph
+---
+
+export const contractVersion = '2.0.0'
+export const urlBase = 'https://api.studio.thegraph.com/query/48080'
+export const NetworkURL = {
+    Sepolia: urlBase + '/sepolia/v' + contractVersion,
+    Fuji: urlBase + '/fuji/v' + contractVersion,
+}
+
+[The Graph](https://thegraph.com/) is a protocol for indexing networks like Ethereum and IPFS. Site owners publish subgraphs that expose site data for anyone to query. UniRep's subgraph allows you to retrieve data from the <a href={`https://github.com/Unirep/Unirep/blob/v${contractVersion}/packages/contracts/contracts/Unirep.sol`}>`Unirep.sol`</a> smart contract.
+
+:::info
+The Graph protocol uses the [GraphQL](https://graphql.org/) query language. For examples, see the [GraphQL API documentation](https://thegraph.com/docs/en/querying/graphql-api/).
+:::
+
+## Deployment
+
+<p>
+    UniRep subgraph version {contractVersion} is deployed on the following
+    networks:
+</p>
+
+<table>
+    <tr>
+        <th>Network</th>
+        <th>API</th>
+    </tr>
+    <tr>
+        <td>Sepolia</td>
+        <td>
+            <a href={`${NetworkURL.Sepolia}`}>{NetworkURL.Sepolia}</a>
+        </td>
+    </tr>
+    <tr>
+        <td>Arbitrum Sepolia</td>
+        <td>NOT SUPPORTED YET</td>
+    </tr>
+    <tr>
+        <td>Avalanche Fuji</td>
+        <td>
+            <a href={`${NetworkURL.Fuji}`}>{NetworkURL.Fuji}</a>
+        </td>
+    </tr>
+</table>
+
+## Query Examples
+
+1. Query the first 100 attesters (by default, sorted by `id`).
+
+:::info
+`id` is computed by
+
+```ts
+event.transaction.hash.concatI32(event.logIndex.toI32())
+```
+
+:::
+
+```graphql
+query MyQuery {
+    attesters {
+        attesterId
+        blockNumber
+        epochLength
+        startTimestamp
+        transactionHash
+    }
+}
+```
+
+2. Query the first 100 users from a certain attester ID (by default, sorted by `id`).
+
+```graphql
+query MyQuery {
+    users(
+        where: {
+            attesterId: "812064237485286466066480536294992408637941768146"
+        }
+    ) {
+        commitment
+    }
+}
+```
+
+3. Query the first 100 state tree leaves, sorted by `index`.
+
+```graphql
+query MyQuery {
+    stateTreeLeaves(
+        orderBy: index
+        where: {
+            attesterId: "812064237485286466066480536294992408637941768146"
+            epoch: "1"
+        }
+    ) {
+        leaf
+    }
+}
+```
+
+3. Query the first 1000 state tree leaves, sorted by `index`.
+
+```graphql
+query MyQuery {
+    stateTreeLeaves(
+        first: 1000
+        orderBy: index
+        where: {
+            attesterId: "812064237485286466066480536294992408637941768146"
+            epoch: "1"
+        }
+    ) {
+        leaf
+    }
+}
+```
+
+4. Query the next 1000 state tree leaves, sorted by `index`.
+
+```graphql
+query MyQuery {
+    stateTreeLeaves(
+        skip: 1000
+        first: 1000
+        orderBy: index
+        where: {
+            attesterId: "812064237485286466066480536294992408637941768146"
+            epoch: "1"
+        }
+    ) {
+        leaf
+    }
+}
+```
+
+## Schema
+
+### Attestation
+
+-   `id`: An id to avoid data collision
+-   `epoch`: The epoch in which an attestation occurred
+-   `epochKey`: The receiver's epoch key
+-   `attesterId`: The attester address
+-   `fieldIndex`: The index of the data field that was changed
+-   `change`: The change number of the data
+-   `blockNumber`: The block number in which the attestation transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the attestation transaction occurred
+-   `transactionHash`: The attestation transaction hash
+
+### StateTreeLeaf
+
+-   `id`: An id to avoid data collision
+-   `epoch`: The epoch in which the state tree leaf was emitted
+-   `leaf`: The emitted state tree leaf
+-   `index`: The index of the state tree leaf in the epoch
+-   `attesterId`: The attester address
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
+-   `transactionHash`: The transaction hash
+
+### EpochTreeLeaf
+
+-   `id`: An id to avoid data collision
+-   `epoch`: The epoch in which the epoch tree leaf was emitted
+-   `leaf`: The emitted epoch tree leaf
+-   `index`: The index of the epoch tree leaf in the epoch
+-   `attesterId`: The attester address
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
+-   `transactionHash`: The transaction hash
+
+### HistoryTreeLeaf
+
+-   `id`: An id to avoid data collision
+-   `leaf`: The emitted history tree leaf
+-   `attesterId`: The attester address
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
+-   `transactionHash`: The transaction hash
+
+### Epoch
+
+-   `id`: An id to avoid data collision
+-   `number`: The number of the ended epoch
+-   `attesterId`: The attester address
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
+-   `transactionHash`: The transaction hash
+
+### Nullifier
+
+-   `id`: An id to avoid data collision
+-   `epoch`: The epoch in which the nullifier was emitted
+-   `attesterId`: The attester address
+-   `nullifier`: The nullifier that was used to prevent a double user state transition
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
+-   `transactionHash`: The transaction hash
+
+### User
+
+-   `id`: An id to avoid data collision
+-   `commitment`: The Semaphore identity commitment
+-   `epoch`: The epoch in which the user signed up
+-   `attesterId`: The address of the attester the user signed up to
+-   `leafIndex`: The state tree leaf of the signup event
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
+-   `transactionHash`: The transaction hash
+
+### Attester
+
+-   `id`: An id to avoid data collision
+-   `attesterId`: The attester address
+-   `startTimestamp`: The start time of the attester's first epoch
+-   `epochLength`: The length of the attester's epochs
+-   `blockNumber`: The block number in which the transaction occurred
+-   `blockTimestamp`: The timestamp of the block in which the transaction occurred
+-   `transactionHash`: The transaction hash
