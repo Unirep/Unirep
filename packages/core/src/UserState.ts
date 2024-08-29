@@ -20,7 +20,7 @@ import {
     EpochKeyLiteProof,
 } from '@unirep/circuits'
 import { Synchronizer, toDecString } from './Synchronizer'
-import { schema } from './userSchema'
+import { userSchema } from './userSchema'
 import { MemoryConnector } from 'anondb/web'
 
 /**
@@ -113,7 +113,7 @@ export default class UserState {
         id: Identity
         prover: Prover
     }) {
-        const db = config.db ?? new MemoryConnector(constructSchema(schema))
+        const db = config.db ?? new MemoryConnector(constructSchema(userSchema))
         const {
             id,
             synchronizer,
