@@ -500,8 +500,23 @@ export default class UserState {
             },
         })
 
+        const validEpochs = await this.db.findMany('Epoch', {
+            where: {
+                AND: [
+                    {
+                        number: { gte: transitionedEpoch },
+                    },
+                    {
+                        number: { lte: _toEpoch },
+                    },
+                ],
+            },
+            orderBy: {
+                number: 'asc',
+            },
+        })
         let latestTransitionedEpoch = transitionedEpoch
-        for (let x = transitionedEpoch; x <= _toEpoch; x++) {
+        for (const { number: x } of validEpochs) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
