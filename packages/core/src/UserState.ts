@@ -469,7 +469,15 @@ export default class UserState {
         const transitionedEpoch =
             savedData?.latestTransitionedEpoch ?? signup?.epoch
         const allNullifiers = [] as any
-        for (let x = signup?.epoch; x <= _toEpoch; x++) {
+        const epochs = await this.db.findMany('Epoch', {
+            where: {
+                number: { gte: signup?.epoch },
+            },
+            orderBy: {
+                number: 'asc',
+            },
+        })
+        for (const { number: x } of epochs) {
             allNullifiers.push(
                 ...[0, this.sync.settings.numEpochKeyNoncePerEpoch].map((v) =>
                     genEpochKey(
@@ -492,8 +500,23 @@ export default class UserState {
             },
         })
 
+        const validEpochs = await this.db.findMany('Epoch', {
+            where: {
+                AND: [
+                    {
+                        number: { gte: transitionedEpoch },
+                    },
+                    {
+                        number: { lte: _toEpoch },
+                    },
+                ],
+            },
+            orderBy: {
+                number: 'asc',
+            },
+        })
         let latestTransitionedEpoch = transitionedEpoch
-        for (let x = transitionedEpoch; x <= _toEpoch; x++) {
+        for (const { number: x } of validEpochs) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
