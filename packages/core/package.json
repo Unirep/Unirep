@@ -1,6 +1,6 @@
 {
     "name": "@unirep/core",
-    "version": "2.1.1",
+    "version": "2.1.2",
     "description": "",
     "main": "build/src/index.js",
     "types": "build/src/index.d.ts",
@@ -32,9 +32,9 @@
     },
     "dependencies": {
         "@semaphore-protocol/identity": "3.10.1",
-        "@unirep/circuits": "2.1.1",
-        "@unirep/contracts": "2.1.1",
-        "@unirep/utils": "2.1.1",
+        "@unirep/circuits": "2.1.2",
+        "@unirep/contracts": "2.1.2",
+        "@unirep/utils": "2.1.2",
         "anondb": "0.0.21",
         "async-lock": "1.4.0",
         "ethers": "5.7.2",

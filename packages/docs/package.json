@@ -27,7 +27,7 @@
     "devDependencies": {
         "@cloudflare/kv-asset-handler": "^0.2.0",
         "@docusaurus/module-type-aliases": "^2.4.3",
-        "@unirep/core": "2.1.1",
+        "@unirep/core": "2.1.2",
         "docusaurus-plugin-matomo": "^0.0.6",
         "docusaurus-plugin-typedoc": "^0.20.2",
         "typedoc": "^0.25.2",

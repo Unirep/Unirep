@@ -1,6 +1,6 @@
 {
     "name": "unirep",
-    "version": "2.1.1",
+    "version": "2.1.2",
     "main": "index.js",
     "license": "MIT",
     "description": "UniRep is a private and nonrepudiable data system based on ZKP",
