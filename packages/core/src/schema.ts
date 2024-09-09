@@ -44,7 +44,7 @@ const _schema = [
     },
     {
         name: 'StateTreeLeaf',
-        indexes: [{ keys: ['index'] }],
+        indexes: [{ keys: ['index'] }, { keys: ['epoch'] }],
         rows: [
             ['epoch', 'Int'],
             ['hash', 'String'],

@@ -469,15 +469,15 @@ export default class UserState {
         const transitionedEpoch =
             savedData?.latestTransitionedEpoch ?? signup?.epoch
         const allNullifiers = [] as any
-        const epochs = await this.db.findMany('Epoch', {
+        const epochs = await this.db.findMany('StateTreeLeaf', {
             where: {
-                number: { gte: signup?.epoch },
+                epoch: { gte: signup?.epoch },
             },
             orderBy: {
-                number: 'asc',
+                epoch: 'asc',
             },
         })
-        for (const { number: x } of epochs) {
+        for (const { epoch: x } of epochs) {
             allNullifiers.push(
                 ...[0, this.sync.settings.numEpochKeyNoncePerEpoch].map((v) =>
                     genEpochKey(
