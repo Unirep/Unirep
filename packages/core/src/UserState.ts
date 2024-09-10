@@ -471,7 +471,14 @@ export default class UserState {
         const allNullifiers = [] as any
         const epochs = await this.db.findMany('StateTreeLeaf', {
             where: {
-                epoch: { gte: signup?.epoch },
+                AND: [
+                    {
+                        epoch: { gte: signup?.epoch },
+                    },
+                    {
+                        epoch: { lte: _toEpoch },
+                    },
+                ],
             },
             orderBy: {
                 epoch: 'asc',
@@ -500,23 +507,23 @@ export default class UserState {
             },
         })
 
-        const validEpochs = await this.db.findMany('Epoch', {
+        const validEpochs = await this.db.findMany('StateTreeLeaf', {
             where: {
                 AND: [
                     {
-                        number: { gte: transitionedEpoch },
+                        epoch: { gte: transitionedEpoch },
                     },
                     {
-                        number: { lte: _toEpoch },
+                        epoch: { lte: _toEpoch },
                     },
                 ],
             },
             orderBy: {
-                number: 'asc',
+                epoch: 'asc',
             },
         })
         let latestTransitionedEpoch = transitionedEpoch
-        for (const { number: x } of validEpochs) {
+        for (const { epoch: x } of validEpochs) {
             const epks = Array(this.sync.settings.numEpochKeyNoncePerEpoch)
                 .fill(null)
                 .map((_, i) =>
