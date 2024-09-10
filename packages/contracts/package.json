@@ -1,6 +1,6 @@
 {
     "name": "@unirep/contracts",
-    "version": "2.1.3",
+    "version": "2.1.4",
     "main": "build/src/index.js",
     "types": "build/src/index.d.ts",
     "author": "Unirep team <team@unirep.io>",
@@ -31,8 +31,8 @@
     },
     "dependencies": {
         "@openzeppelin/contracts": "4.9.3",
-        "@unirep/circuits": "2.1.3",
-        "@unirep/utils": "2.1.3",
+        "@unirep/circuits": "2.1.4",
+        "@unirep/utils": "2.1.4",
         "@zk-kit/incremental-merkle-tree.sol": "1.7.0",
         "ethers": "5.7.2",
         "global-factory": "0.0.2",
