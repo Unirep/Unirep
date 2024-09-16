@@ -1069,19 +1069,25 @@ export class Synchronizer extends EventEmitter {
         const index = Number(decodedData.index)
         const attesterId = toDecString(decodedData.attesterId)
         const hash = toDecString(decodedData.leaf)
+        const { blockNumber } = event
         if (!this.attesterExist(attesterId)) return
-        const existing = await this._db.findOne('StateTreeLeaf', {
+        const id = `${epoch}-${index}-${attesterId}`
+        db.upsert('StateTreeLeaf', {
             where: {
-                hash,
+                id,
             },
-        })
-        if (existing) return true
-        db.create('StateTreeLeaf', {
-            epoch,
-            hash,
-            index,
-            attesterId,
-            blockNumber: event.blockNumber,
+            update: {
+                hash,
+                blockNumber,
+            },
+            create: {
+                id,
+                epoch,
+                index,
+                attesterId,
+                hash,
+                blockNumber,
+            },
         })
         return true
     }
