@@ -1,6 +1,6 @@
 {
     "name": "@unirep/utils",
-    "version": "2.1.4",
+    "version": "2.1.5-alpha-1",
     "main": "build/index.js",
     "types": "build/index.d.ts",
     "repository": "https://github.com/unirep/unirep.git",

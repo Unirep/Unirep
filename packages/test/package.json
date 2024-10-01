@@ -7,6 +7,6 @@
         "build": "tsc"
     },
     "dependencies": {
-        "@unirep/core": "2.1.4"
+        "@unirep/core": "2.1.5-alpha-1"
     }
 }
