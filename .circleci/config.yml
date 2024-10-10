@@ -54,15 +54,6 @@ workflows:
 
 # Just for reusing below
 step_defs:
-    - run: &node_version
-          name: Set Node version
-          command: |
-              nvm install v16
-              nvm alias default v16
-              echo "nvm use default" >> $BASH_ENV
-    - run: &check_version
-          name: Check Node version
-          command: node -v | grep v16
     - run: &download_circom
           name: Download Circom
           command: |
@@ -83,8 +74,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run: *download_circom
             - run:
                   name: Install Packages
@@ -116,8 +105,6 @@ jobs:
             - checkout
             - node/install-packages:
                   pkg-manager: yarn
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Install
                   command: yarn
@@ -134,8 +121,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Test
                   command: |
@@ -151,8 +136,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Test
                   command: yarn circuits test
@@ -166,8 +149,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Test
                   command: |
@@ -183,8 +164,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Test
                   command: yarn contracts coverage
@@ -201,8 +180,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Upload Coverage
                   command: |
@@ -217,8 +194,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Test
                   command: yarn utils test
@@ -231,8 +206,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Build Docs Site
                   command: yarn docs build
@@ -250,8 +223,6 @@ jobs:
                   pkg-manager: yarn
             - attach_workspace:
                   at: ~/project
-            - run: *node_version
-            - run: *check_version
             - run:
                   name: Install dependencies
                   command: |
