@@ -1,6 +1,6 @@
 version: 2.1
 orbs:  
-    node: circleci/node@5.0.2
+    node: circleci/node@6.1.0
 workflows:
     lint_and_test:
         jobs:
@@ -72,8 +72,6 @@ step_defs:
 
 jobs:
     build:
-        machine:
-            image: ubuntu-2204:edge
         resource_class: large
         environment:
             ABI_ORIGIN: packages/contracts/abi/Unirep.json
@@ -112,8 +110,6 @@ jobs:
                       - node_modules
                       - packages/
     lint:
-        machine:
-            image: ubuntu-2204:edge
         resource_class: medium
         executor: node/default
         steps:
@@ -131,8 +127,6 @@ jobs:
     core-test:
         parallelism: 4
         resource_class: large
-        machine:
-            image: ubuntu-2204:edge
         executor: node/default
         steps:
             - checkout
@@ -150,8 +144,6 @@ jobs:
                       yarn test-ci $TEST_FILES
     circuits-test:
         resource_class: medium
-        machine:
-            image: ubuntu-2204:edge
         executor: node/default
         steps:
             - checkout
@@ -167,8 +159,6 @@ jobs:
     contracts-test:
         parallelism: 4
         resource_class: large
-        machine:
-            image: ubuntu-2204:edge
         executor: node/default
         steps:
             - checkout
@@ -186,8 +176,6 @@ jobs:
                       yarn test-ci $TEST_FILES
     contracts-test-coverage:
         resource_class: large
-        machine:
-            image: ubuntu-2204:edge
         executor: node/default
         steps:
             - checkout
@@ -206,8 +194,6 @@ jobs:
                       - packages/contracts
     contracts-coverage:
         resource_class: medium
-        machine:
-            image: ubuntu-2204:edge
         executor: node/default
         steps:
             - checkout
@@ -224,8 +210,6 @@ jobs:
                       npx wrangler@2.1 publish
     utils-test:
         resource_class: medium
-        machine:
-            image: ubuntu-2204:edge
         executor: node/default
         steps:
             - checkout
@@ -240,8 +224,6 @@ jobs:
                   command: yarn utils test
     docs-publish:
         resource_class: medium
-        machine:
-            image: ubuntu-2204:edge
         executor: node/default
         steps:
             - checkout
@@ -261,8 +243,6 @@ jobs:
                       npx wrangler@2.1 publish
     subgraph-test:
         resource_class: medium
-        machine:
-            image: ubuntu-2204:edge
         executor: node/default
         steps:
             - checkout
