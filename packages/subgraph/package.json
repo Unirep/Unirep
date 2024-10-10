@@ -1,6 +1,6 @@
 {
     "name": "@unirep/subgraph",
-    "version": "2.1.5-alpha-1",
+    "version": "2.1.5",
     "repository": "https://github.com/unirep/unirep",
     "author": "Unirep team <team@unirep.io>",
     "license": "MIT",
