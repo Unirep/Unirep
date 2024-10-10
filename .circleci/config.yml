@@ -71,7 +71,7 @@ step_defs:
 jobs:
     build:
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         resource_class: large
         environment:
             ABI_ORIGIN: packages/contracts/abi/Unirep.json
@@ -108,7 +108,7 @@ jobs:
                       - packages/
     lint:
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         resource_class: medium
         steps:
             - checkout
@@ -124,7 +124,7 @@ jobs:
         parallelism: 4
         resource_class: large
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         steps:
             - checkout
             - attach_workspace:
@@ -140,7 +140,7 @@ jobs:
     circuits-test:
         resource_class: medium
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         steps:
             - checkout
             - attach_workspace:
@@ -154,7 +154,7 @@ jobs:
         parallelism: 4
         resource_class: large
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         steps:
             - checkout
             - attach_workspace:
@@ -170,7 +170,7 @@ jobs:
     contracts-test-coverage:
         resource_class: large
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         steps:
             - checkout
             - attach_workspace:
@@ -187,7 +187,7 @@ jobs:
     contracts-coverage:
         resource_class: medium
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         steps:
             - checkout
             - attach_workspace:
@@ -202,7 +202,7 @@ jobs:
     utils-test:
         resource_class: medium
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         steps:
             - checkout
             - attach_workspace:
@@ -215,7 +215,7 @@ jobs:
     docs-publish:
         resource_class: medium
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         steps:
             - checkout
             - attach_workspace:
@@ -233,7 +233,7 @@ jobs:
     subgraph-test:
         resource_class: medium
         machine:
-            image: ubuntu-2204:2022.04.1
+            image: ubuntu-2204:edge
         steps:
             - checkout
             - attach_workspace:
