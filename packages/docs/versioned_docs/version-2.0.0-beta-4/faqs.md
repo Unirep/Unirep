@@ -18,7 +18,7 @@ An [Attester](./protocol/users-and-attesters.md) is the smart contract that is c
 ### What is an Epoch Key?
 
 [Epoch Keys](./protocol/epoch-key) are temporary anonymous identities or personas used to interact with a Unirep application. A user will be given multiple epoch keys, and they are changed with every new epoch. The epoch keys are used to receive and prove data without associating that data with the user. Users are able to prove ownership of the total data accumulated by all of their epoch keys. 
-- Epoch Keys are similiar to Ethereum wallet addreses in that users can receive data from others, but each user's activity or history cannot be traced back to their persistent identity.
+- Epoch Keys are similar to Ethereum wallet addresses in that users can receive data from others, but each user's activity or history cannot be traced back to their persistent identity.
 
 ### What is the architecture of a Unirep application?
 
