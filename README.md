@@ -47,7 +47,7 @@ For more information, refer to the [documentation](https://developer.unirep.io/)
 ​
 ## 🔋 Requirements
 
-- Intall [rust](https://www.rust-lang.org/tools/install) and [circom 2](https://docs.circom.io/getting-started/installation/)
+- Install [rust](https://www.rust-lang.org/tools/install) and [circom 2](https://docs.circom.io/getting-started/installation/)
 - Node.js >=16.14
 
 ## 🛠 Install and test
