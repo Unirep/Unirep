@@ -12,7 +12,7 @@ const config = {
     tagline: 'Universal Reputation - Private user data & Provable reputation',
     url: 'https://developer.unirep.io',
     baseUrl: '/',
-    onBrokenLinks: 'throw',
+    onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/unirep-icon.png',
 
