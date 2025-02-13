@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_unirep_docs=self.webpackChunk_unirep_docs||[]).push([[841],{975:e=>{e.exports=JSON.parse('{"label":"attester","permalink":"/blog/tags/attester","allTagsPath":"/blog/tags","count":1}')}}]);

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_unirep_docs=self.webpackChunk_unirep_docs||[]).push([[5324],{37514:e=>{e.exports=JSON.parse('{"label":"year in review","permalink":"/blog/tags/year-in-review","allTagsPath":"/blog/tags","count":1}')}}]);

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_unirep_docs=self.webpackChunk_unirep_docs||[]).push([[8372],{97055:e=>{e.exports=JSON.parse('{"label":"unirep in turkey","permalink":"/blog/tags/unirep-in-turkey","allTagsPath":"/blog/tags","count":1}')}}]);

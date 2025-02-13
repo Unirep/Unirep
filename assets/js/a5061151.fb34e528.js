@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_unirep_docs=self.webpackChunk_unirep_docs||[]).push([[6687],{57969:e=>{e.exports=JSON.parse('{"label":"prototype","permalink":"/blog/tags/prototype","allTagsPath":"/blog/tags","count":1}')}}]);
